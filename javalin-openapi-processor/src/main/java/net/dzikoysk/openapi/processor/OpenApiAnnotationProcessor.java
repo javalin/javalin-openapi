@@ -4,7 +4,8 @@ import com.google.auto.service.AutoService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import net.dzikoysk.openapi.processor.annotations.OpenApiInstance;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -13,18 +14,12 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.AbstractAnnotationValueVisitor8;
-import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import javax.tools.Diagnostic.Kind;
-import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -63,22 +58,19 @@ public final class OpenApiAnnotationProcessor extends AbstractProcessor {
             JsonObject paths = new JsonObject();
             openApi.add("paths", paths);
 
+            Collection<OpenApi> openApiAnnotations = new ArrayList<>();
+
             for (TypeElement annotation : annotations) {
                 Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
 
                 for (Element annotatedElement : annotatedElements) {
                     AnnotationMirror openApiAnnotationMirror = annotatedElement.getAnnotationMirrors().get(0);
-
-                    String path = getValue(openApiAnnotationMirror.getElementValues(), "path").toString();
-                    HttpMethod method = HttpMethod.valueOf(getValue(openApiAnnotationMirror.getElementValues(), "method").toString().toUpperCase());
-
-                    JsonObject pathObject = computeIfAbsent(paths, path, JsonObject::new);
-                    JsonObject methodObject = computeIfAbsent(pathObject, method.name().toLowerCase(), JsonObject::new);
-
-                    for (Entry<? extends ExecutableElement, ? extends AnnotationValue> property : openApiAnnotationMirror.getElementValues().entrySet()) {
-                        methodObject.addProperty(property.getKey().getSimpleName().toString(), property.getValue().getValue().toString());
-                    }
+                    openApiAnnotations.add(new OpenApiInstance(openApiAnnotationMirror));
                 }
+            }
+
+            for (OpenApi openApiAnnotation : openApiAnnotations) {
+
             }
 
             messager.printMessage(Kind.WARNING, gson.toJson(openApi));
@@ -99,14 +91,6 @@ public final class OpenApiAnnotationProcessor extends AbstractProcessor {
         }
 
         messager.printMessage(Kind.ERROR, error.toString());
-    }
-
-    private Object getValue(Map<? extends ExecutableElement, ? extends AnnotationValue> values, String key) {
-        return values.entrySet().stream()
-                .filter(element -> element.getKey().getSimpleName().contentEquals(key))
-                .map(element -> element.getValue().getValue())
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Missing '" + key + "' property in @OpenApi annotation"));
     }
 
     private JsonObject computeIfAbsent(JsonObject root, String key, Supplier<JsonObject> value) {
