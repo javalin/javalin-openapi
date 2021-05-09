@@ -1,11 +1,19 @@
-package net.dzikoysk.openapi.processor.annotations;
+package net.dzikoysk.openapi.processor.processing;
+
+import net.dzikoysk.openapi.processor.processing.ArrayVisitor;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 
-class AnnotationMirrorMapper {
+public class AnnotationMirrorMapper {
 
     protected final AnnotationMirror mirror;
 
@@ -19,12 +27,23 @@ class AnnotationMirrorMapper {
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Missing '" + key + "' property in @OpenApi annotation"));
     }
+
     protected Object getValue(String key) {
         return getEntry(key).getValue().getValue();
     }
 
-    protected Object[] getArray(String key) {
-        return getEntry(key).getValue().accept(new ArrayVisitor<>(), null).toArray();
+    protected <A extends Annotation> A getAnnotation(String key, Function<AnnotationMirror, A> function) {
+        return function.apply(getEntry(key).getValue().accept(new AnnotationVisitor<>(), null));
+    }
+
+    protected <T, R> R[] getArray(String key, Class<T> type, Function<T, R> mapper, IntFunction<R[]> arraySupplier) {
+        return getArray(key, type).stream()
+                .map(mapper)
+                .toArray(arraySupplier);
+    }
+
+    protected <T> List<? extends T> getArray(String key, Class<T> type) {
+        return getEntry(key).getValue().accept(new ArrayVisitor<T>(), null);
     }
 
     protected String getString(String key) {

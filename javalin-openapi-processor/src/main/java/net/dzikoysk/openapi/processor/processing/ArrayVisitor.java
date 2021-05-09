@@ -1,4 +1,4 @@
-package net.dzikoysk.openapi.processor.annotations;
+package net.dzikoysk.openapi.processor.processing;
 
 import javax.lang.model.element.AnnotationValue;
 import java.util.List;

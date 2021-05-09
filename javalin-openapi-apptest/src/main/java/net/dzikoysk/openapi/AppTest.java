@@ -6,6 +6,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
+import java.io.Serializable;
+
 public final class AppTest {
 
     @OpenApi(
@@ -33,7 +35,27 @@ public final class AppTest {
             }
     )
     public static void main(String[] args) {
-        System.out.println("mainxx");
+        System.out.println("main");
+    }
+
+    public static final class EntityDto implements Serializable {
+
+        private final int status;
+        private final String message;
+
+        public EntityDto(int status, String message) {
+            this.status = status;
+            this.message = message;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
     }
 
 }

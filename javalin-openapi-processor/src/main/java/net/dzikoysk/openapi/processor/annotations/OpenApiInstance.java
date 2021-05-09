@@ -9,12 +9,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 
 @SuppressWarnings("ClassExplicitlyAnnotation")
-public final class OpenApiInstance extends AnnotationMirrorMapper implements OpenApi {
+final class OpenApiInstance extends AnnotationMirrorMapper implements OpenApi {
 
     public OpenApiInstance(AnnotationMirror mirror) {
         super(mirror);
@@ -22,12 +25,12 @@ public final class OpenApiInstance extends AnnotationMirrorMapper implements Ope
 
     @Override
     public OpenApiComposedRequestBody composedRequestBody() {
-        return null;
+        return getAnnotation("composedRequestBody", OpenApiComposedRequestBodyInstance::new);
     }
 
     @Override
     public OpenApiParam[] cookies() {
-        return new OpenApiParam[0];
+        return getArray("cookies", AnnotationMirror.class, OpenApiParamInstance::new, OpenApiParam[]::new);
     }
 
     @Override
@@ -42,17 +45,17 @@ public final class OpenApiInstance extends AnnotationMirrorMapper implements Ope
 
     @Override
     public OpenApiFileUpload[] fileUploads() {
-        return new OpenApiFileUpload[0];
+        return getArray("fileUploads", AnnotationMirror.class, OpenApiFileUploadInstance::new, OpenApiFileUpload[]::new);
     }
 
     @Override
     public OpenApiFormParam[] formParams() {
-        return new OpenApiFormParam[0];
+        return getArray("formParams", AnnotationMirror.class, OpenApiFormParamInstance::new, OpenApiFormParam[]::new);
     }
 
     @Override
     public OpenApiParam[] headers() {
-        return new OpenApiParam[0];
+        return getArray("headers", AnnotationMirror.class, OpenApiParamInstance::new, OpenApiParam[]::new);
     }
 
     @Override
@@ -77,27 +80,29 @@ public final class OpenApiInstance extends AnnotationMirrorMapper implements Ope
 
     @Override
     public OpenApiParam[] pathParams() {
-        return new OpenApiParam[0];
+        return getArray("pathParams", AnnotationMirror.class, OpenApiParamInstance::new, OpenApiParam[]::new);
     }
 
     @Override
     public OpenApiParam[] queryParams() {
-        return new OpenApiParam[0];
+        return getArray("queryParams", AnnotationMirror.class, OpenApiParamInstance::new, OpenApiParam[]::new);
     }
 
     @Override
     public OpenApiRequestBody requestBody() {
-        return null;
+        return getAnnotation("requestBody", OpenApiRequestBodyInstance::new);
     }
 
     @Override
     public OpenApiResponse[] responses() {
-        return new OpenApiResponse[0];
+        return getArray("responses", AnnotationMirror.class).stream()
+                .map(OpenApiResponseInstance::new)
+                .toArray(OpenApiResponse[]::new);
     }
 
     @Override
     public OpenApiSecurity[] security() {
-        return new OpenApiSecurity[0];
+        return getArray("security", AnnotationMirror.class, OpenApiSecurityInstance::new, OpenApiSecurity[]::new);
     }
 
     @Override
@@ -107,12 +112,14 @@ public final class OpenApiInstance extends AnnotationMirrorMapper implements Ope
 
     @Override
     public String[] tags() {
-        return new String[0];
+        return getArray("tags", AnnotationValue.class).stream()
+                .map(value -> value.getValue().toString())
+                .toArray(String[]::new);
     }
 
     @Override
     public Class<? extends Annotation> annotationType() {
-        return null;
+        return OpenApi.class;
     }
 
 }
