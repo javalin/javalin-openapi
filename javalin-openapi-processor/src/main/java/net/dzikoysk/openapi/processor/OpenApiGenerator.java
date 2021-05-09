@@ -3,8 +3,7 @@ package net.dzikoysk.openapi.processor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import net.dzikoysk.openapi.processor.annotations.OpenApiLoader;
+import net.dzikoysk.openapi.processor.annotations.OpenApiInstance;
 
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
@@ -23,7 +22,7 @@ final class OpenApiGenerator {
         this.messager = messager;
     }
 
-    JsonObject generate(Collection<OpenApi> annotations) {
+    JsonObject generate(Collection<OpenApiInstance> annotations) {
         JsonObject openApi = new JsonObject();
         openApi.addProperty("openapi", "3.0.1");
 
@@ -42,8 +41,8 @@ final class OpenApiGenerator {
         openApi.add("paths", paths);
 
 
-        for (OpenApi openApiAnnotation : annotations) {
-            System.out.println(openApiAnnotation.headers()[0].name());
+        for (OpenApiInstance openApiAnnotation : annotations) {
+            System.out.println(openApiAnnotation.headers()[0].type());
         }
 
         messager.printMessage(Kind.WARNING, gson.toJson(openApi));

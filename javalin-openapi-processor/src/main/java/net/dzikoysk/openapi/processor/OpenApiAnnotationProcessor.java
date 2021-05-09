@@ -1,10 +1,8 @@
 package net.dzikoysk.openapi.processor;
 
 import com.google.auto.service.AutoService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import io.javalin.plugin.openapi.annotations.OpenApi;
+import net.dzikoysk.openapi.processor.annotations.OpenApiInstance;
 import net.dzikoysk.openapi.processor.annotations.OpenApiLoader;
 import net.dzikoysk.openapi.processor.utils.ProcessorUtils;
 
@@ -19,7 +17,6 @@ import javax.tools.Diagnostic.Kind;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.function.Supplier;
 
 @AutoService(Processor.class)
 public final class OpenApiAnnotationProcessor extends AbstractProcessor {
@@ -35,7 +32,7 @@ public final class OpenApiAnnotationProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
-            Collection<OpenApi> openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv);
+            Collection<OpenApiInstance> openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv);
 
             OpenApiGenerator generator = new OpenApiGenerator(messager);
             JsonObject result = generator.generate(openApiAnnotations);

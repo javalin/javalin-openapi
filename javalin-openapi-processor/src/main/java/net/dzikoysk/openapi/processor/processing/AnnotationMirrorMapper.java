@@ -1,17 +1,13 @@
 package net.dzikoysk.openapi.processor.processing;
 
-import net.dzikoysk.openapi.processor.processing.ArrayVisitor;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
+import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 
 public class AnnotationMirrorMapper {
 
@@ -32,7 +28,7 @@ public class AnnotationMirrorMapper {
         return getEntry(key).getValue().getValue();
     }
 
-    protected <A extends Annotation> A getAnnotation(String key, Function<AnnotationMirror, A> function) {
+    protected <R> R getAnnotation(String key, Function<AnnotationMirror, R> function) {
         return function.apply(getEntry(key).getValue().accept(new AnnotationVisitor<>(), null));
     }
 
@@ -44,6 +40,10 @@ public class AnnotationMirrorMapper {
 
     protected <T> List<? extends T> getArray(String key, Class<T> type) {
         return getEntry(key).getValue().accept(new ArrayVisitor<T>(), null);
+    }
+
+    protected TypeMirror getType(String key) {
+        return getEntry(key).getValue().accept(new ClassVisitor(), null);
     }
 
     protected String getString(String key) {

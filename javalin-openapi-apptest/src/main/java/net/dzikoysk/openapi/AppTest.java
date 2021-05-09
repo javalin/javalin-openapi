@@ -18,7 +18,7 @@ public final class AppTest {
             description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
             tags = { "Cli" },
             headers = {
-                    @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true)
+                    @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = String.class)
             },
             responses = {
                     @OpenApiResponse(status = "200", description = "Status of the executed command", content = {

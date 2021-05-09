@@ -1,8 +1,5 @@
 package net.dzikoysk.openapi.processor.annotations;
 
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import net.dzikoysk.openapi.processor.annotations.OpenApiInstance;
-
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -13,8 +10,8 @@ import java.util.Set;
 
 public final class OpenApiLoader {
 
-    public static Collection<OpenApi> loadAnnotations(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Collection<OpenApi> openApiAnnotations = new ArrayList<>();
+    public static Collection<OpenApiInstance> loadAnnotations(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        Collection<OpenApiInstance> openApiAnnotations = new ArrayList<>();
 
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);

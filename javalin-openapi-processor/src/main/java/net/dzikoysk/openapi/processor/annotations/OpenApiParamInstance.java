@@ -4,51 +4,43 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 
-@SuppressWarnings("ClassExplicitlyAnnotation")
-final class OpenApiParamInstance extends AnnotationMirrorMapper implements OpenApiParam {
+public final class OpenApiParamInstance extends AnnotationMirrorMapper {
 
     public OpenApiParamInstance(AnnotationMirror mirror) {
         super(mirror);
     }
 
-    @Override
     public boolean allowEmptyValue() {
         return getBoolean("allowEmptyValue");
     }
 
-    @Override
     public boolean deprecated() {
         return getBoolean("boolean");
     }
 
-    @Override
     public String description() {
         return getString("description");
     }
 
-    @Override
     public boolean isRepeatable() {
         return getBoolean("isRepeatable");
     }
 
-    @Override
     public String name() {
         return getString("name");
     }
 
-    @Override
     public boolean required() {
         return getBoolean("required");
     }
 
-    @Override
-    public Class<?> type() {
-        return null;
+    public TypeMirror type() {
+        return getType("type");
     }
 
-    @Override
     public Class<? extends Annotation> annotationType() {
         return OpenApiParam.class;
     }

@@ -4,31 +4,27 @@ import io.javalin.plugin.openapi.annotations.OpenApiFormParam;
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 
-@SuppressWarnings("ClassExplicitlyAnnotation")
-final class OpenApiFormParamInstance extends AnnotationMirrorMapper implements OpenApiFormParam {
+public final class OpenApiFormParamInstance extends AnnotationMirrorMapper {
 
     OpenApiFormParamInstance(AnnotationMirror mirror) {
         super(mirror);
     }
 
-    @Override
     public String name() {
         return getString("name");
     }
 
-    @Override
     public boolean required() {
         return getBoolean("required");
     }
 
-    @Override
-    public Class<?> type() {
-        return null;
+    public TypeMirror type() {
+        return getType("type");
     }
 
-    @Override
     public Class<? extends Annotation> annotationType() {
         return OpenApiFormParam.class;
     }
