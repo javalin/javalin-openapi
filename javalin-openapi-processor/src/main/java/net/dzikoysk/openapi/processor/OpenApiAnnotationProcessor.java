@@ -13,6 +13,8 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,17 +24,21 @@ import java.util.Set;
 public final class OpenApiAnnotationProcessor extends AbstractProcessor {
 
     private Messager messager;
+    private Elements elements;
+    private Types types;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         this.messager = processingEnv.getMessager();
+        this.elements = processingEnv.getElementUtils();
+        this.types = processingEnv.getTypeUtils();
         messager.printMessage(Kind.WARNING, "OpenApi Annotation Processor");
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
-            Collection<OpenApiInstance> openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv);
+            Collection<OpenApiInstance> openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, elements, types, roundEnv);
 
             OpenApiGenerator generator = new OpenApiGenerator(messager);
             JsonObject result = generator.generate(openApiAnnotations);
