@@ -22,7 +22,6 @@ public final class OpenApiLoader {
                 AnnotationMirror openApiAnnotationMirror = annotatedElement.getAnnotationMirrors().get(0);
                 OpenApiInstance openApiInstance = new OpenApiInstance(openApiAnnotationMirror);
                 openApiAnnotations.add(openApiInstance);
-                // types.asElement(openApiInstance.responses()[0].content()[0].from()).getEnclosedElements()
             }
         }
 

@@ -23,15 +23,15 @@ import java.util.Set;
 @AutoService(Processor.class)
 public final class OpenApiAnnotationProcessor extends AbstractProcessor {
 
-    private Messager messager;
-    private Elements elements;
-    private Types types;
+    private static Messager messager;
+    private static Elements elements;
+    private static Types types;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
-        this.messager = processingEnv.getMessager();
-        this.elements = processingEnv.getElementUtils();
-        this.types = processingEnv.getTypeUtils();
+        messager = processingEnv.getMessager();
+        elements = processingEnv.getElementUtils();
+        types = processingEnv.getTypeUtils();
         messager.printMessage(Kind.WARNING, "OpenApi Annotation Processor");
     }
 
@@ -46,12 +46,11 @@ public final class OpenApiAnnotationProcessor extends AbstractProcessor {
             // TODO: result to file
         }
         catch (Throwable throwable) {
-            ProcessorUtils.printException(messager, throwable);
+            ProcessorUtils.printException(throwable);
         }
 
         return true;
     }
-
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -61,6 +60,14 @@ public final class OpenApiAnnotationProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
+    }
+
+    public static Types getTypes() {
+        return types;
+    }
+
+    public static Messager getMessager() {
+        return messager;
     }
 
 }

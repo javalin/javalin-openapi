@@ -2,8 +2,10 @@ package net.dzikoysk.openapi.processor.processing;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -17,11 +19,25 @@ public class AnnotationMirrorMapper {
         this.mirror = mirror;
     }
 
+    @SuppressWarnings("unchecked")
     protected Entry<? extends ExecutableElement, ? extends AnnotationValue> getEntry(String key) {
         return mirror.getElementValues().entrySet().stream()
                 .filter(element -> element.getKey().getSimpleName().contentEquals(key))
                 .findAny()
-                .orElseThrow(() -> new IllegalStateException("Missing '" + key + "' property in @OpenApi annotation"));
+                .map(entry -> (Entry<ExecutableElement, AnnotationValue>) entry)
+                .orElseGet(() -> {
+                    List<? extends Element> properties = mirror.getAnnotationType().asElement().getEnclosedElements();
+
+                    for (Element property : properties) {
+                        if (property.getSimpleName().contentEquals(key)) {
+                            ExecutableElement executableElement = property.accept(new ExecutableVisitor(), null);
+                            AnnotationValue defaultValue = executableElement.getDefaultValue();
+                            return new SimpleEntry<>(executableElement, defaultValue);
+                        }
+                    }
+
+                    throw new IllegalStateException("Missing '" + key + "' property in @OpenApi annotation");
+                });
     }
 
     protected Object getValue(String key) {
@@ -29,7 +45,7 @@ public class AnnotationMirrorMapper {
     }
 
     protected <R> R getAnnotation(String key, Function<AnnotationMirror, R> function) {
-        return function.apply(getEntry(key).getValue().accept(new AnnotationVisitor<>(), null));
+        return function.apply(getEntry(key).getValue().accept(new AnnotationVisitor(), null));
     }
 
     protected <T, R> R[] getArray(String key, Class<T> type, Function<T, R> mapper, IntFunction<R[]> arraySupplier) {

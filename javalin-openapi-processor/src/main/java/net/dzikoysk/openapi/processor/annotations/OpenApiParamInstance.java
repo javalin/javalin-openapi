@@ -9,6 +9,13 @@ import java.lang.annotation.Annotation;
 
 public final class OpenApiParamInstance extends AnnotationMirrorMapper {
 
+    public enum In {
+        QUERY,
+        HEADER,
+        PATH,
+        COOKIE
+    }
+
     public OpenApiParamInstance(AnnotationMirror mirror) {
         super(mirror);
     }
@@ -18,7 +25,7 @@ public final class OpenApiParamInstance extends AnnotationMirrorMapper {
     }
 
     public boolean deprecated() {
-        return getBoolean("boolean");
+        return getBoolean("deprecated");
     }
 
     public String description() {

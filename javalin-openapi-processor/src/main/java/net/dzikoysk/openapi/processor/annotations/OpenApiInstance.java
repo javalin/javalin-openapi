@@ -5,7 +5,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper;
 
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import java.lang.annotation.Annotation;
 
 public final class OpenApiInstance extends AnnotationMirrorMapper {
@@ -46,8 +45,8 @@ public final class OpenApiInstance extends AnnotationMirrorMapper {
         return getBoolean("ignore");
     }
 
-    public HttpMethod method() {
-        return HttpMethod.valueOf(getValue("method").toString().toUpperCase());
+    public HttpMethod[] methods() {
+        return new HttpMethod[] { HttpMethod.valueOf(getValue("method").toString().toUpperCase()) };
     }
 
     public String operationId() {
@@ -85,9 +84,7 @@ public final class OpenApiInstance extends AnnotationMirrorMapper {
     }
 
     public String[] tags() {
-        return getArray("tags", AnnotationValue.class).stream()
-                .map(value -> value.getValue().toString())
-                .toArray(String[]::new);
+        return getArray("tags", String.class).toArray(new String[0]);
     }
 
     public Class<? extends Annotation> annotationType() {

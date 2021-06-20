@@ -7,11 +7,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 public final class AppTest {
 
     @OpenApi(
-            path = "/main",
+            path = "/main/:name",
             operationId = "cli",
             method = HttpMethod.POST,
             summary = "Remote command execution",
@@ -19,6 +20,9 @@ public final class AppTest {
             tags = { "Cli" },
             headers = {
                     @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = String.class)
+            },
+            pathParams = {
+                    @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
             },
             responses = {
                     @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
@@ -42,10 +46,22 @@ public final class AppTest {
 
         private final int status;
         private final String message;
+        private final Foo foo;
+        private final Bar bar;
 
-        public EntityDto(int status, String message) {
+        public EntityDto(int status, String message, Foo foo, Bar bar) {
             this.status = status;
             this.message = message;
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public Bar getBar() {
+            return bar;
+        }
+
+        public Foo getFoo() {
+            return foo;
         }
 
         public int getStatus() {
@@ -54,6 +70,26 @@ public final class AppTest {
 
         public String getMessage() {
             return message;
+        }
+
+    }
+
+    public static final class Foo {
+
+        private String property;
+
+        public String getProperty() {
+            return property;
+        }
+
+    }
+
+    public static final class Bar {
+
+        private String property;
+
+        public String getProperty() {
+            return property;
         }
 
     }
