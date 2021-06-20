@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
 }
 
 repositories {
@@ -7,8 +7,6 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor 'com.google.auto.service:auto-service:1.0'
-    compileOnly 'com.google.auto.service:auto-service:1.0'
     implementation 'io.javalin:javalin:4.0.0.ALPHA1'
     implementation 'com.google.code.gson:gson:2.8.6'
 
