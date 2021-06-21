@@ -143,32 +143,39 @@ internal class OpenApiGenerator(private val messager: Messager) {
 
         val components = JsonObject()
         val schemas = JsonObject()
+        val generatedComponents: MutableSet<TypeMirror> = mutableSetOf()
 
-        for (componentReference in componentReferences) {
-            val type = TypesUtils.getType(componentReference)
-            val schema = JsonObject()
-            val properties = JsonObject()
-
-            for (property in type.element.enclosedElements) {
-                if (property is ExecutableElement && property.kind == METHOD) {
-                    val simpleName = property.simpleName.toString()
-
-                    val name = when {
-                        simpleName.startsWith("get") -> simpleName.replaceFirst("get", "")
-                        simpleName.startsWith("is") -> simpleName.replaceFirst("is", "")
-                        else -> continue
-                    }.decapitalize()
-
-                    val propertyEntry = JsonObject()
-                    addSchema(propertyEntry, property.returnType, false)
-                    properties.add(name, propertyEntry)
+        while (generatedComponents.size < componentReferences.size) {
+            for (componentReference in componentReferences) {
+                if (generatedComponents.contains(componentReference)) {
+                    continue
                 }
+
+                val type = TypesUtils.getType(componentReference)
+                val schema = JsonObject()
+                val properties = JsonObject()
+
+                for (property in type.element.enclosedElements) {
+                    if (property is ExecutableElement && property.kind == METHOD) {
+                        val simpleName = property.simpleName.toString()
+
+                        val name = when {
+                            simpleName.startsWith("get") -> simpleName.replaceFirst("get", "")
+                            simpleName.startsWith("is") -> simpleName.replaceFirst("is", "")
+                            else -> continue
+                        }.decapitalize()
+
+                        val propertyEntry = JsonObject()
+                        addSchema(propertyEntry, property.returnType, false)
+                        properties.add(name, propertyEntry)
+                    }
+                }
+
+                schema.addProperty("type", "object")
+                schema.add("properties", properties)
+                schemas.add(type.getSimpleName(), schema)
+                generatedComponents.add(componentReference)
             }
-
-            schema.addProperty("type", "object")
-            schema.add("properties", properties)
-
-            schemas.add(type.getSimpleName(), schema)
         }
 
         components.add("schemas", schemas)
