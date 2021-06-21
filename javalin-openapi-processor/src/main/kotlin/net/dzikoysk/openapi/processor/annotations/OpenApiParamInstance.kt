@@ -5,7 +5,7 @@ import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.TypeMirror
 
-class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     enum class In {
         QUERY, HEADER, PATH, COOKIE

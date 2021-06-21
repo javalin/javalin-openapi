@@ -7,6 +7,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import net.dzikoysk.openapi.annotations.OpenApiIgnore;
+import net.dzikoysk.openapi.annotations.OpenApiName;
+import net.dzikoysk.openapi.annotations.OpenApiPropertyType;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -58,7 +61,7 @@ public final class AppTest {
         private final int status;
         private final String message;
         private final Foo foo;
-        private final Bar bar;
+        private Bar bar;
 
         public EntityDto(int status, String message, Foo foo, Bar bar) {
             this.status = status;
@@ -67,20 +70,37 @@ public final class AppTest {
             this.bar = bar;
         }
 
+        // should ignore
+        public void setBar(Bar bar) {
+            this.bar = bar;
+        }
+
+        // should by displayed as standard json section
         public Bar getBar() {
             return bar;
         }
 
+        // should by displayed as string
+        @OpenApiPropertyType(definedBy = String.class)
         public Foo getFoo() {
             return foo;
         }
 
+        // should support primitive types
         public int getStatus() {
             return status;
         }
 
-        public String getMessage() {
+        // should rename
+        @OpenApiName("message")
+        public String getMessageValue() {
             return message;
+        }
+
+        // should ignore
+        @OpenApiIgnore
+        public String getFormattedMessage() {
+            return status + message;
         }
 
     }

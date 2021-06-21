@@ -7,7 +7,7 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
 import kotlin.collections.Map.Entry
 
-open class AnnotationMirrorMapper protected constructor(protected val mirror: AnnotationMirror) {
+internal open class AnnotationMirrorMapper protected constructor(protected val mirror: AnnotationMirror) {
 
     protected fun getEntry(key: String): Entry<ExecutableElement, AnnotationValue> =
         mirror.elementValues.entries.firstOrNull { (element, _) -> element.simpleName.contentEquals(key) }

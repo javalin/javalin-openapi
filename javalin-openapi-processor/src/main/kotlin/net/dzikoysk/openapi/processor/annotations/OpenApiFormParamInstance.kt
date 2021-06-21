@@ -5,7 +5,7 @@ import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.TypeMirror
 
-class OpenApiFormParamInstance internal constructor(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiFormParamInstance internal constructor(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun name(): String =
         getString("name")

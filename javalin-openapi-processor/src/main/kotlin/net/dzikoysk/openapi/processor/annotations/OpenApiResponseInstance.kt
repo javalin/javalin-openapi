@@ -4,7 +4,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
-class OpenApiResponseInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiResponseInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun content(): List<OpenApiContentInstance> =
         getArray("content", AnnotationMirror::class.java) { OpenApiContentInstance(it) }

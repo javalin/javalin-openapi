@@ -6,6 +6,8 @@ import com.google.gson.JsonObject
 import io.javalin.plugin.openapi.annotations.ContentType.AUTODETECT
 import io.javalin.plugin.openapi.annotations.NULL_CLASS
 import io.javalin.plugin.openapi.annotations.NULL_STRING
+import net.dzikoysk.openapi.annotations.OpenApiIgnore
+import net.dzikoysk.openapi.annotations.OpenApiName
 import net.dzikoysk.openapi.processor.annotations.OpenApiContentInstance
 import net.dzikoysk.openapi.processor.annotations.OpenApiInstance
 import net.dzikoysk.openapi.processor.annotations.OpenApiParamInstance
@@ -14,6 +16,7 @@ import net.dzikoysk.openapi.processor.annotations.OpenApiParamInstance.In.COOKIE
 import net.dzikoysk.openapi.processor.annotations.OpenApiParamInstance.In.HEADER
 import net.dzikoysk.openapi.processor.annotations.OpenApiParamInstance.In.PATH
 import net.dzikoysk.openapi.processor.annotations.OpenApiParamInstance.In.QUERY
+import net.dzikoysk.openapi.processor.annotations.OpenApiPropertyTypeInstance
 import net.dzikoysk.openapi.processor.utils.JsonUtils
 import net.dzikoysk.openapi.processor.utils.TypesUtils
 import javax.annotation.processing.Messager
@@ -157,16 +160,27 @@ internal class OpenApiGenerator(private val messager: Messager) {
 
                 for (property in type.element.enclosedElements) {
                     if (property is ExecutableElement && property.kind == METHOD) {
+                        if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
+                            continue
+                        }
+
                         val simpleName = property.simpleName.toString()
+                        val customName = property.getAnnotation(OpenApiName::class.java)
 
                         val name = when {
-                            simpleName.startsWith("get") -> simpleName.replaceFirst("get", "")
-                            simpleName.startsWith("is") -> simpleName.replaceFirst("is", "")
+                            customName != null -> customName.value
+                            simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").decapitalize()
+                            simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").decapitalize()
                             else -> continue
-                        }.decapitalize()
+                        }
+
+                        val propertyType = property.annotationMirrors
+                            .firstOrNull { it.annotationType.asElement().simpleName.contentEquals("OpenApiPropertyType") }
+                            ?.let { OpenApiPropertyTypeInstance(it).definedBy() }
+                            ?: property.returnType
 
                         val propertyEntry = JsonObject()
-                        addSchema(propertyEntry, property.returnType, false)
+                        addSchema(propertyEntry, propertyType, false)
                         properties.add(name, propertyEntry)
                     }
                 }

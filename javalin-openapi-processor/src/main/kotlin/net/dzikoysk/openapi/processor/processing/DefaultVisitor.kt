@@ -6,7 +6,7 @@ import javax.lang.model.element.AnnotationValueVisitor
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 
-abstract class DefaultVisitor<R, P> : AnnotationValueVisitor<R, P> {
+internal abstract class DefaultVisitor<R, P> : AnnotationValueVisitor<R, P> {
 
     override fun visit(av: AnnotationValue, p: P): R {
         throw UnsupportedOperationException("Not implemented")

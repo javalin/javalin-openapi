@@ -3,7 +3,7 @@ package net.dzikoysk.openapi.processor.utils
 import net.dzikoysk.openapi.processor.OpenApiAnnotationProcessor
 import javax.tools.Diagnostic.Kind.ERROR
 
-object ProcessorUtils {
+internal object ProcessorUtils {
 
     fun printException(throwable: Throwable) {
         val messager = OpenApiAnnotationProcessor.messager

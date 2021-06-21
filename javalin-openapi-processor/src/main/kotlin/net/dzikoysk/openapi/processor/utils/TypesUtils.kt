@@ -6,7 +6,7 @@ import javax.lang.model.type.ArrayType
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 
-object TypesUtils {
+internal object TypesUtils {
 
     data class Data(
         val type: String,

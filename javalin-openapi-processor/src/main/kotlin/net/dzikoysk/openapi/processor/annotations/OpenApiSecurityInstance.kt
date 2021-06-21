@@ -4,7 +4,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiSecurity
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
-class OpenApiSecurityInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiSecurityInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun name(): String =
         getString("name")

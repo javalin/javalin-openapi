@@ -4,7 +4,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiComposedRequestBody
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
-class OpenApiComposedRequestBodyInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiComposedRequestBodyInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun anyOf(): List<OpenApiContentInstance> =
         getArray("anyOf", AnnotationMirror::class.java) { OpenApiContentInstance(it) }

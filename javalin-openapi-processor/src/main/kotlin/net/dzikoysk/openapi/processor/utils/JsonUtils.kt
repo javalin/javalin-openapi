@@ -4,7 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.util.function.Supplier
 
-object JsonUtils {
+internal object JsonUtils {
 
     fun <T> toArray(list: List<T>, mapper: (T) -> String = { it.toString() }): JsonArray {
         val jsonArray = JsonArray(list.size)

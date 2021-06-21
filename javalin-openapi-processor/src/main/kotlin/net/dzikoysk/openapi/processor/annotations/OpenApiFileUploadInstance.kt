@@ -4,7 +4,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiFileUpload
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
-class OpenApiFileUploadInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiFileUploadInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun description(): String =
         getString("description")

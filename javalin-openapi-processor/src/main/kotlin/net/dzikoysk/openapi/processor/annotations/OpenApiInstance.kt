@@ -5,7 +5,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi
 import net.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
-class OpenApiInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal class OpenApiInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     fun composedRequestBody(): OpenApiComposedRequestBodyInstance =
         getAnnotation("composedRequestBody") { OpenApiComposedRequestBodyInstance(it) }

@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
     annotationProcessor project(":javalin-openapi-processor")
+    implementation project(":javalin-openapi-api")
     implementation 'io.javalin:javalin:4.0.0.ALPHA1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'

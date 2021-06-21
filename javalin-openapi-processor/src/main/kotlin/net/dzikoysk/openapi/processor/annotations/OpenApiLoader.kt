@@ -5,7 +5,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
-object OpenApiLoader {
+internal object OpenApiLoader {
 
     fun loadAnnotations(annotations: Set<TypeElement>, elements: Elements, types: Types, roundEnv: RoundEnvironment): Collection<OpenApiInstance> {
         val openApiAnnotations: MutableCollection<OpenApiInstance> = ArrayList()

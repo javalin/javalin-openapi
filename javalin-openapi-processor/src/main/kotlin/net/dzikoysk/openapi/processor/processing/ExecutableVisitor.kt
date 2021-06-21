@@ -8,7 +8,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.element.VariableElement
 
-class ExecutableVisitor : ElementVisitor<ExecutableElement, Void?> {
+internal class ExecutableVisitor : ElementVisitor<ExecutableElement, Void?> {
 
     override fun visit(e: Element, unused: Void?): ExecutableElement {
         throw UnsupportedOperationException("Not implemented: ExecutableVisitor.visit(Element, Void)")
