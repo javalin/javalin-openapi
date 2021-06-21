@@ -30,13 +30,16 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         try {
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, elements, types, roundEnv)
+
             val generator = OpenApiGenerator(messager)
             val result = generator.generate(openApiAnnotations)
+            messager.printMessage(WARNING, result)
 
             // TODO: result to file
         } catch (throwable: Throwable) {
             ProcessorUtils.printException(throwable)
         }
+
         return true
     }
 
