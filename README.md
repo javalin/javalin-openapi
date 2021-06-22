@@ -47,3 +47,6 @@ Javalin.create(config -> {
 })
 .start(80);
 ```
+
+### Used by
+* [Reposilite](https://github.com/dzikoysk/reposilite)
