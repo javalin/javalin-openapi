@@ -2,7 +2,7 @@ allprojects {
     apply plugin: 'maven-publish'
 
     group = "com.dzikoysk"
-    version = "1.0.1"
+    version = "1.0.3"
 
     publishing {
         repositories {

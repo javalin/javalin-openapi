@@ -9,7 +9,7 @@ repositories {
 dependencies {
     annotationProcessor project(":openapi-processor")
     implementation project(":openapi-javalin-plugin")
-    implementation 'io.javalin:javalin:4.0.0.ALPHA1'
+    implementation 'io.javalin:javalin:4.0.0.ALPHA3'
 
     def logback = "1.2.3"
     implementation "ch.qos.logback:logback-core:$logback"
