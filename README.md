@@ -2,13 +2,18 @@
 Experimental compile-time OpenAPI integration for Javalin ecosystem
 
 **Notes**
-* Supports Java 8+ (also 16)
+* Supports Java 8+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
 * Reflection free, does not perform any extra operations at runtime
-* Uses `@OpenApi` to maintain compatibility with builtin OpenAPI plugin
-* Annotation processor development requires Gradle to simplify workflow
-  * Of course the final plugin can be used also in Maven based projects 
+* Uses `@OpenApi` to simplify migration from bundled OpenApi implementation
+* Uses internal WebJar handler that works with `/*` route out of the box
+* Provides better projection of OpenAPI specification
+* Annotation processor uses Gradle to simplify workflow
     
 **Structure**
-* `javalin-openapi-apptest` - application that uses OpenApi plugin
-* `javalin-openapi-plugin` - `openapi.json` loader, should serve openapi endpoint and swagger/redoc frontend
-* `javalin-openapi-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
+* `openapi-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
+* `openapi-api` - annotations used by annotation processor to generate OpenAPI docs
+
+Javalin:
+
+* `openapi-javalin-plugin` - loads `openapi.json` and serves openapi endpoint and swagger frontend
+* `openapi-javalin-apptest` - application that uses OpenApi plugin

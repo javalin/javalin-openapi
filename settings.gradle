@@ -1,6 +1,5 @@
 rootProject.name = 'javalin-openapi'
-include 'javalin-openapi-api'
-include 'javalin-openapi-processor'
-include 'javalin-openapi-plugin'
-include 'javalin-openapi-apptest'
-
+include 'openapi-annotations'
+include 'openapi-processor'
+include 'openapi-javalin-plugin'
+include 'openapi-javalin-apptest'

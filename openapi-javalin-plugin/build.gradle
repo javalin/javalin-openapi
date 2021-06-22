@@ -1,0 +1,20 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":openapi-annotations")
+    implementation 'org.webjars:swagger-ui:3.50.0' // also bump swagger-ui version in OpenApiConfiguration
+    compileOnly 'io.javalin:javalin:4.0.0.ALPHA1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}
