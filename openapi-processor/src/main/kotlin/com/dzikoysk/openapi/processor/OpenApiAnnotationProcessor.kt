@@ -54,10 +54,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
     }
 
     override fun getSupportedAnnotationTypes(): Set<String> =
-        setOf(
-            "com.dzikoysk.openapi.annotations.OpenApi",
-            "com.dzikoysk.openapi.annotations.OpenApi"
-        )
+        setOf("com.dzikoysk.openapi.annotations.OpenApi")
 
     override fun getSupportedSourceVersion(): SourceVersion =
         SourceVersion.latestSupported()

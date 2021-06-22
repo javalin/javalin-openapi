@@ -5,12 +5,15 @@
 
 package com.dzikoysk.openapi.annotations
 
+import kotlin.annotation.AnnotationRetention.SOURCE
+import kotlin.annotation.AnnotationTarget.FUNCTION
 import kotlin.reflect.KClass
 
 /**
  * Provide metadata for the generation of the open api documentation to the annotated Handler.
  */
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD)
+@Target(FUNCTION)
+@Retention(SOURCE)
 annotation class OpenApi(
     /** Ignore the endpoint in the open api documentation */
     val ignore: Boolean = false,
@@ -32,7 +35,7 @@ annotation class OpenApi(
     /** The path of the endpoint. This will if the annotation * couldn't be found via reflection. */
     val path: String,
     /** The method of the endpoint. This will if the annotation * couldn't be found via reflection. */
-    val method: HttpMethod = HttpMethod.GET
+    val method: HttpMethod
 )
 
 @Target()

@@ -12,9 +12,9 @@ internal object OpenApiLoader {
             val annotatedElements = roundEnv.getElementsAnnotatedWith(annotation)
 
             for (annotatedElement in annotatedElements) {
-                val openApiAnnotationMirror = annotatedElement.annotationMirrors[0]
-                val openApiInstance = OpenApiInstance(openApiAnnotationMirror)
-                openApiAnnotations.add(openApiInstance)
+                annotatedElement.annotationMirrors
+                    .filter { mirror -> mirror.annotationType.asElement().simpleName.contentEquals(annotation.simpleName) }
+                    .forEach { openApiAnnotations.add(OpenApiInstance(it)) }
             }
         }
 

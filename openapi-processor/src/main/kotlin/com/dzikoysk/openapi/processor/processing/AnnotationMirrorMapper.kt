@@ -1,10 +1,12 @@
 package com.dzikoysk.openapi.processor.processing
 
+import com.dzikoysk.openapi.processor.OpenApiAnnotationProcessor
 import java.util.AbstractMap.SimpleEntry
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
+import javax.tools.Diagnostic.Kind.ERROR
 import kotlin.collections.Map.Entry
 
 internal open class AnnotationMirrorMapper protected constructor(protected val mirror: AnnotationMirror) {
@@ -16,7 +18,23 @@ internal open class AnnotationMirrorMapper protected constructor(protected val m
                     val executableElement = it.accept(ExecutableVisitor(), null)
                     SimpleEntry(executableElement, executableElement.defaultValue)
                 }
-                ?: run { throw IllegalStateException("Missing '$key' property in @OpenApi annotation in ${mirror.annotationType.asElement().enclosingElement}") }
+                ?: run {
+                    val classSymbol = mirror.annotationType.asElement()
+                    val sourceFile = classSymbol.javaClass.getField("sourcefile").get(classSymbol)
+                    val classFile = classSymbol.javaClass.getField("classfile").get(classSymbol)
+
+                    val messager = OpenApiAnnotationProcessor.messager
+                    messager.printMessage(ERROR, "Missing '$key' property in @OpenApi annotation.")
+                    messager.printMessage(ERROR, "Source file: $sourceFile")
+                    messager.printMessage(ERROR, "Class file: $classFile")
+                    messager.printMessage(ERROR, "Defined properties:")
+
+                    mirror.elementValues.forEach { (executableElement, annotationValue) ->
+                        messager.printMessage(ERROR, "  - ${executableElement.simpleName} = ${annotationValue.value}")
+                    }
+
+                    throw IllegalStateException("Missing '$key' property in @OpenApi annotation")
+                }
 
     protected fun getValue(key: String): Any =
         getEntry(key).value.value

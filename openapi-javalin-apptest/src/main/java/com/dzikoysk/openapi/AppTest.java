@@ -20,8 +20,16 @@ public final class AppTest {
 
     private static final String ROUTE = "/main/{name}";
 
+    public static void main(String[] args) {
+        Javalin.create(config -> {
+            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
+            config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
+        })
+        .start(80);
+    }
+
+    @Override
     @OpenApi(
-            path = ROUTE,
             operationId = "cli",
             method = HttpMethod.POST,
             summary = "Remote command execution",
@@ -54,12 +62,8 @@ public final class AppTest {
                     })
             }
     )
-    public static void main(String[] args) {
-        Javalin.create(config -> {
-            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-            config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
-        })
-        .start(80);
+    public String toString() {
+        return super.toString();
     }
 
     public static final class EntityDto implements Serializable {

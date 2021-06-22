@@ -1,8 +1,14 @@
 allprojects {
+    apply plugin: 'java-library'
     apply plugin: 'maven-publish'
 
     group = "com.dzikoysk"
-    version = "1.0.3"
+    version = "1.0.4"
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
 
     publishing {
         repositories {
