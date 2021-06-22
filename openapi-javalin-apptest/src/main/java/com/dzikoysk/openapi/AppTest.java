@@ -18,8 +18,10 @@ import java.util.UUID;
 
 public final class AppTest {
 
+    private static final String ROUTE = "/main/{name}";
+
     @OpenApi(
-            path = "/main/{name}",
+            path = ROUTE,
             operationId = "cli",
             method = HttpMethod.POST,
             summary = "Remote command execution",

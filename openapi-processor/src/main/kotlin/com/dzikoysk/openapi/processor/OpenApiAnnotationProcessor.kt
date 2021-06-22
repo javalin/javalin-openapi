@@ -55,7 +55,6 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     override fun getSupportedAnnotationTypes(): Set<String> =
         setOf(
-            "io.javalin.plugin.openapi.annotations.OpenApi",
             "com.dzikoysk.openapi.annotations.OpenApi",
             "com.dzikoysk.openapi.annotations.OpenApi"
         )

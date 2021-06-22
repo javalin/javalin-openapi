@@ -9,14 +9,14 @@ import kotlin.collections.Map.Entry
 
 internal open class AnnotationMirrorMapper protected constructor(protected val mirror: AnnotationMirror) {
 
-    protected fun getEntry(key: String): Entry<ExecutableElement, AnnotationValue> =
+    private fun getEntry(key: String): Entry<ExecutableElement, AnnotationValue> =
         mirror.elementValues.entries.firstOrNull { (element, _) -> element.simpleName.contentEquals(key) }
             ?: mirror.annotationType.asElement().enclosedElements.firstOrNull { it.simpleName.contentEquals(key) }
                 ?.let {
                     val executableElement = it.accept(ExecutableVisitor(), null)
                     SimpleEntry(executableElement, executableElement.defaultValue)
                 }
-                ?: run { throw IllegalStateException("Missing '$key' property in @OpenApi annotation") }
+                ?: run { throw IllegalStateException("Missing '$key' property in @OpenApi annotation in ${mirror.annotationType.asElement().enclosingElement}") }
 
     protected fun getValue(key: String): Any =
         getEntry(key).value.value
