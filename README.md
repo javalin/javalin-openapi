@@ -1,4 +1,4 @@
-# Javalin OpenAPI
+# Javalin OpenAPI [![CI](https://github.com/dzikoysk/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/dzikoysk/javalin-openapi/actions/workflows/gradle.yml)
 Experimental compile-time OpenAPI integration for Javalin ecosystem
 
 **Notes**
@@ -28,9 +28,9 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor "net.dzikoysk:openapi-processor:1.0.0" // Use Kapt in Kotlin projects 
-    implementation "net.dzikoysk::openapi-annotations:1.0.0"
-    implementation "net.dzikoysk::openapi-javalin-plugin:1.0.0"
+    annotationProcessor "com.dzikoysk:openapi-processor:1.0.0" // Use Kapt in Kotlin projects 
+    implementation "com.dzikoysk:openapi-annotations:1.0.0"
+    implementation "com.dzikoysk:openapi-javalin-plugin:1.0.0"
 }
 ```
 

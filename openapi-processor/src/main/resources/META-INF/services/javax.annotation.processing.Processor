@@ -1,1 +1,1 @@
-net.dzikoysk.openapi.processor.OpenApiAnnotationProcessor
+com.dzikoysk.openapi.processor.OpenApiAnnotationProcessor

@@ -1,8 +1,7 @@
 allprojects {
-    apply plugin: 'java'
     apply plugin: 'maven-publish'
 
-    group = "net.dzikoysk"
+    group = "com.dzikoysk"
     version = "1.0.0"
 
     publishing {
