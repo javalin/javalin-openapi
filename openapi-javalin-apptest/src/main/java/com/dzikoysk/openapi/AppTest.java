@@ -30,6 +30,7 @@ public final class AppTest {
 
     @Override
     @OpenApi(
+            path = ROUTE,
             operationId = "cli",
             method = HttpMethod.POST,
             summary = "Remote command execution",
