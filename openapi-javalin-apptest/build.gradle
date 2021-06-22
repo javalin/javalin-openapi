@@ -8,8 +8,6 @@ repositories {
 
 dependencies {
     annotationProcessor project(":openapi-processor")
-    implementation project(":openapi-annotations")
-
     implementation project(":openapi-javalin-plugin")
     implementation 'io.javalin:javalin:4.0.0.ALPHA1'
 

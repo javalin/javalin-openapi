@@ -32,7 +32,8 @@ public final class AppTest {
                     }
             ),
             headers = {
-                    @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class)
+                    @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
+                    @OpenApiParam(name = "Optional")
             },
             pathParams = {
                     @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)

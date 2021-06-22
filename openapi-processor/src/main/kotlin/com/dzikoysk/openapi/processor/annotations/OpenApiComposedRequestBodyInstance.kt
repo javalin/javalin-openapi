@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiComposedRequestBody
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
@@ -20,8 +19,5 @@ internal class OpenApiComposedRequestBodyInstance(mirror: AnnotationMirror) : An
 
     fun required(): Boolean =
         getBoolean("required")
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiComposedRequestBody::class.java
 
 }

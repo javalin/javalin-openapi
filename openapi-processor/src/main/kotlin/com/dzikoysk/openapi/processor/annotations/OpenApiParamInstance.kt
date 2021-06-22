@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiParam
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.TypeMirror
@@ -31,8 +30,5 @@ internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirror
 
     fun type(): TypeMirror =
         getType("type")
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiParam::class.java
 
 }

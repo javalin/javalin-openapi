@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiPropertyType
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.TypeMirror
@@ -9,8 +8,5 @@ internal class OpenApiPropertyTypeInstance(mirror: AnnotationMirror) : Annotatio
 
     fun definedBy(): TypeMirror =
         getType("definedBy")
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiPropertyType::class.java
 
 }

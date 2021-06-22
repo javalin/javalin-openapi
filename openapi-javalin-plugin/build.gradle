@@ -15,9 +15,9 @@ repositories {
 }
 
 dependencies {
-    implementation project(":openapi-annotations")
-    implementation 'org.webjars:swagger-ui:3.50.0' // also bump swagger-ui version in OpenApiConfiguration
-    compileOnly 'io.javalin:javalin:4.0.0.ALPHA1'
+    api project(":openapi-annotations")
+    api 'org.webjars:swagger-ui:3.50.0' // also bump swagger-ui version in OpenApiConfiguration
+    compileOnly 'io.javalin:javalin:4.0.0.ALPHA3'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'

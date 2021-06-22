@@ -31,9 +31,8 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor "com.dzikoysk:openapi-processor:1.0.0" // Use Kapt in Kotlin projects 
-    implementation "com.dzikoysk:openapi-annotations:1.0.0"
-    implementation "com.dzikoysk:openapi-javalin-plugin:1.0.0"
+    annotationProcessor "com.dzikoysk:openapi-processor:1.0.1" // Use Kapt in Kotlin projects 
+    implementation "com.dzikoysk:openapi-javalin-plugin:1.0.1"
 }
 ```
 

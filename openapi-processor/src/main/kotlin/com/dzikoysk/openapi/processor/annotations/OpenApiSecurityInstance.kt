@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiSecurity
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
@@ -11,8 +10,5 @@ internal class OpenApiSecurityInstance(mirror: AnnotationMirror) : AnnotationMir
 
     fun scopes(): List<String> =
         getArray("scopes", String::class.java)
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiSecurity::class.java
 
 }

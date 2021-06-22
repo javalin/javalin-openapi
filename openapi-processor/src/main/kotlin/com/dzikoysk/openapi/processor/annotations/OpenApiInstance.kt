@@ -1,7 +1,6 @@
 package com.dzikoysk.openapi.processor.annotations
 
 import com.dzikoysk.openapi.annotations.HttpMethod
-import com.dzikoysk.openapi.annotations.OpenApi
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
@@ -60,8 +59,5 @@ internal class OpenApiInstance(mirror: AnnotationMirror) : AnnotationMirrorMappe
 
     fun tags(): List<String> =
         getArray("tags", String::class.java)
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApi::class.java
 
 }

@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiFileUpload
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
@@ -17,8 +16,5 @@ internal class OpenApiFileUploadInstance(mirror: AnnotationMirror) : AnnotationM
 
     fun required(): Boolean =
         getBoolean("required")
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiFileUpload::class.java
 
 }

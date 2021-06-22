@@ -1,6 +1,5 @@
 package com.dzikoysk.openapi.processor.annotations
 
-import com.dzikoysk.openapi.annotations.OpenApiResponse
 import com.dzikoysk.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 
@@ -14,8 +13,5 @@ internal class OpenApiResponseInstance(mirror: AnnotationMirror) : AnnotationMir
 
     fun status(): String =
         getString("status")
-
-    fun annotationType(): Class<out Annotation> =
-        OpenApiResponse::class.java
 
 }
