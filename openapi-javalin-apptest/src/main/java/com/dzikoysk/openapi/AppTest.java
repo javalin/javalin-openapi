@@ -54,7 +54,6 @@ public final class AppTest {
     public static void main(String[] args) {
         Javalin.create(config -> {
             OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-            openApiConfiguration.setDocumentationPath("/swagger-docs");
             config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
         })
         .start(80);

@@ -3,6 +3,14 @@ plugins {
     id "maven-publish"
 }
 
+publishing {
+    publications {
+        libraries(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }

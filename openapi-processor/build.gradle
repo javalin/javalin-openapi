@@ -2,6 +2,14 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.5.10"
 }
 
+publishing {
+    publications {
+        libraries(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }
