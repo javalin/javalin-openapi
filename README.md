@@ -17,3 +17,30 @@ Javalin:
 
 * `openapi-javalin-plugin` - loads `openapi.json` and serves openapi endpoint and swagger frontend
 * `openapi-javalin-apptest` - application that uses OpenApi plugin
+
+### Setup
+
+Download required dependencies:
+
+```groovy
+repositories {
+    maven { url 'https://repo.panda-lang.org/releases' }
+}
+
+dependencies {
+    annotationProcessor "net.dzikoysk:openapi-processor:1.0.0" // Use Kapt in Kotlin projects 
+    implementation "net.dzikoysk::openapi-annotations:1.0.0"
+    implementation "net.dzikoysk::openapi-javalin-plugin:1.0.0"
+}
+```
+
+And enable OpenAPI plugin:
+
+```java
+Javalin.create(config -> {
+    OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
+    openApiConfiguration.setDocumentationPath("/swagger-docs");
+    config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
+})
+.start(80);
+```

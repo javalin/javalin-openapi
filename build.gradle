@@ -1,22 +1,21 @@
-plugins {
-    id 'java'
-}
-
 allprojects {
-    group 'net.dzikoysk'
-    version = '1.0.0'
-}
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
+    group = "net.dzikoysk"
+    version = "1.0.0"
 
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-}
+    publishing {
+        repositories {
+            maven {
+                name = "panda-repository"
+                url = uri("https://repo.panda-lang.org/releases")
 
-test {
-    useJUnitPlatform()
+                credentials {
+                    username = property("mavenUser") as String
+                    password = property("mavenPassword") as String
+                }
+            }
+        }
+    }
 }

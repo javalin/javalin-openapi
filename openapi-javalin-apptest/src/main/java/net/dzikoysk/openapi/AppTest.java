@@ -1,15 +1,15 @@
 package net.dzikoysk.openapi;
 
 import io.javalin.Javalin;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import net.dzikoysk.openapi.annotations.HttpMethod;
+import net.dzikoysk.openapi.annotations.OpenApi;
+import net.dzikoysk.openapi.annotations.OpenApiContent;
 import net.dzikoysk.openapi.annotations.OpenApiIgnore;
 import net.dzikoysk.openapi.annotations.OpenApiName;
+import net.dzikoysk.openapi.annotations.OpenApiParam;
 import net.dzikoysk.openapi.annotations.OpenApiPropertyType;
+import net.dzikoysk.openapi.annotations.OpenApiRequestBody;
+import net.dzikoysk.openapi.annotations.OpenApiResponse;
 import net.dzikoysk.openapi.javalin.OpenApiConfiguration;
 import net.dzikoysk.openapi.javalin.OpenApiPlugin;
 
