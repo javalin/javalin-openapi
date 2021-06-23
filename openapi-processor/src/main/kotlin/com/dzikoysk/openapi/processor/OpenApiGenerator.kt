@@ -151,7 +151,7 @@ internal class OpenApiGenerator(private val messager: Messager) {
         val generatedComponents: MutableSet<TypeMirror> = mutableSetOf()
 
         while (generatedComponents.size < componentReferences.size) {
-            for (componentReference in componentReferences) {
+            for (componentReference in componentReferences.toMutableList()) {
                 if (generatedComponents.contains(componentReference)) {
                     continue
                 }
