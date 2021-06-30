@@ -36,13 +36,20 @@ dependencies {
 }
 ```
 
-And enable OpenAPI plugin:
+And enable OpenAPI plugin with Swagger UI:
 
 ```java
 Javalin.create(config -> {
+    String deprecatedDocsPath = "/swagger-docs";
+
     OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-    openApiConfiguration.setDocumentationPath("/swagger-docs");
+    openApiConfiguration.setTitle("AwesomeApp");
+    openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
     config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
+
+    SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
+    swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
+    config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
 })
 .start(80);
 ```
