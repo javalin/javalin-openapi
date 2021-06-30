@@ -11,6 +11,8 @@ import com.dzikoysk.openapi.annotations.OpenApiRequestBody;
 import com.dzikoysk.openapi.annotations.OpenApiResponse;
 import com.dzikoysk.openapi.javalin.OpenApiConfiguration;
 import com.dzikoysk.openapi.javalin.OpenApiPlugin;
+import com.dzikoysk.openapi.javalin.redoc.ReDocConfiguration;
+import com.dzikoysk.openapi.javalin.redoc.ReDocPlugin;
 import com.dzikoysk.openapi.javalin.swagger.SwaggerConfiguration;
 import com.dzikoysk.openapi.javalin.swagger.SwaggerPlugin;
 import io.javalin.Javalin;
@@ -76,6 +78,10 @@ public final class AppTest implements Handler {
             SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
             swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
             config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
+
+            ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
+            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration));
         })
         .start(80);
     }

@@ -10,16 +10,17 @@ Experimental compile-time OpenAPI integration for Javalin ecosystem
 * Uses internal WebJar handler that works with `/*` route out of the box
 * Provides better projection of OpenAPI specification
 * Annotation processor uses Gradle to simplify workflow
-* Does not support ReDoc
     
 **Structure**
-* `openapi-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
-* `openapi-api` - annotations used by annotation processor to generate OpenAPI docs
+* `openapi-annotation-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
+* `openapi-annotations` - annotations used by annotation processor to generate OpenAPI docs
 
 Javalin:
 
-* `openapi-javalin-plugin` - loads `openapi.json` and serves openapi endpoint and swagger frontend
-* `openapi-javalin-apptest` - application that uses OpenApi plugin
+* `javalin-openapi-plugin` - loads `openapi.json` resource and serves OpenApi endpoint
+* `javalin-swagger-plugin` - serves Swagger UI
+* `javalin-redoc-plugin` - serves ReDoc UI
+* `javalin-apptest` - example application that uses OpenApi plugin
 
 ### Setup
 
@@ -31,8 +32,10 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor "com.dzikoysk:openapi-processor:1.0.5" // Use Kapt in Kotlin projects 
-    implementation "com.dzikoysk:openapi-javalin-plugin:1.0.5"
+    annotationProcessor "com.dzikoysk:openapi-annotation-processor:1.0.5" // Use Kapt in Kotlin projects 
+    implementation "com.dzikoysk:javalin-openapi-plugin:1.0.5"
+    implementation "com.dzikoysk:javalin-swagger-plugin:1.0.5" // for Swagger UI
+    implementation "com.dzikoysk:javalin-redoc-plugin:1.0.5" // for ReDoc UI
 }
 ```
 
@@ -41,15 +44,19 @@ And enable OpenAPI plugin with Swagger UI:
 ```java
 Javalin.create(config -> {
     String deprecatedDocsPath = "/swagger-docs";
-
+    
     OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
     openApiConfiguration.setTitle("AwesomeApp");
     openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
     config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
-
+    
     SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
     swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
     config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
+    
+    ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
+    reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
+    config.registerPlugin(new ReDocPlugin(reDocConfiguration));
 })
 .start(80);
 ```

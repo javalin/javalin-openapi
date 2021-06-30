@@ -1,0 +1,28 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
+}
+
+publishing {
+    publications {
+        libraries(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api project(":openapi-annotations")
+    api 'org.webjars.npm:redoc:2.0.0-rc.53' // also bump swagger-ui version in OpenApiConfiguration
+    compileOnly 'io.javalin:javalin:4.0.0.ALPHA3'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}
