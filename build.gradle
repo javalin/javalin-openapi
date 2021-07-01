@@ -3,7 +3,7 @@ allprojects {
     apply plugin: 'maven-publish'
 
     group = "com.dzikoysk"
-    version = "1.0.7"
+    version = "1.0.8"
 
     java {
         withJavadocJar()
