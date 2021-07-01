@@ -1,4 +1,4 @@
-package com.dzikoysk.openapi.javalin
+package com.dzikoysk.openapi.ktor
 
 import io.javalin.Javalin
 import io.javalin.core.plugin.Plugin

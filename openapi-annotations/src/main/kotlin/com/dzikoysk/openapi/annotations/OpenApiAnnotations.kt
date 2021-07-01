@@ -7,6 +7,7 @@ package com.dzikoysk.openapi.annotations
 
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
+import kotlin.annotation.AnnotationTarget.EXPRESSION
 import kotlin.annotation.AnnotationTarget.FUNCTION
 import kotlin.annotation.AnnotationTarget.PROPERTY_GETTER
 import kotlin.annotation.AnnotationTarget.PROPERTY_SETTER
@@ -15,7 +16,7 @@ import kotlin.reflect.KClass
 /**
  * Provide metadata for the generation of the open api documentation to the annotated Handler.
  */
-@Target(FUNCTION, CLASS)
+@Target(FUNCTION, CLASS, EXPRESSION)
 @Retention(SOURCE)
 annotation class OpenApi(
     /** Ignore the endpoint in the open api documentation */

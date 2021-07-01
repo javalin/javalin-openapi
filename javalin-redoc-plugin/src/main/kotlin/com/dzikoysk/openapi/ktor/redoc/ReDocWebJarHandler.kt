@@ -1,4 +1,4 @@
-package com.dzikoysk.openapi.javalin.redoc
+package com.dzikoysk.openapi.ktor.redoc
 
 import io.javalin.http.Context
 import io.javalin.http.Handler

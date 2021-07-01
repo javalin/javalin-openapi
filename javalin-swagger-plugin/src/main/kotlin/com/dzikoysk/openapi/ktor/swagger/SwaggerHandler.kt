@@ -1,4 +1,4 @@
-package com.dzikoysk.openapi.javalin.swagger
+package com.dzikoysk.openapi.ktor.swagger
 
 import io.javalin.http.Context
 import io.javalin.http.Handler

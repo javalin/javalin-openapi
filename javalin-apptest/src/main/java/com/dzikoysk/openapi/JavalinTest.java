@@ -9,12 +9,12 @@ import com.dzikoysk.openapi.annotations.OpenApiParam;
 import com.dzikoysk.openapi.annotations.OpenApiPropertyType;
 import com.dzikoysk.openapi.annotations.OpenApiRequestBody;
 import com.dzikoysk.openapi.annotations.OpenApiResponse;
-import com.dzikoysk.openapi.javalin.OpenApiConfiguration;
-import com.dzikoysk.openapi.javalin.OpenApiPlugin;
-import com.dzikoysk.openapi.javalin.redoc.ReDocConfiguration;
-import com.dzikoysk.openapi.javalin.redoc.ReDocPlugin;
-import com.dzikoysk.openapi.javalin.swagger.SwaggerConfiguration;
-import com.dzikoysk.openapi.javalin.swagger.SwaggerPlugin;
+import com.dzikoysk.openapi.ktor.OpenApiConfiguration;
+import com.dzikoysk.openapi.ktor.OpenApiPlugin;
+import com.dzikoysk.openapi.ktor.redoc.ReDocConfiguration;
+import com.dzikoysk.openapi.ktor.redoc.ReDocPlugin;
+import com.dzikoysk.openapi.ktor.swagger.SwaggerConfiguration;
+import com.dzikoysk.openapi.ktor.swagger.SwaggerPlugin;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public final class AppTest implements Handler {
+public final class JavalinTest implements Handler {
 
     private static final String ROUTE = "/main/{name}";
 

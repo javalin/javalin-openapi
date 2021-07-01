@@ -1,4 +1,4 @@
-package com.dzikoysk.openapi.javalin
+package com.dzikoysk.openapi.ktor
 
 import io.javalin.core.util.Header
 import io.javalin.http.Context

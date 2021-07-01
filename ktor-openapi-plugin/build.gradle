@@ -1,0 +1,27 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
+}
+
+publishing {
+    publications {
+        libraries(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api project(":openapi-annotations")
+    compileOnly "io.ktor:ktor-server-core:1.6.1"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}
