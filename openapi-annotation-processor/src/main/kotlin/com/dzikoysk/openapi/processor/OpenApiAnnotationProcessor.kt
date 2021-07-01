@@ -2,6 +2,8 @@ package com.dzikoysk.openapi.processor
 
 import com.dzikoysk.openapi.processor.annotations.OpenApiLoader
 import com.dzikoysk.openapi.processor.utils.ProcessorUtils
+import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.ParseOptions
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -12,6 +14,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
+import javax.tools.Diagnostic.Kind.WARNING
 import javax.tools.StandardLocation
 
 open class OpenApiAnnotationProcessor : AbstractProcessor() {
@@ -39,12 +42,21 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
         try {
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv)
-
             val generator = OpenApiGenerator()
             val result = generator.generate(openApiAnnotations)
 
-            filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json").openWriter().use {
+            val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json")
+            val location = resource.toUri()
+
+            resource.openWriter().use {
                 it.write(result)
+            }
+
+            val parsedSchema = OpenAPIV3Parser().readLocation(location.toString(), emptyList(), ParseOptions())
+            messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+
+            parsedSchema.messages.forEach {
+                messager.printMessage(WARNING, it)
             }
         } catch (throwable: Throwable) {
             ProcessorUtils.printException(throwable)
