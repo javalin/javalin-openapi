@@ -32,10 +32,10 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor "com.dzikoysk:openapi-annotation-processor:1.0.6" // Use Kapt in Kotlin projects 
-    implementation "com.dzikoysk:javalin-openapi-plugin:1.0.6"
-    implementation "com.dzikoysk:javalin-swagger-plugin:1.0.6" // for Swagger UI
-    implementation "com.dzikoysk:javalin-redoc-plugin:1.0.6" // for ReDoc UI
+    annotationProcessor "com.dzikoysk:openapi-annotation-processor:1.0.7" // Use Kapt in Kotlin projects 
+    implementation "com.dzikoysk:javalin-openapi-plugin:1.0.7"
+    implementation "com.dzikoysk:javalin-swagger-plugin:1.0.7" // for Swagger UI
+    implementation "com.dzikoysk:javalin-redoc-plugin:1.0.7" // for ReDoc UI
 }
 ```
 
