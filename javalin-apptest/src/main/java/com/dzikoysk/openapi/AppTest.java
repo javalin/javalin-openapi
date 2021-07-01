@@ -21,6 +21,7 @@ import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 public final class AppTest implements Handler {
@@ -62,9 +63,7 @@ public final class AppTest implements Handler {
                     })
             }
     )
-    public void handle(@NotNull Context ctx) throws Exception {
-
-    }
+    public void handle(@NotNull Context ctx) { }
 
     public static void main(String[] args) {
         Javalin.create(config -> {
@@ -91,12 +90,14 @@ public final class AppTest implements Handler {
         private final int status;
         private final String message;
         private final Foo foo;
+        private final List<Foo> foos;
         private Bar bar;
 
-        public EntityDto(int status, String message, Foo foo, Bar bar) {
+        public EntityDto(int status, String message, Foo foo, List<Foo> foos, Bar bar) {
             this.status = status;
             this.message = message;
             this.foo = foo;
+            this.foos = foos;
             this.bar = bar;
         }
 
@@ -108,6 +109,11 @@ public final class AppTest implements Handler {
         // should by displayed as standard json section
         public Bar getBar() {
             return bar;
+        }
+
+        // should by represented by array
+        public List<Foo> getFoos() {
+            return foos;
         }
 
         // should by displayed as string

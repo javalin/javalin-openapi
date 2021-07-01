@@ -2,13 +2,9 @@ package com.dzikoysk.openapi.processor.utils
 
 import com.dzikoysk.openapi.processor.OpenApiAnnotationProcessor
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind.METHOD
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.TypeElement
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.PrimitiveType
-import javax.lang.model.type.TypeKind.NONE
 import javax.lang.model.type.TypeMirror
 
 
@@ -58,26 +54,6 @@ internal object TypesUtils {
         fun getSimpleName(): String =
             element.simpleName.toString()
 
-        fun findStringTypeMirror(): TypeMirror {
-            var type = element as TypeElement
-
-            while (type.superclass.kind != NONE) {
-                type = (type.superclass as DeclaredType).asElement() as TypeElement
-            }
-
-            for (enclosed in type.enclosedElements) {
-                if (enclosed.kind == METHOD) {
-                    val method = enclosed as ExecutableElement
-
-                    if (method.simpleName.contentEquals("toString")) {
-                        return method.returnType
-                    }
-                }
-            }
-
-            throw IllegalStateException("Cannot find toString method in Object")
-        }
-
     }
 
     fun getType(typeMirror: TypeMirror): Type {
@@ -89,12 +65,20 @@ internal object TypesUtils {
             dimensions++
         }
 
+        val types = OpenApiAnnotationProcessor.types
+        val collectionType = OpenApiAnnotationProcessor.elements.getTypeElement(Collection::class.java.name)
+
+        while (types.isAssignable(types.erasure(type), collectionType.asType())) {
+            type = (type as DeclaredType).typeArguments[0]
+            dimensions++
+        }
+
         val element =
             if (type is PrimitiveType) {
-                OpenApiAnnotationProcessor.types.boxedClass(type)
+                types.boxedClass(type)
             }
             else {
-                OpenApiAnnotationProcessor.types.asElement(type)
+                types.asElement(type)
             }
 
         return Type(element, dimensions)

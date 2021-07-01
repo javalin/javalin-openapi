@@ -19,12 +19,11 @@ import com.dzikoysk.openapi.processor.utils.TypesUtils
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import javax.annotation.processing.Messager
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
 
-internal class OpenApiGenerator(private val messager: Messager) {
+internal class OpenApiGenerator {
 
     private val gson = GsonBuilder()
         .setPrettyPrinting()

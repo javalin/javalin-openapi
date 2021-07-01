@@ -40,7 +40,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         try {
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv)
 
-            val generator = OpenApiGenerator(messager)
+            val generator = OpenApiGenerator()
             val result = generator.generate(openApiAnnotations)
 
             filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json").openWriter().use {
