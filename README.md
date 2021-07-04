@@ -38,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    def openapi = "1.0.8"
+    def openapi = "1.0.9"
     annotationProcessor "com.dzikoysk:openapi-annotation-processor:$openapi" // Use Kapt in Kotlin projects 
     
     // Javalin
