@@ -1,13 +1,5 @@
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "1.5.10"
-}
-
-publishing {
-    publications {
-        libraries(MavenPublication) {
-            from components.java
-        }
-    }
+    id 'java'
 }
 
 repositories {
@@ -15,9 +7,11 @@ repositories {
 }
 
 dependencies {
-    implementation project(":openapi-annotations")
-    implementation 'com.google.code.gson:gson:2.8.7'
-    implementation 'io.swagger.parser.v3:swagger-parser:2.0.27'
+    annotationProcessor project(":openapi-annotation-processor")
+    implementation project(":javalin-modules:javalin-openapi-plugin")
+    implementation project(":javalin-modules:javalin-swagger-plugin")
+    implementation project(":javalin-modules:javalin-redoc-plugin")
+    implementation 'io.javalin:javalin:4.0.0.RC0'
 
     def logback = '1.2.5'
     implementation "ch.qos.logback:logback-core:$logback"
