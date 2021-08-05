@@ -20,16 +20,16 @@ repositories {
 }
 
 dependencies {
-    def openapi = "1.0.9"
-    annotationProcessor "com.dzikoysk:openapi-annotation-processor:$openapi" // Use Kapt in Kotlin projects 
+    def openapi = "1.1.0"
+    annotationProcessor "io.javalin-rfc:openapi-annotation-processor:$openapi" // Use Kapt in Kotlin projects 
     
     // Javalin
-    implementation "com.dzikoysk:javalin-openapi-plugin:$openapi"
-    implementation "com.dzikoysk:javalin-swagger-plugin:$openapi" // for Swagger UI
-    implementation "com.dzikoysk:javalin-redoc-plugin:$openapi" // for ReDoc UI
+    implementation "io.javalin-rfc:javalin-openapi-plugin:$openapi"
+    implementation "io.javalin-rfc:javalin-swagger-plugin:$openapi" // for Swagger UI
+    implementation "io.javalin-rfc:javalin-redoc-plugin:$openapi" // for ReDoc UI
     
     // Ktor
-    implementation "com.dzikoysk:ktor-openapi-plugin:$openapi"
+    implementation "io.javalin-rfc:ktor-openapi-plugin:$openapi"
 }
 ```
 

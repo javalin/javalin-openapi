@@ -2,7 +2,7 @@ allprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
 
-    group = "com.dzikoysk"
+    group = "io.javalin-rfc"
     version = "1.0.9"
 
     java {
