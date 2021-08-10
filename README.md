@@ -9,6 +9,7 @@ Experimental compile-time OpenAPI integration for Javalin and Ktor ecosystem.
 * Supports Java 8+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
 * Uses internal WebJar handler that works with `/*` route out of the box
 * Provides better projection of OpenAPI specification
+* Schema validation through Swagger core module
 
 ### Setup
 
