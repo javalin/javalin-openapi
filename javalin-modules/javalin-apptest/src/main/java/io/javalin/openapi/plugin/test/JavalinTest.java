@@ -71,6 +71,7 @@ public final class JavalinTest implements Handler {
             OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
             openApiConfiguration.setTitle("AwesomeApp");
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
+            openApiConfiguration.setDocumentProcessor(docs -> docs); // you can add whatever you want to this document using your favourite json api
             config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
 
             SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();

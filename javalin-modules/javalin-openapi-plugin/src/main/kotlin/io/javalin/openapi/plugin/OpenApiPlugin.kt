@@ -4,6 +4,7 @@ import io.javalin.Javalin
 import io.javalin.core.plugin.Plugin
 import io.javalin.core.plugin.PluginLifecycleInit
 import org.slf4j.LoggerFactory
+import java.util.function.Function
 
 class OpenApiConfiguration {
 
@@ -11,6 +12,7 @@ class OpenApiConfiguration {
     var description = "OpenApi Description"
     var version = "OpenApi Version"
     var documentationPath = "/openapi"
+    var documentProcessor: Function<String, String> = Function.identity()
 
 }
 
@@ -24,6 +26,7 @@ class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, P
             ?.replaceFirst("{openapi.title}", configuration.title)
             ?.replaceFirst("{openapi.description}", configuration.description)
             ?.replaceFirst("{openapi.version}", configuration.version)
+            ?.let { configuration.documentProcessor.apply(it) }
     }
 
     private fun readResource(path: String): String? =
@@ -35,7 +38,7 @@ class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, P
             return
         }
 
-        app.get(configuration.documentationPath, io.javalin.openapi.plugin.OpenApiHandler(documentation!!))
+        app.get(configuration.documentationPath, OpenApiHandler(documentation!!))
     }
 
 }
