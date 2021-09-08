@@ -106,17 +106,17 @@ public final class JavalinTest implements Handler {
             this.bar = bar;
         }
 
-        // should by displayed as standard json section
+        // should be displayed as standard json section
         public Bar getBar() {
             return bar;
         }
 
-        // should by represented by array
+        // should be represented by array
         public List<Foo> getFoos() {
             return foos;
         }
 
-        // should by displayed as string
+        // should be displayed as string
         @OpenApiPropertyType(definedBy = String.class)
         public Foo getFoo() {
             return foo;
