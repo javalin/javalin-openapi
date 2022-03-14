@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
     kapt project(":openapi-annotation-processor")
-    implementation project(":ktor-modules:ktor-openapi-plugin")
+    implementation project(":openapi-platforms:ktor-modules:ktor-openapi-plugin")
 
     def ktor = "1.6.1"
     implementation "io.ktor:ktor-server-core:$ktor"

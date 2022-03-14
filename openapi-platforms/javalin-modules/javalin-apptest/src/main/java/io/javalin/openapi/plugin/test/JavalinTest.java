@@ -23,7 +23,36 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Starts Javalin server with OpenAPI plugin
+ */
 public final class JavalinTest implements Handler {
+
+    /**
+     * Runs server on localhost:80
+     *
+     * @param args args
+     */
+    public static void main(String[] args) {
+        Javalin.create(config -> {
+            String deprecatedDocsPath = "/swagger-docs";
+
+            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
+            openApiConfiguration.setTitle("AwesomeApp");
+            openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
+            openApiConfiguration.setDocumentProcessor(docs -> docs); // you can add whatever you want to this document using your favourite json api
+            config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
+
+            SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
+            swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
+            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
+
+            ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
+            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration));
+        })
+        .start(80);
+    }
 
     private static final String ROUTE = "/main/{name}";
 
@@ -64,28 +93,7 @@ public final class JavalinTest implements Handler {
     )
     public void handle(@NotNull Context ctx) { }
 
-    public static void main(String[] args) {
-        Javalin.create(config -> {
-            String deprecatedDocsPath = "/swagger-docs";
-
-            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-            openApiConfiguration.setTitle("AwesomeApp");
-            openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
-            openApiConfiguration.setDocumentProcessor(docs -> docs); // you can add whatever you want to this document using your favourite json api
-            config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
-
-            SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
-            swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
-
-            ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
-            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.registerPlugin(new ReDocPlugin(reDocConfiguration));
-        })
-        .start(80);
-    }
-
-    public static final class EntityDto implements Serializable {
+    static final class EntityDto implements Serializable {
 
         private final int status;
         private final String message;
@@ -141,7 +149,7 @@ public final class JavalinTest implements Handler {
 
     }
 
-    public static final class Foo {
+    static final class Foo {
 
         private String property;
 
@@ -151,7 +159,7 @@ public final class JavalinTest implements Handler {
 
     }
 
-    public static final class Bar {
+    static final class Bar {
 
         private String property;
 

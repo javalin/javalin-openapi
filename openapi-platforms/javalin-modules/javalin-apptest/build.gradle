@@ -8,9 +8,9 @@ repositories {
 
 dependencies {
     annotationProcessor project(":openapi-annotation-processor")
-    implementation project(":javalin-modules:javalin-openapi-plugin")
-    implementation project(":javalin-modules:javalin-swagger-plugin")
-    implementation project(":javalin-modules:javalin-redoc-plugin")
+    implementation project(":openapi-platforms:javalin-modules:javalin-openapi-plugin")
+    implementation project(":openapi-platforms:javalin-modules:javalin-swagger-plugin")
+    implementation project(":openapi-platforms:javalin-modules:javalin-redoc-plugin")
     implementation 'io.javalin:javalin:4.0.0.RC0'
 
     def logback = '1.2.5'

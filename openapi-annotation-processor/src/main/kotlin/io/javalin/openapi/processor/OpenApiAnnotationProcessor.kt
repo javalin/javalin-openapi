@@ -38,7 +38,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             return false
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Annotation Processor :: ${annotations.size} annotation(s) found")
+        // messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Annotation Processor :: ${annotations.size} annotation(s) found")
 
         try {
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv)
@@ -53,7 +53,10 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             }
 
             val parsedSchema = OpenAPIV3Parser().readLocation(location.toString(), emptyList(), ParseOptions())
-            messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+
+            if (parsedSchema.messages.size > 0) {
+                messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+            }
 
             parsedSchema.messages.forEach {
                 messager.printMessage(WARNING, it)
