@@ -7,7 +7,7 @@ import io.javalin.core.plugin.PluginLifecycleInit
 class SwaggerConfiguration {
 
     var title = "OpenApi documentation"
-    var version = "3.51.2"
+    var version = "3.52.5"
     var uiPath = "/swagger"
     var webJarPath = "/webjars/swagger-ui"
     var documentationPath = "/openapi"

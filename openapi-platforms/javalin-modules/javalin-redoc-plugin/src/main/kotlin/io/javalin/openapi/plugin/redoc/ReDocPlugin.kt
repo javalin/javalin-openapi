@@ -7,7 +7,7 @@ import io.javalin.core.plugin.PluginLifecycleInit
 class ReDocConfiguration {
 
     var title = "OpenApi documentation"
-    var version = "2.0.0-rc.53"
+    var version = "2.0.0-rc.56"
     var uiPath = "/redoc"
     var webJarPath = "/webjars/redoc"
     var documentationPath = "/openapi"

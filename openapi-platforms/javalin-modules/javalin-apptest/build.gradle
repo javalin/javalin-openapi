@@ -11,7 +11,7 @@ dependencies {
     implementation project(":openapi-platforms:javalin-modules:javalin-openapi-plugin")
     implementation project(":openapi-platforms:javalin-modules:javalin-swagger-plugin")
     implementation project(":openapi-platforms:javalin-modules:javalin-redoc-plugin")
-    implementation 'io.javalin:javalin:4.0.0.RC0'
+    implementation 'io.javalin:javalin:4.4.0'
 
     def logback = '1.2.5'
     implementation "ch.qos.logback:logback-core:$logback"
