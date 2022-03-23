@@ -6,6 +6,7 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
+import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -41,12 +42,12 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         // messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Annotation Processor :: ${annotations.size} annotation(s) found")
 
         try {
+            val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json")
+            val location = resource.toUri()
+
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv)
             val generator = OpenApiGenerator()
             val result = generator.generate(openApiAnnotations)
-
-            val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json")
-            val location = resource.toUri()
 
             resource.openWriter().use {
                 it.write(result)
@@ -61,6 +62,8 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             parsedSchema.messages.forEach {
                 messager.printMessage(WARNING, it)
             }
+        } catch (filerException: FilerException) {
+            // openapi.json has been created during previous compilation phase
         } catch (throwable: Throwable) {
             ProcessorUtils.printException(throwable)
         }

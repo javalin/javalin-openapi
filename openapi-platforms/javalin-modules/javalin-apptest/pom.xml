@@ -6,7 +6,7 @@
 
     <groupId>javalin-openapi.openapi-platforms.javalin-modules</groupId>
     <artifactId>javalin-apptest</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -44,17 +44,17 @@
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-swagger-plugin</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-redoc-plugin</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>org.webjars.npm</groupId>
@@ -81,7 +81,7 @@
                             <annotationProcessorPath>
                                 <groupId>io.javalin-rfc</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
-                                <version>1.1.4</version>
+                                <version>1.1.5</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>

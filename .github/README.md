@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    def openapi = "1.1.4"
+    def openapi = "1.1.5"
     annotationProcessor "io.javalin-rfc:openapi-annotation-processor:$openapi" // Use Kapt in Kotlin projects 
     
     // Javalin
