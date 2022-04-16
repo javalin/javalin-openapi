@@ -16,16 +16,17 @@ repositories {
 
 dependencies {
     implementation project(":openapi-annotations")
-    implementation 'com.google.code.gson:gson:2.8.7'
-    implementation 'io.swagger.parser.v3:swagger-parser:2.0.27'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'io.swagger.parser.v3:swagger-parser:2.0.32'
 
-    def logback = '1.2.5'
+    def logback = '1.2.11'
     implementation "ch.qos.logback:logback-core:$logback"
     implementation "ch.qos.logback:logback-classic:$logback"
-    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+    def junit = "5.8.2"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junit"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit"
 }
 
 test {
