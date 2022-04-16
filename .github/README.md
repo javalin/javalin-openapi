@@ -70,6 +70,7 @@ install(OpenApiFeature) {
 ### Used by
 * [Reposilite](https://github.com/dzikoysk/reposilite) with Javalin
 * [Hub](https://github.com/panda-lang/hub) with Ktor
+* [Javalin OpenApi Example](https://github.com/paulkagiri/JavalinOpenApiExample) by [paulkagiri](https://github.com/paulkagiri)
 
 ### Structure
 * `openapi-annotation-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
