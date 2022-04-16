@@ -103,8 +103,10 @@ internal class OpenApiGenerator {
                 val requestBody = JsonObject()
                 addString(requestBody, "description", requestBodyAnnotation.description())
                 addContent(requestBody, requestBodyAnnotation.content())
+                if (requestBody.size() > 0) {
+                    operation.add("requestBody", requestBody)
+                }
                 requestBody.addProperty("required", requestBodyAnnotation.required())
-                operation.add("requestBody", requestBody)
 
                 // Responses
                 // ~ https://swagger.io/specification/#responses-object
@@ -228,7 +230,9 @@ internal class OpenApiGenerator {
             }
         }
 
-        parent.add("content", requestBodyContent)
+        if (requestBodyContent.size() > 0) {
+            parent.add("content", requestBodyContent)
+        }
     }
 
     private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean) {
