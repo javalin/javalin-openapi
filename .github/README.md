@@ -3,14 +3,6 @@ Experimental compile-time OpenAPI integration for Javalin ecosystem.
 
 ![Preview](https://user-images.githubusercontent.com/4235722/122982162-d2344f80-d39a-11eb-9a93-e52b9b7b7b53.png)
 
-### Notes
-* Reflection free, does not perform any extra operations at runtime
-* Uses `@OpenApi` to simplify migration from bundled OpenApi implementation
-* Supports Java 8+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
-* Uses internal WebJar handler that works with `/*` route out of the box
-* Provides better projection of OpenAPI specification
-* Schema validation through Swagger core module
-
 ### Setup
 
 Download required dependencies:
@@ -133,7 +125,16 @@ Javalin.create(config -> {
 .start(8080);
 ```
 
-### Examples
+
+### Notes
+* Reflection free, does not perform any extra operations at runtime
+* Uses `@OpenApi` to simplify migration from bundled OpenApi implementation
+* Supports Java 8+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
+* Uses internal WebJar handler that works with `/*` route out of the box
+* Provides better projection of OpenAPI specification
+* Schema validation through Swagger core module
+
+### Other examples
 * [Reposilite](https://github.com/dzikoysk/reposilite) - real world app using Javalin and OpenApi integration
 * [Javalin OpenApi Example](https://github.com/paulkagiri/JavalinOpenApiExample) by [paulkagiri](https://github.com/paulkagiri)
 
