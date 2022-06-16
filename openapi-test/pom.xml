@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>javalin-openapi.openapi-platforms.javalin-modules</groupId>
+    <artifactId>javalin-apptest</artifactId>
+    <version>1.1.7</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>panda-repository</id>
+            <url>https://repo.panda-lang.org/releases</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>4.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-api</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>slf4j-tinylog</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin-rfc</groupId>
+            <artifactId>javalin-openapi-plugin</artifactId>
+            <version>1.1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin-rfc</groupId>
+            <artifactId>javalin-swagger-plugin</artifactId>
+            <version>1.1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin-rfc</groupId>
+            <artifactId>javalin-redoc-plugin</artifactId>
+            <version>1.1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>redoc</artifactId>
+            <version>2.0.0-rc.56</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>io.javalin-rfc</groupId>
+                                <artifactId>openapi-annotation-processor</artifactId>
+                                <version>1.1.7</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

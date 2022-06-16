@@ -1,5 +1,5 @@
-# OpenAPI Annotation Processor [![CI](https://github.com/dzikoysk/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/dzikoysk/javalin-openapi/actions/workflows/gradle.yml)
-Experimental compile-time OpenAPI integration for Javalin and Ktor ecosystem.
+# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml)
+Experimental compile-time OpenAPI integration for Javalin ecosystem.
 
 ![Preview](https://user-images.githubusercontent.com/4235722/122982162-d2344f80-d39a-11eb-9a93-e52b9b7b7b53.png)
 
@@ -15,24 +15,101 @@ Experimental compile-time OpenAPI integration for Javalin and Ktor ecosystem.
 
 Download required dependencies:
 
+
+<details>
+    <summary>Gradle setup</summary>
+
 ```groovy
 repositories {
-    maven { url 'https://repo.panda-lang.org/releases' }
+    maven { url 'https://maven.reposilite.com/releases' }
+    // For snapshots
+    maven { url 'https://maven.reposilite.com/snapshots' }
 }
 
 dependencies {
-    def openapi = "1.1.7"
-    annotationProcessor "io.javalin-rfc:openapi-annotation-processor:$openapi" // Use Kapt in Kotlin projects 
+    def openapi = "5.0.0-SNAPSHOT"
     
-    // Javalin
-    implementation "io.javalin-rfc:javalin-openapi-plugin:$openapi"
-    implementation "io.javalin-rfc:javalin-swagger-plugin:$openapi" // for Swagger UI
-    implementation "io.javalin-rfc:javalin-redoc-plugin:$openapi" // for ReDoc UI
-    
-    // Ktor
-    implementation "io.javalin-rfc:ktor-openapi-plugin:$openapi"
+    // For Java projects
+    annotationProcessor("io.javalin-rfc:openapi-annotation-processor:$openapi")
+    // For Kotlin projects
+    kapt("io.javalin-rfc:openapi-annotation-processor:$openapi")
+
+    implementation("io.javalinc:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
+    implementation("io.javalin:javalin-swagger-plugin:$openapi") // for Swagger UI
+    implementation("io.javalin:javalin-redoc-plugin:$openapi") // for ReDoc UI
 }
 ```
+
+</details>
+
+<details>
+    <summary>Maven setup</summary>
+
+```xml
+<project>
+     <repositories>
+        <repository>
+            <id>reposilite-repository</id>
+            <url>https://maven.reposilite.com/releases</url>
+        </repository>
+    </repositories>
+    
+    <dependencies>
+        <!-- OpenApi plugin -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-openapi-plugin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+        <!-- Swagger plugin -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-swagger-plugin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+        <!-- ReDoc plugin -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-redoc-plugin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>redoc</artifactId>
+            <version>2.0.0-rc.56</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>io.javalin</groupId>
+                                <artifactId>openapi-annotation-processor</artifactId>
+                                <version>${javalin.version}</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
+```
+
+</details>
 
 And enable OpenAPI plugin for Javalin with Swagger UI:
 
@@ -53,38 +130,20 @@ Javalin.create(config -> {
     reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
     config.registerPlugin(new ReDocPlugin(reDocConfiguration));
 })
-.start(80);
+.start(8080);
 ```
 
-Or for Ktor application using the features:
-
-```kotlin
-install(OpenApiFeature) {
-    documentationPath = "/swagger-docs"
-}
-
-// Swagger and ReDoc are not supported yet
-```
-
-
-### Used by
-* [Reposilite](https://github.com/dzikoysk/reposilite) with Javalin
-* [Hub](https://github.com/panda-lang/hub) with Ktor
+### Examples
+* [Reposilite](https://github.com/dzikoysk/reposilite) - real world app using Javalin and OpenApi integration
 * [Javalin OpenApi Example](https://github.com/paulkagiri/JavalinOpenApiExample) by [paulkagiri](https://github.com/paulkagiri)
 
-### Structure
+### Repository structure
 * `openapi-annotation-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
 * `openapi-annotations` - annotations used by annotation processor to generate OpenAPI docs
+* `openapi-test` - example Javalin application that uses OpenApi plugin in Gradle & Maven
 
 Javalin:
 
 * `javalin-openapi-plugin` - loads `openapi.json` resource and serves OpenApi endpoint
 * `javalin-swagger-plugin` - serves Swagger UI
 * `javalin-redoc-plugin` - serves ReDoc UI
-* `javalin-apptest` - example Javalin application that uses OpenApi plugin
-
-
-Ktor:
-
-* `ktor-openapi-plugin` - loads `openapi.json` resource and serves OpenApi endpoint
-* `ktor-apptest` - example Ktor application that uses OpenApi plugin
