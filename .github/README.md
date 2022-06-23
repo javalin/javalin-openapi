@@ -1,5 +1,7 @@
-# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml)
-Experimental compile-time OpenAPI integration for Javalin ecosystem.
+# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml) ![Version](https://maven.reposilite.com/api/badge/latest/snapshots/io/javalin/openapi-annotations?color=A97BFF&name=Javalin%20OpenApi)
+Experimental compile-time OpenAPI integration for Javalin 5.x ecosystem.
+This is a new plugin that replaces [old built-in OpenApi module](https://github.com/javalin/javalin/tree/javalin-4x/javalin-openapi), 
+the API looks quite the same despite of some minor changes.
 
 ![Preview](https://user-images.githubusercontent.com/4235722/122982162-d2344f80-d39a-11eb-9a93-e52b9b7b7b53.png)
 
@@ -7,9 +9,8 @@ Experimental compile-time OpenAPI integration for Javalin ecosystem.
 
 Download required dependencies:
 
-
 <details>
-    <summary>Gradle setup</summary>
+    <summary>Gradle setup for Javalin 5.x</summary>
 
 ```groovy
 repositories {
@@ -22,11 +23,11 @@ dependencies {
     def openapi = "5.0.0-SNAPSHOT"
     
     // For Java projects
-    annotationProcessor("io.javalin-rfc:openapi-annotation-processor:$openapi")
+    annotationProcessor("io.javalin:openapi-annotation-processor:$openapi")
     // For Kotlin projects
-    kapt("io.javalin-rfc:openapi-annotation-processor:$openapi")
+    kapt("io.javalin:openapi-annotation-processor:$openapi")
 
-    implementation("io.javalinc:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
+    implementation("io.javalin:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
     implementation("io.javalin:javalin-swagger-plugin:$openapi") // for Swagger UI
     implementation("io.javalin:javalin-redoc-plugin:$openapi") // for ReDoc UI
 }
@@ -35,14 +36,20 @@ dependencies {
 </details>
 
 <details>
-    <summary>Maven setup</summary>
+    <summary>Maven setup for Javalin 5.x</summary>
 
 ```xml
 <project>
-     <repositories>
+    <repositories>
+        <!--Releases-->
         <repository>
             <id>reposilite-repository</id>
             <url>https://maven.reposilite.com/releases</url>
+        </repository>
+        <!-- Snapshots -->
+        <repository>
+            <id>reposilite-repository</id>
+            <url>https://maven.reposilite.com/snapshots</url>
         </repository>
     </repositories>
     
