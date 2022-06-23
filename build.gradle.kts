@@ -12,6 +12,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven("https://maven.reposilite.com/snapshots")
     }
 
     publishing {
@@ -35,7 +36,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     dependencies {
-        val javalin = "4.6.3"
+        val javalin = "5.0.0-SNAPSHOT"
         compileOnly("io.javalin:javalin:$javalin")
 
         val junit = "5.7.2"

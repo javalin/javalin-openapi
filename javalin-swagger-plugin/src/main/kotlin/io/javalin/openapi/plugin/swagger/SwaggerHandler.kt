@@ -16,7 +16,8 @@ class SwaggerHandler(
     override fun handle(context: Context) {
         context
             .html(createSwaggerUiHtml())
-            .res.characterEncoding = "UTF-8"
+            .res
+            .characterEncoding = "UTF-8"
     }
 
     private fun createSwaggerUiHtml(): String {

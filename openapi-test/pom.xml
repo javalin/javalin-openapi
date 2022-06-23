@@ -18,13 +18,17 @@
             <id>panda-repository</id>
             <url>https://repo.panda-lang.org/releases</url>
         </repository>
+        <repository>
+            <id>panda-repository</id>
+            <url>https://repo.panda-lang.org/snapshots</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>4.6.3</version>
+            <version>5.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.tinylog</groupId>
