@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         # Use both LTS releases and latest one
-        jdk: [ 8, 11, 16 ]
+        jdk: [ 11, 17, 18 ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK
