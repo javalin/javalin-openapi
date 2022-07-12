@@ -1,8 +1,8 @@
 package io.javalin.openapi.plugin.redoc
 
 import io.javalin.Javalin
-import io.javalin.core.plugin.Plugin
-import io.javalin.core.plugin.PluginLifecycleInit
+import io.javalin.plugin.Plugin
+import io.javalin.plugin.PluginLifecycleInit
 
 class ReDocConfiguration {
 
