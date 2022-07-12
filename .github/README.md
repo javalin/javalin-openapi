@@ -132,6 +132,7 @@ Javalin.create(config -> {
 .start(8080);
 ```
 
+This plugin is also compatibile with Javalin 4.x, see: [Javalin RFC - OpenApi plugin](https://github.com/javalin/javalin-openapi/tree/99fe1f8eb1df46a1687653bf433d082d7115d426)
 
 ### Notes
 * Reflection free, does not perform any extra operations at runtime
