@@ -1,7 +1,7 @@
 plugins {
     `java-library`
     `maven-publish`
-    kotlin("jvm") version "1.7.0"
+    kotlin("jvm") version "1.7.10"
 }
 
 allprojects {
@@ -39,7 +39,7 @@ subprojects {
         val javalin = "5.0.0-SNAPSHOT"
         compileOnly("io.javalin:javalin:$javalin")
 
-        val junit = "5.7.2"
+        val junit = "5.8.2"
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
     }
