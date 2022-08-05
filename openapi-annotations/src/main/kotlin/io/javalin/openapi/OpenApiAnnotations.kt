@@ -55,7 +55,8 @@ annotation class OpenApiParam(
     val deprecated: Boolean = false,
     val required: Boolean = false,
     val allowEmptyValue: Boolean = false,
-    val isRepeatable: Boolean = false
+    val isRepeatable: Boolean = false,
+    val example: String = ""
 )
 
 @Target()
@@ -108,6 +109,11 @@ annotation class OpenApiIgnore
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 annotation class OpenApiName(
+    val value: String
+)
+
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+annotation class OpenApiExample(
     val value: String
 )
 

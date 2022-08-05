@@ -6,6 +6,7 @@ import io.javalin.http.Handler;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiIgnore;
 import io.javalin.openapi.OpenApiName;
 import io.javalin.openapi.OpenApiParam;
@@ -19,7 +20,11 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,7 +77,9 @@ public final class JavalinTest implements Handler {
             ),
             headers = {
                     @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
-                    @OpenApiParam(name = "Optional")
+                    @OpenApiParam(name = "Optional"),
+                    @OpenApiParam(name = "X-Rick", example = "Rolled"),
+                    @OpenApiParam(name = "X-SomeNumber", required = true, type = Integer.class, example = "500")
             },
             pathParams = {
                     @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
@@ -97,6 +104,7 @@ public final class JavalinTest implements Handler {
 
         private final int status;
         private final String message;
+        private final String timestamp;
         private final Foo foo;
         private final List<Foo> foos;
         private Bar bar;
@@ -107,6 +115,7 @@ public final class JavalinTest implements Handler {
             this.foo = foo;
             this.foos = foos;
             this.bar = bar;
+            this.timestamp = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         }
 
         // should ignore
@@ -147,15 +156,31 @@ public final class JavalinTest implements Handler {
             return status + message;
         }
 
+        // should contain example
+        @OpenApiExample(value = "2022-08-14T21:13:03.546Z")
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        // should contain example for primitive types, SwaggerUI will automatically display this as an Integer
+        @OpenApiExample(value = "5050")
+        public int getVeryImportantNumber() {
+            return status + 1;
+        }
     }
 
     static final class Foo {
 
         private String property;
 
+        private String link;
+
         public String getProperty() {
             return property;
         }
+
+        @OpenApiExample(value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        public String getLink(){ return link; }
 
     }
 

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
+import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.processor.annotations.OpenApiContentInstance
@@ -186,8 +187,18 @@ internal class OpenApiGenerator {
                             ?.let { OpenApiPropertyTypeInstance(it).definedBy() }
                             ?: property.returnType
 
+                        var exampleValue = String()
+                        val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
+                        if(exampleProperty == null)
+                        {
+                            exampleValue = ""
+                        }
+                        else{
+                            exampleValue = exampleProperty.value.toString()
+                        }
+
                         val propertyEntry = JsonObject()
-                        addSchema(propertyEntry, propertyType, false)
+                        addSchema(propertyEntry, propertyType, false, exampleValue)
                         properties.add(name, propertyEntry)
                     }
                 }
@@ -217,6 +228,7 @@ internal class OpenApiGenerator {
         parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue())
         val schema = JsonObject()
         addSchema(schema, OpenApiAnnotationProcessor.elements.getTypeElement(String::class.java.name).asType(), false)
+        schema.addProperty("example", parameterInstance.example())
         parameter.add("schema", schema)
         return parameter
     }
@@ -236,6 +248,10 @@ internal class OpenApiGenerator {
     }
 
     private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean) {
+        addSchema(schema, typeMirror, isArray, "")
+    }
+
+    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String) {
         val type = TypesUtils.getType(typeMirror)
 
         if (isArray || type.isArray()) {
@@ -246,6 +262,11 @@ internal class OpenApiGenerator {
         }
         else {
             addType(schema, typeMirror)
+        }
+
+        if("" != exampleValue)
+        {
+            schema.addProperty("example", exampleValue)
         }
     }
 
