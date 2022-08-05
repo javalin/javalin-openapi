@@ -15,7 +15,7 @@ class ReDocHandler(
     override fun handle(context: Context) {
         context
             .html(createReDocUI())
-            .res.characterEncoding = "UTF-8"
+            .res().characterEncoding = "UTF-8"
     }
 
     private fun createReDocUI(): String {
