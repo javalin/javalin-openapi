@@ -240,11 +240,7 @@ internal class OpenApiGenerator {
         }
     }
 
-    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean) {
-        addSchema(schema, typeMirror, isArray, "")
-    }
-
-    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String?) {
+    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String? = null) {
         val type = TypesUtils.getType(typeMirror)
 
         if (isArray || type.isArray()) {
