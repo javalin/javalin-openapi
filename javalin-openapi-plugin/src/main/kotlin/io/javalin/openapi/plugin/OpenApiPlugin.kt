@@ -1,19 +1,20 @@
 package io.javalin.openapi.plugin
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
 import io.javalin.plugin.Plugin
 import io.javalin.plugin.PluginLifecycleInit
+import io.javalin.plugin.json.JavalinJackson.Companion.defaultMapper
 import org.slf4j.LoggerFactory
-import java.util.function.Function
 
 class OpenApiConfiguration {
-
     var title = "OpenApi Title"
     var description = "OpenApi Description"
     var version = "OpenApi Version"
     var documentationPath = "/openapi"
-    var documentProcessor: Function<String, String> = Function.identity()
-
+    var documentProcessor: ((ObjectNode) -> String)? = null
+    var security: SecurityConfiguration? = null
 }
 
 class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, PluginLifecycleInit {
@@ -26,8 +27,28 @@ class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, P
             ?.replaceFirst("{openapi.title}", configuration.title)
             ?.replaceFirst("{openapi.description}", configuration.description)
             ?.replaceFirst("{openapi.version}", configuration.version)
-            ?.let { configuration.documentProcessor.apply(it) }
+            ?.let { modifyDocumentation(it) }
     }
+
+    private fun modifyDocumentation(rawDocs: String): String =
+        with(configuration) {
+            if (documentProcessor == null && security == null) {
+                return rawDocs
+            }
+
+            val docsNode = defaultMapper().readTree(rawDocs) as ObjectNode
+            val componentsNode = docsNode.get("components") as? ObjectNode? ?: defaultMapper().createObjectNode().also { docsNode.replace("components", it) }
+
+            val securitySchemes = security?.securitySchemes ?: emptyMap()
+            componentsNode.replace("securitySchemes", defaultMapper().convertValue(securitySchemes, JsonNode::class.java))
+
+            val securityMap = security?.globalSecurity?.associate { it.name to it.scopes.toTypedArray() }
+            docsNode.replace("security", defaultMapper().convertValue(securityMap, JsonNode::class.java))
+
+            return configuration.documentProcessor
+                ?.invoke(docsNode)
+                ?: docsNode.toPrettyString()
+        }
 
     private fun readResource(path: String): String? =
         OpenApiPlugin::class.java.getResource(path)?.readText()

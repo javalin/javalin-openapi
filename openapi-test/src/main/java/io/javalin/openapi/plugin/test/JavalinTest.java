@@ -1,5 +1,8 @@
 package io.javalin.openapi.plugin.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -13,8 +16,18 @@ import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+import io.javalin.openapi.plugin.ApiKeyAuth;
+import io.javalin.openapi.plugin.BasicAuth;
+import io.javalin.openapi.plugin.BearerAuth;
+import io.javalin.openapi.plugin.CookieAuth;
+import io.javalin.openapi.plugin.ImplicitFlow;
+import io.javalin.openapi.plugin.OAuth2;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.openapi.plugin.OpenID;
+import io.javalin.openapi.plugin.Security;
+import io.javalin.openapi.plugin.SecurityConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
@@ -25,8 +38,12 @@ import java.io.Serializable;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
+import static java.util.Map.entry;
 
 /**
  * Starts Javalin server with OpenAPI plugin
@@ -45,7 +62,41 @@ public final class JavalinTest implements Handler {
             OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
             openApiConfiguration.setTitle("AwesomeApp");
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
-            openApiConfiguration.setDocumentProcessor(docs -> docs); // you can add whatever you want to this document using your favourite json api
+            // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
+            openApiConfiguration.setSecurity(new SecurityConfiguration(
+                    Map.ofEntries(
+                        entry("BasicAuth", new BasicAuth()),
+                        entry("BearerAuth", new BearerAuth()),
+                        entry("ApiKeyAuth", new ApiKeyAuth()),
+                        entry("CookieAuth", new CookieAuth("JSESSIONID")),
+                        entry("OpenID", new OpenID("https://example.com/.well-known/openid-configuration")),
+                        entry("OAuth2", new OAuth2(
+                                "This API uses OAuth 2 with the implicit grant flow.",
+                                List.of(
+                                        new ImplicitFlow(
+                                                "https://api.example.com/oauth2/authorize",
+                                                new HashMap<>() {{
+                                                    put("read_pets", "read your pets");
+                                                    put("write_pets", "modify pets in your account");
+                                                }}
+                                        )
+                                )
+                        ))
+                    ),
+                    List.of(
+                            new Security(
+                                    "oauth2",
+                                    List.of(
+                                            "write_pets",
+                                            "read_pets"
+                                    )
+                            )
+                    )
+            ));
+            openApiConfiguration.setDocumentProcessor(docs -> { // you can add whatever you want to this document using your favourite json api
+                docs.set("test", new TextNode("Value"));
+                return docs.toPrettyString();
+            });
             config.plugins.register(new OpenApiPlugin(openApiConfiguration));
 
             SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
@@ -69,6 +120,9 @@ public final class JavalinTest implements Handler {
             summary = "Remote command execution",
             description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
             tags = { "Cli" },
+            security = {
+                    @OpenApiSecurity(name = "BasicAuth")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = String.class),
@@ -76,7 +130,7 @@ public final class JavalinTest implements Handler {
                     }
             ),
             headers = {
-                    @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
+                    //@OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
                     @OpenApiParam(name = "Optional"),
                     @OpenApiParam(name = "X-Rick", example = "Rolled"),
                     @OpenApiParam(name = "X-SomeNumber", required = true, type = Integer.class, example = "500")
