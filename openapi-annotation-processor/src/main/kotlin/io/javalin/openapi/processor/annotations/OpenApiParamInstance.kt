@@ -28,7 +28,8 @@ internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirror
     fun required(): Boolean =
         getBoolean("required")
 
-    fun example(): String = getString("example")
+    fun example(): String =
+        getString("example")
 
     fun type(): TypeMirror =
         getType("type")

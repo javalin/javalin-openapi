@@ -187,18 +187,11 @@ internal class OpenApiGenerator {
                             ?.let { OpenApiPropertyTypeInstance(it).definedBy() }
                             ?: property.returnType
 
-                        var exampleValue = String()
                         val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
-                        if(exampleProperty == null)
-                        {
-                            exampleValue = ""
-                        }
-                        else{
-                            exampleValue = exampleProperty.value.toString()
-                        }
+                            ?.value
 
                         val propertyEntry = JsonObject()
-                        addSchema(propertyEntry, propertyType, false, exampleValue)
+                        addSchema(propertyEntry, propertyType, false, exampleProperty)
                         properties.add(name, propertyEntry)
                     }
                 }
@@ -251,7 +244,7 @@ internal class OpenApiGenerator {
         addSchema(schema, typeMirror, isArray, "")
     }
 
-    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String) {
+    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String?) {
         val type = TypesUtils.getType(typeMirror)
 
         if (isArray || type.isArray()) {
@@ -259,13 +252,11 @@ internal class OpenApiGenerator {
             val items = JsonObject()
             addType(items, typeMirror)
             schema.add("items", items)
-        }
-        else {
+        } else {
             addType(schema, typeMirror)
         }
 
-        if("" != exampleValue)
-        {
+        if (exampleValue != null) {
             schema.addProperty("example", exampleValue)
         }
     }

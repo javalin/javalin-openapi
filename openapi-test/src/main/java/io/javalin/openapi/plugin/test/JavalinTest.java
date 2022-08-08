@@ -157,13 +157,13 @@ public final class JavalinTest implements Handler {
         }
 
         // should contain example
-        @OpenApiExample(value = "2022-08-14T21:13:03.546Z")
+        @OpenApiExample("2022-08-14T21:13:03.546Z")
         public String getTimestamp() {
             return timestamp;
         }
 
         // should contain example for primitive types, SwaggerUI will automatically display this as an Integer
-        @OpenApiExample(value = "5050")
+        @OpenApiExample("5050")
         public int getVeryImportantNumber() {
             return status + 1;
         }
@@ -179,8 +179,10 @@ public final class JavalinTest implements Handler {
             return property;
         }
 
-        @OpenApiExample(value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        public String getLink(){ return link; }
+        @OpenApiExample("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        public String getLink() {
+            return link;
+        }
 
     }
 
