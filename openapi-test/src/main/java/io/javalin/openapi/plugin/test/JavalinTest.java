@@ -24,6 +24,9 @@ import io.javalin.openapi.plugin.CookieAuth;
 import io.javalin.openapi.plugin.ImplicitFlow;
 import io.javalin.openapi.plugin.OAuth2;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
+import io.javalin.openapi.plugin.OpenApiContact;
+import io.javalin.openapi.plugin.OpenApiInfo;
+import io.javalin.openapi.plugin.OpenApiLicense;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.OpenID;
 import io.javalin.openapi.plugin.Security;
@@ -59,8 +62,26 @@ public final class JavalinTest implements Handler {
         Javalin.create(config -> {
             String deprecatedDocsPath = "/swagger-docs";
 
+            OpenApiContact openApiContact = new OpenApiContact();
+            openApiContact.setName("API Support");
+            openApiContact.setUrl("https://www.example.com/support");
+            openApiContact.setEmail("support@example.com");
+
+            OpenApiLicense openApiLicense = new OpenApiLicense();
+            openApiLicense.setName("Apache 2.0");
+            openApiLicense.setIdentifier("Apache-2.0");
+
+            OpenApiInfo openApiInfo = new OpenApiInfo();
+            openApiInfo.setTitle("Awesome App");
+            openApiInfo.setSummary("App summary");
+            openApiInfo.setDescription("App description goes right here");
+            openApiInfo.setTermsOfService("https://example.com/tos");
+            openApiInfo.setContact(openApiContact);
+            openApiInfo.setLicense(openApiLicense);
+            openApiInfo.setVersion("1.0.0");
+
             OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-            openApiConfiguration.setTitle("AwesomeApp");
+            openApiConfiguration.setInfo(openApiInfo);
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
             openApiConfiguration.setSecurity(new SecurityConfiguration(
