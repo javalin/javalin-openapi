@@ -42,6 +42,12 @@ internal class OpenApiGenerator {
         val openApi = JsonObject()
         openApi.addProperty("openapi", "3.0.3")
 
+        // fill info
+        val info = JsonObject()
+        info.addProperty("title", "")
+        info.addProperty("version", "")
+        openApi.add("info", info)
+
         // fill paths
         val paths = JsonObject()
         openApi.add("paths", paths)
