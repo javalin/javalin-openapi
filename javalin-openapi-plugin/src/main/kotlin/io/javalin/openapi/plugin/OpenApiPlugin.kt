@@ -3,9 +3,9 @@ package io.javalin.openapi.plugin
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
+import io.javalin.json.JavalinJackson.Companion.defaultMapper
 import io.javalin.plugin.Plugin
 import io.javalin.plugin.PluginLifecycleInit
-import io.javalin.plugin.json.JavalinJackson.Companion.defaultMapper
 import org.slf4j.LoggerFactory
 
 class OpenApiConfiguration {
