@@ -153,7 +153,7 @@ internal class OpenApiGenerator {
 
         val components = JsonObject()
         val schemas = JsonObject()
-        val generatedComponents: MutableSet<TypeMirror> = mutableSetOf()
+        val generatedComponents = mutableSetOf<TypeMirror>()
 
         while (generatedComponents.size < componentReferences.size) {
             for (componentReference in componentReferences.toMutableList()) {
@@ -164,6 +164,7 @@ internal class OpenApiGenerator {
                 val type = TypesUtils.getType(componentReference)
                 val schema = JsonObject()
                 val properties = JsonObject()
+                val requiredProperties = mutableListOf<String>()
 
                 for (property in type.element.enclosedElements) {
                     if (property is ExecutableElement && property.kind == METHOD) {
@@ -189,6 +190,10 @@ internal class OpenApiGenerator {
                         val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
                             ?.value
 
+                        if (propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") }) {
+                            requiredProperties.add(name)
+                        }
+
                         val propertyEntry = JsonObject()
                         addSchema(propertyEntry, propertyType, false, exampleProperty)
                         properties.add(name, propertyEntry)
@@ -198,6 +203,13 @@ internal class OpenApiGenerator {
                 schema.addProperty("type", "object")
                 schema.add("properties", properties)
                 schemas.add(type.getSimpleName(), schema)
+
+                if (requiredProperties.isNotEmpty()) {
+                    val required = JsonArray()
+                    requiredProperties.forEach { required.add(it) }
+                    schema.add("required", required)
+                }
+
                 generatedComponents.add(componentReference)
             }
         }
@@ -267,7 +279,10 @@ internal class OpenApiGenerator {
         }
 
         parent.addProperty("type", nonRefType.type)
-        parent.addProperty("format", nonRefType.format)
+
+        nonRefType.format
+            .takeIf { it.isNotEmpty() }
+            ?.also { parent.addProperty("format", it) }
     }
 
     private fun addString(parent: JsonObject, key: String, value: String?) {

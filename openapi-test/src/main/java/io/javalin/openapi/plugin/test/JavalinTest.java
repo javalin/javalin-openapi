@@ -36,6 +36,7 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.time.ZoneOffset;
@@ -178,19 +179,20 @@ public final class JavalinTest implements Handler {
     static final class EntityDto implements Serializable {
 
         private final int status;
-        private final String message;
-        private final String timestamp;
-        private final Foo foo;
-        private final List<Foo> foos;
+        private final @NotNull String message;
+        private final @NotNull String timestamp;
+        private final @NotNull Foo foo;
+        private final @NotNull List<Foo> foos;
+
         private Bar bar;
 
-        public EntityDto(int status, String message, Foo foo, List<Foo> foos, Bar bar) {
+        public EntityDto(int status, @NotNull String message, @NotNull Foo foo, @NotNull List<Foo> foos, @Nullable Bar bar) {
             this.status = status;
             this.message = message;
             this.foo = foo;
             this.foos = foos;
             this.bar = bar;
-            this.timestamp = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+            this.timestamp = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
         }
 
         // should ignore
@@ -204,13 +206,13 @@ public final class JavalinTest implements Handler {
         }
 
         // should be represented by array
-        public List<Foo> getFoos() {
+        public @NotNull List<Foo> getFoos() {
             return foos;
         }
 
         // should be displayed as string
         @OpenApiPropertyType(definedBy = String.class)
-        public Foo getFoo() {
+        public @NotNull Foo getFoo() {
             return foo;
         }
 
@@ -233,7 +235,7 @@ public final class JavalinTest implements Handler {
 
         // should contain example
         @OpenApiExample("2022-08-14T21:13:03.546Z")
-        public String getTimestamp() {
+        public @NotNull String getTimestamp() {
             return timestamp;
         }
 
@@ -242,12 +244,12 @@ public final class JavalinTest implements Handler {
         public int getVeryImportantNumber() {
             return status + 1;
         }
+
     }
 
     static final class Foo {
 
         private String property;
-
         private String link;
 
         public String getProperty() {
