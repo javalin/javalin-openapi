@@ -1,9 +1,4 @@
-package io.javalin.openapi.plugin
-
-data class SecurityConfiguration(
-    val securitySchemes: Map<String, SecurityScheme> = emptyMap(),
-    val globalSecurity: List<Security> = emptyList()
-)
+package io.javalin.openapi
 
 data class Security(
     val name: String,

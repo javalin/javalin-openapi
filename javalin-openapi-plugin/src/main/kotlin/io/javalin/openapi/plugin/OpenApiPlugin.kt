@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson.Companion.defaultMapper
+import io.javalin.openapi.OpenApiInfo
+import io.javalin.openapi.Security
+import io.javalin.openapi.SecurityScheme
 import io.javalin.plugin.Plugin
 import io.javalin.plugin.PluginLifecycleInit
 import io.javalin.security.RouteRole
@@ -16,6 +19,11 @@ class OpenApiConfiguration {
     var security: SecurityConfiguration? = null
     var roles: Array<RouteRole> = emptyArray()
 }
+
+data class SecurityConfiguration(
+    val securitySchemes: Map<String, SecurityScheme> = emptyMap(),
+    val globalSecurity: List<Security> = emptyList()
+)
 
 class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, PluginLifecycleInit {
 
