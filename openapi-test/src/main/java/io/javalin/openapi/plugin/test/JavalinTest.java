@@ -35,6 +35,7 @@ import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -148,7 +149,8 @@ public final class JavalinTest implements Handler {
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = String.class),
-                            @OpenApiContent(from = EntityDto[].class)
+                            @OpenApiContent(from = EntityDto[].class),
+                            @OpenApiContent(from = LombokEntity.class)
                     }
             ),
             headers = {
@@ -271,6 +273,11 @@ public final class JavalinTest implements Handler {
             return property;
         }
 
+    }
+
+    @Data
+    static final class LombokEntity {
+        private String property;
     }
 
 }

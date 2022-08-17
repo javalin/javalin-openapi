@@ -1,4 +1,12 @@
 dependencies {
+    // declare lombok annotation processor as first
+    val lombok =  "1.18.24"
+    compileOnly("org.projectlombok:lombok:$lombok")
+    annotationProcessor("org.projectlombok:lombok:$lombok")
+    testCompileOnly("org.projectlombok:lombok:$lombok")
+    testAnnotationProcessor("org.projectlombok:lombok:$lombok")
+
+    // then openapi annotation processor
     annotationProcessor(project(":openapi-annotation-processor"))
     implementation(project(":javalin-openapi-plugin"))
     implementation(project(":javalin-swagger-plugin"))
