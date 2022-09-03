@@ -6,8 +6,12 @@ import javax.lang.model.type.TypeMirror
 
 internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
-    enum class In {
-        QUERY, HEADER, PATH, COOKIE
+    enum class In(val identifier: String) {
+        QUERY("query"),
+        HEADER("header"),
+        PATH("path"),
+        COOKIE("cookie"),
+        FORM_DATA("formData")
     }
 
     fun allowEmptyValue(): Boolean =

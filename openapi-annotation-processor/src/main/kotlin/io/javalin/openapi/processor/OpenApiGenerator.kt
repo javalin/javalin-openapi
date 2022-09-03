@@ -14,6 +14,7 @@ import io.javalin.openapi.processor.annotations.OpenApiInstance
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.COOKIE
+import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.FORM_DATA
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.HEADER
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.PATH
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.QUERY
@@ -23,6 +24,7 @@ import io.javalin.openapi.processor.utils.TypesUtils
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
+import javax.swing.text.html.HTML.Tag.FORM
 
 internal class OpenApiGenerator {
 
@@ -93,6 +95,10 @@ internal class OpenApiGenerator {
 
                 for (cookieParameterAnnotation in routeAnnotation.cookies()) {
                     parameters.add(fromParameter(COOKIE, cookieParameterAnnotation))
+                }
+
+                for (formParameterAnnotation in routeAnnotation.formParams()) {
+                    parameters.add(fromParameter(FORM_DATA, formParameterAnnotation))
                 }
 
                 operation.add("parameters", parameters)
@@ -225,7 +231,7 @@ internal class OpenApiGenerator {
     private fun fromParameter(`in`: In, parameterInstance: OpenApiParamInstance?): JsonObject {
         val parameter = JsonObject()
         addString(parameter, "name", parameterInstance!!.name())
-        addString(parameter, "in", `in`.name.lowercase())
+        addString(parameter, "in", `in`.identifier)
         addString(parameter, "description", parameterInstance.description())
         parameter.addProperty("required", parameterInstance.required())
         parameter.addProperty("deprecated", parameterInstance.deprecated())

@@ -30,7 +30,7 @@ annotation class OpenApi(
     val headers: Array<OpenApiParam> = [],
     val pathParams: Array<OpenApiParam> = [],
     val queryParams: Array<OpenApiParam> = [],
-    val formParams: Array<OpenApiFormParam> = [],
+    val formParams: Array<OpenApiParam> = [],
     val requestBody: OpenApiRequestBody = OpenApiRequestBody([]),
     val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]),
     val fileUploads: Array<OpenApiFileUpload> = [],
@@ -57,13 +57,6 @@ annotation class OpenApiParam(
     val allowEmptyValue: Boolean = false,
     val isRepeatable: Boolean = false,
     val example: String = ""
-)
-
-@Target()
-annotation class OpenApiFormParam(
-    val name: String,
-    val type: KClass<*> = String::class,
-    val required: Boolean = false
 )
 
 @Target()
