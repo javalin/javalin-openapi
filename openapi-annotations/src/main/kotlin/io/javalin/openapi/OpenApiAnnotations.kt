@@ -31,7 +31,6 @@ annotation class OpenApi(
     val pathParams: Array<OpenApiParam> = [],
     val queryParams: Array<OpenApiParam> = [],
     val formParams: Array<OpenApiParam> = [],
-    val fileUploads: Array<OpenApiParam> = [],
     val requestBody: OpenApiRequestBody = OpenApiRequestBody([]),
     // val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]), ?
     val responses: Array<OpenApiResponse> = [],
@@ -78,9 +77,17 @@ annotation class OpenApiRequestBody(
 @Target()
 annotation class OpenApiContent(
     val from: KClass<*> = NULL_CLASS::class,
-    /** Whenever the schema should be wrapped in an array */
-    val isArray: Boolean = false,
-    val type: String = ContentType.AUTODETECT
+    val mimeType: String = ContentType.AUTODETECT,
+    val type: String = NULL_STRING,
+    val format: String = NULL_STRING,
+    val properties: Array<OpenApiContentProperty> = []
+)
+
+@Target()
+annotation class OpenApiContentProperty(
+    val name: String,
+    val type: String,
+    val format: String = NULL_STRING
 )
 
 @Target()

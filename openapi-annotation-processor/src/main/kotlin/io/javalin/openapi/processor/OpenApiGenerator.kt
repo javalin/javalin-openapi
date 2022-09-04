@@ -24,7 +24,6 @@ import io.javalin.openapi.processor.utils.TypesUtils
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
-import javax.swing.text.html.HTML.Tag.FORM
 
 internal class OpenApiGenerator {
 
@@ -99,13 +98,6 @@ internal class OpenApiGenerator {
 
                 for (formParameterAnnotation in routeAnnotation.formParams()) {
                     parameters.add(fromParameter(FORM_DATA, formParameterAnnotation))
-                }
-
-                for (fileUploadAnnotation in routeAnnotation.fileUploads()) {
-                    val fileUpload = fromParameter(FORM_DATA, fileUploadAnnotation)
-                    fileUpload.addProperty("type", "file")
-                    fileUpload.remove("schema")
-                    parameters.add(fileUpload)
                 }
 
                 operation.add("parameters", parameters)
@@ -243,11 +235,14 @@ internal class OpenApiGenerator {
         parameter.addProperty("required", parameterInstance.required())
         parameter.addProperty("deprecated", parameterInstance.deprecated())
         parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue())
-        addType(parameter, parameterInstance.type())
+
         val schema = JsonObject()
-        addSchema(schema, OpenApiAnnotationProcessor.elements.getTypeElement(String::class.java.name).asType(), false)
-        schema.addProperty("example", parameterInstance.example())
+        addSchema(schema, parameterInstance.type() /*OpenApiAnnotationProcessor.elements.getTypeElement(String::class.java.name).asType() */, false)
+        parameterInstance.example()
+            .takeIf { it.isNotEmpty() }
+            .let { schema.addProperty("example", it) }
         parameter.add("schema", schema)
+
         return parameter
     }
 
@@ -255,9 +250,52 @@ internal class OpenApiGenerator {
         val requestBodyContent = JsonObject()
 
         for (contentAnnotation in annotations) {
-            if (contentAnnotation.from().toString() != NULL_CLASS::class.java.name) {
-                addMediaType(requestBodyContent, contentAnnotation.type(), contentAnnotation.from(), contentAnnotation.isArray())
+            val from = contentAnnotation.from()
+            val type = contentAnnotation.type()
+            val format = contentAnnotation.format().takeIf { it != NULL_STRING }
+            val properties = contentAnnotation.properties()
+            var mimeType = contentAnnotation.mimeType()
+
+            if (AUTODETECT == mimeType) {
+                mimeType = TypesUtils.detectContentType(contentAnnotation.from())
             }
+
+            val mediaType = JsonObject()
+            val schema = JsonObject()
+
+            when {
+                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name -> addSchema(schema, from, false)
+                properties.isEmpty() -> {
+                    schema.addProperty("type", type)
+                    format?.also { schema.addProperty("format", it) }
+                }
+                else -> {
+                    val propertiesSchema = JsonObject()
+                    schema.addProperty("type", "object")
+
+                    for (contentProperty in properties) {
+                        val propertyScheme = JsonObject()
+                        val propertyFormat = contentProperty.format().takeIf { it != NULL_STRING }
+                        propertyScheme.addProperty("type", contentProperty.type())
+
+                        if (contentProperty.type() == "array") {
+                            val items = JsonObject()
+                            items.addProperty("type", "string")
+                            propertyFormat?.let { items.addProperty("format", it) }
+                            propertyScheme.add("items", items)
+                        } else {
+                            propertyFormat?.let { propertyScheme.addProperty("format", it) }
+                        }
+
+                        propertiesSchema.add(contentProperty.name(), propertyScheme)
+                    }
+
+                    schema.add("properties", propertiesSchema)
+                }
+            }
+
+            mediaType.add("schema", schema)
+            requestBodyContent.add(mimeType, mediaType)
         }
 
         if (requestBodyContent.size() > 0) {
@@ -303,20 +341,6 @@ internal class OpenApiGenerator {
         if (NULL_STRING != value) {
             parent.addProperty(key, value)
         }
-    }
-
-    private fun addMediaType(parent: JsonObject, mimeType: String, type: TypeMirror, isArray: Boolean) {
-        var detectedContentType = mimeType
-
-        if (AUTODETECT == detectedContentType) {
-            detectedContentType = TypesUtils.detectContentType(type)
-        }
-
-        val mediaType = JsonObject()
-        val schema = JsonObject()
-        addSchema(schema, type, isArray)
-        mediaType.add("schema", schema)
-        parent.add(detectedContentType, mediaType)
     }
 
 }

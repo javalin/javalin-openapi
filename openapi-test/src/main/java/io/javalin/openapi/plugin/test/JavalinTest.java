@@ -14,6 +14,7 @@ import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiContentProperty;
 import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiIgnore;
 import io.javalin.openapi.OpenApiInfo;
@@ -146,9 +147,14 @@ public final class JavalinTest implements Handler {
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = String.class),
-                            @OpenApiContent(from = EntityDto[].class),
-                            @OpenApiContent(from = LombokEntity.class)
+                            @OpenApiContent(from = String.class), // simple type
+                            @OpenApiContent(from = EntityDto[].class), // array
+                            @OpenApiContent(from = LombokEntity.class), // lombok
+                            @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
+                            @OpenApiContent(mimeType = "multipart/form-data", properties = {
+                                    @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
+                                    @OpenApiContentProperty(name = "file-name", type = "array", format = "base64") // multi-file upload
+                            })
                     }
             ),
             headers = {
@@ -159,9 +165,6 @@ public final class JavalinTest implements Handler {
             },
             pathParams = {
                     @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
-            },
-            fileUploads = {
-                    @OpenApiParam(name = "file1", description = "File description", required = true)
             },
             responses = {
                     @OpenApiResponse(status = "200", description = "Status of the executed command", content = {

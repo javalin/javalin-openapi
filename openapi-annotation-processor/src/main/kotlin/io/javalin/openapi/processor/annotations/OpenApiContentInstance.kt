@@ -9,10 +9,16 @@ internal class OpenApiContentInstance(mirror: AnnotationMirror) : AnnotationMirr
     fun from(): TypeMirror =
         getType("from")
 
-    fun isArray(): Boolean =
-        getBoolean("isArray")
+    fun mimeType(): String =
+        getString("mimeType")
 
     fun type(): String =
         getString("type")
+
+    fun format(): String =
+        getString("format")
+
+    fun properties(): List<OpenApiContentPropertyInstance> =
+        getArray("properties", AnnotationMirror::class.java) { OpenApiContentPropertyInstance(it) }
 
 }

@@ -7,7 +7,6 @@ import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 
-
 internal object TypesUtils {
 
     data class Data(
