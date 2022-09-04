@@ -18,8 +18,8 @@ internal class OpenApiInstance(mirror: AnnotationMirror) : AnnotationMirrorMappe
     fun description(): String =
         getString("description")
 
-    fun fileUploads(): List<OpenApiFileUploadInstance> =
-        getArray("fileUploads", AnnotationMirror::class.java) { OpenApiFileUploadInstance(it) }
+    fun fileUploads(): List<OpenApiParamInstance> =
+        getArray("fileUploads", AnnotationMirror::class.java) { OpenApiParamInstance(it) }
 
     fun formParams(): List<OpenApiParamInstance> =
         getArray("formParams", AnnotationMirror::class.java) { OpenApiParamInstance(it) }

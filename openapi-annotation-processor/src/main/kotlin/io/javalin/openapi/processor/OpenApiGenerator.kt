@@ -101,6 +101,13 @@ internal class OpenApiGenerator {
                     parameters.add(fromParameter(FORM_DATA, formParameterAnnotation))
                 }
 
+                for (fileUploadAnnotation in routeAnnotation.fileUploads()) {
+                    val fileUpload = fromParameter(FORM_DATA, fileUploadAnnotation)
+                    fileUpload.addProperty("type", "file")
+                    fileUpload.remove("schema")
+                    parameters.add(fileUpload)
+                }
+
                 operation.add("parameters", parameters)
 
                 // RequestBody
@@ -236,6 +243,7 @@ internal class OpenApiGenerator {
         parameter.addProperty("required", parameterInstance.required())
         parameter.addProperty("deprecated", parameterInstance.deprecated())
         parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue())
+        addType(parameter, parameterInstance.type())
         val schema = JsonObject()
         addSchema(schema, OpenApiAnnotationProcessor.elements.getTypeElement(String::class.java.name).asType(), false)
         schema.addProperty("example", parameterInstance.example())

@@ -4,7 +4,7 @@ import io.javalin.openapi.processor.processing.AnnotationMirrorMapper
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.TypeMirror
 
-internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
+internal open class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirrorMapper(mirror) {
 
     enum class In(val identifier: String) {
         QUERY("query"),
@@ -35,7 +35,7 @@ internal class OpenApiParamInstance(mirror: AnnotationMirror) : AnnotationMirror
     fun example(): String =
         getString("example")
 
-    fun type(): TypeMirror =
+    open fun type(): TypeMirror =
         getType("type")
 
 }

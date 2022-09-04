@@ -160,6 +160,9 @@ public final class JavalinTest implements Handler {
             pathParams = {
                     @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
             },
+            fileUploads = {
+                    @OpenApiParam(name = "file1", description = "File description", required = true)
+            },
             responses = {
                     @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
                             @OpenApiContent(from = EntityDto[].class)

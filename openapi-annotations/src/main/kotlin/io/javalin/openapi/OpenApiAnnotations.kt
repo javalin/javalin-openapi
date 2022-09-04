@@ -31,9 +31,9 @@ annotation class OpenApi(
     val pathParams: Array<OpenApiParam> = [],
     val queryParams: Array<OpenApiParam> = [],
     val formParams: Array<OpenApiParam> = [],
+    val fileUploads: Array<OpenApiParam> = [],
     val requestBody: OpenApiRequestBody = OpenApiRequestBody([]),
-    val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]),
-    val fileUploads: Array<OpenApiFileUpload> = [],
+    // val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]), ?
     val responses: Array<OpenApiResponse> = [],
     val security: Array<OpenApiSecurity> = [],
     val path: String,
@@ -66,22 +66,14 @@ annotation class OpenApiRequestBody(
     val description: String = NULL_STRING
 )
 
-@Target()
-annotation class OpenApiComposedRequestBody(
-    val anyOf: Array<OpenApiContent> = [],
-    val oneOf: Array<OpenApiContent> = [],
-    val required: Boolean = false,
-    val description: String = NULL_STRING,
-    val contentType: String = ContentType.AUTODETECT
-)
-
-@Target()
-annotation class OpenApiFileUpload(
-    val name: String,
-    val isArray: Boolean = false,
-    val description: String = NULL_STRING,
-    val required: Boolean = false
-)
+//@Target()
+//annotation class OpenApiComposedRequestBody(
+//    val anyOf: Array<OpenApiContent> = [],
+//    val oneOf: Array<OpenApiContent> = [],
+//    val required: Boolean = false,
+//    val description: String = NULL_STRING,
+//    val contentType: String = ContentType.AUTODETECT
+//)
 
 @Target()
 annotation class OpenApiContent(
