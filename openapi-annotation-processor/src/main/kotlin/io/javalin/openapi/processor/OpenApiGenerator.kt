@@ -276,14 +276,16 @@ internal class OpenApiGenerator {
                     for (contentProperty in properties) {
                         val propertyScheme = JsonObject()
                         val propertyFormat = contentProperty.format().takeIf { it != NULL_STRING }
-                        propertyScheme.addProperty("type", contentProperty.type())
 
-                        if (contentProperty.type() == "array") {
+                        if (contentProperty.isArray()) {
+                            propertyScheme.addProperty("type", "array")
+
                             val items = JsonObject()
-                            items.addProperty("type", "string")
+                            items.addProperty("type", contentProperty.type())
                             propertyFormat?.let { items.addProperty("format", it) }
                             propertyScheme.add("items", items)
                         } else {
+                            propertyScheme.addProperty("type", contentProperty.type())
                             propertyFormat?.let { propertyScheme.addProperty("format", it) }
                         }
 

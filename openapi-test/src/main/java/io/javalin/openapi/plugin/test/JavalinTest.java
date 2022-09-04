@@ -153,7 +153,7 @@ public final class JavalinTest implements Handler {
                             @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                             @OpenApiContent(mimeType = "multipart/form-data", properties = {
                                     @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
-                                    @OpenApiContentProperty(name = "file-name", type = "array", format = "base64") // multi-file upload
+                                    @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
                             })
                     }
             ),

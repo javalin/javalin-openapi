@@ -86,6 +86,7 @@ annotation class OpenApiContent(
 @Target()
 annotation class OpenApiContentProperty(
     val name: String,
+    val isArray: Boolean = false,
     val type: String,
     val format: String = NULL_STRING
 )

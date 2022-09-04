@@ -8,6 +8,9 @@ internal class OpenApiContentPropertyInstance(mirror: AnnotationMirror) : Annota
     fun name(): String =
         getString("name")
 
+    fun isArray(): Boolean =
+        getBoolean("isArray")
+
     fun type(): String =
         getString("type")
 
