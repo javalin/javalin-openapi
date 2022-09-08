@@ -84,12 +84,12 @@ public final class JavalinTest implements Handler {
             openApiInfo.setVersion("1.0.0");
 
             OpenApiServerVariable portServerVariable = new OpenApiServerVariable();
-            portServerVariable.setEnum(new String[] { "7070", "8080" });
+            portServerVariable.setValues(new String[] { "7070", "8080" });
             portServerVariable.setDefault("8080");
             portServerVariable.setDescription("Port of the server");
 
             OpenApiServerVariable basePathServerVariable = new OpenApiServerVariable();
-            basePathServerVariable.setEnum(new String[] { "v1" });
+            basePathServerVariable.setValues(new String[] { "v1" });
             basePathServerVariable.setDefault("v1");
             basePathServerVariable.setDescription("Base path of the server");
 
