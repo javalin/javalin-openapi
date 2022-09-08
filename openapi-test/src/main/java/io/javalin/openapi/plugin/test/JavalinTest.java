@@ -93,14 +93,11 @@ public final class JavalinTest implements Handler {
             basePathServerVariable.setDefault("v1");
             basePathServerVariable.setDescription("Base path of the server");
 
-            Map<String, OpenApiServerVariable> serverVariables = new HashMap<>();
-            serverVariables.put("port", portServerVariable);
-            serverVariables.put("basePath", basePathServerVariable);
-
             OpenApiServer openApiServer = new OpenApiServer();
             openApiServer.setUrl("https://example.com:{port}/{basePath}");
             openApiServer.setDescription("Server description goes here");
-            openApiServer.setVariables(serverVariables);
+            openApiServer.addVariable("port", portServerVariable);
+            openApiServer.addVariable("basePath", basePathServerVariable);
 
             OpenApiServer[] servers = new OpenApiServer[] { openApiServer };
 
