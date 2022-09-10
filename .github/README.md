@@ -119,15 +119,15 @@ Javalin.create(config -> {
     OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
     openApiConfiguration.setTitle("AwesomeApp");
     openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
-    config.registerPlugin(new OpenApiPlugin(openApiConfiguration));
+    config.plugins.register(new OpenApiPlugin(openApiConfiguration));
     
     SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
     swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-    config.registerPlugin(new SwaggerPlugin(swaggerConfiguration));
+    config.plugins.register(new SwaggerPlugin(swaggerConfiguration));
     
     ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
     reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-    config.registerPlugin(new ReDocPlugin(reDocConfiguration));
+    config.plugins.register(new ReDocPlugin(reDocConfiguration));
 })
 .start(8080);
 ```
