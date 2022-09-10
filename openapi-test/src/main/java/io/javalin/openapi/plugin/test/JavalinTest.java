@@ -25,6 +25,8 @@ import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
+import io.javalin.openapi.OpenApiServer;
+import io.javalin.openapi.OpenApiServerVariable;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
@@ -81,8 +83,27 @@ public final class JavalinTest implements Handler {
             openApiInfo.setLicense(openApiLicense);
             openApiInfo.setVersion("1.0.0");
 
+            OpenApiServerVariable portServerVariable = new OpenApiServerVariable();
+            portServerVariable.setValues(new String[] { "7070", "8080" });
+            portServerVariable.setDefault("8080");
+            portServerVariable.setDescription("Port of the server");
+
+            OpenApiServerVariable basePathServerVariable = new OpenApiServerVariable();
+            basePathServerVariable.setValues(new String[] { "v1" });
+            basePathServerVariable.setDefault("v1");
+            basePathServerVariable.setDescription("Base path of the server");
+
+            OpenApiServer openApiServer = new OpenApiServer();
+            openApiServer.setUrl("https://example.com:{port}/{basePath}");
+            openApiServer.setDescription("Server description goes here");
+            openApiServer.addVariable("port", portServerVariable);
+            openApiServer.addVariable("basePath", basePathServerVariable);
+
+            OpenApiServer[] servers = new OpenApiServer[] { openApiServer };
+
             OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
             openApiConfiguration.setInfo(openApiInfo);
+            openApiConfiguration.setServers(servers);
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
             openApiConfiguration.setSecurity(new SecurityConfiguration(

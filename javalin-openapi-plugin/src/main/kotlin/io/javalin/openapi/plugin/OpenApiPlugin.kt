@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson.Companion.defaultMapper
 import io.javalin.openapi.OpenApiInfo
+import io.javalin.openapi.OpenApiServer
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
 import io.javalin.plugin.Plugin
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory
 
 class OpenApiConfiguration {
     var info: OpenApiInfo = OpenApiInfo()
+    var servers: Array<OpenApiServer> = emptyArray()
     var documentationPath = "/openapi"
     var documentProcessor: ((ObjectNode) -> String)? = null
     var security: SecurityConfiguration? = null
@@ -40,6 +42,9 @@ class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, P
 
             //process OpenAPI "info"
             docsNode.replace("info", defaultMapper().convertValue(info, JsonNode::class.java))
+
+            // process OpenAPI "servers"
+            docsNode.replace("servers", defaultMapper().convertValue(servers, JsonNode::class.java))
 
             // process OpenAPI "components"
             val componentsNode = docsNode.get("components") as? ObjectNode?
