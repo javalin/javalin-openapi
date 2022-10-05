@@ -1,4 +1,4 @@
-# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml) ![Version](https://maven.reposilite.com/api/badge/latest/snapshots/io/javalin/openapi-annotations?color=A97BFF&name=Javalin%20OpenApi)
+# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml) ![Version](https://maven.reposilite.com/api/badge/latest/snapshots/io/javalin/javalin-openapi-plugin?color=A97BFF&name=Javalin%20OpenApi)
 Experimental compile-time OpenAPI integration for Javalin 5.x ecosystem.
 This is a new plugin that replaces [old built-in OpenApi module](https://github.com/javalin/javalin/tree/javalin-4x/javalin-openapi), 
 the API looks quite the same despite of some minor changes.
@@ -40,6 +40,10 @@ dependencies {
 
 ```xml
 <project>
+    <properties>
+        <javalin.version>5.0.0</javalin.version>
+    </properties>
+    
     <repositories>
         <!--Releases-->
         <repository>
@@ -75,7 +79,7 @@ dependencies {
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>redoc</artifactId>
-            <version>2.0.0-rc.56</version>
+            <version>2.0.0-rc.70</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -148,7 +152,7 @@ This plugin is also compatibile with Javalin 4.x, see: [Javalin RFC - OpenApi pl
 
 ### Repository structure
 * `openapi-annotation-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
-* `openapi-annotations` - annotations used by annotation processor to generate OpenAPI docs
+* `openapi-specification` - annotations & classes used to describe OpenAPI specification
 * `openapi-test` - example Javalin application that uses OpenApi plugin in Gradle & Maven
 
 Javalin:

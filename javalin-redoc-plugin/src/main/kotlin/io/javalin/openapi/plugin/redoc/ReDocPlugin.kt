@@ -7,7 +7,7 @@ import io.javalin.security.RouteRole
 
 class ReDocConfiguration {
     var title = "OpenApi documentation"
-    var version = "2.0.0-rc.56"
+    var version = "2.0.0-rc.70"
     var uiPath = "/redoc"
     var webJarPath = "/webjars/redoc"
     var documentationPath = "/openapi"
