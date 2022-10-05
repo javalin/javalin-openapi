@@ -1,5 +1,5 @@
-# OpenAPI Annotation Processor [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml) ![Version / Stable](https://maven.reposilite.com/api/badge/latest/releases/io/javalin/javalin-openapi-plugin?color=007ec6&name=Stable) ![Version / Snapshot](https://maven.reposilite.com/api/badge/latest/snapshots/io/javalin/javalin-openapi-plugin?color=A97BFF&name=Snapshot)
-Experimental compile-time OpenAPI integration for Javalin 5.x ecosystem.
+# OpenAPI Plugin [![CI](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml/badge.svg)](https://github.com/javalin/javalin-openapi/actions/workflows/gradle.yml) ![Version / Stable](https://maven.reposilite.com/api/badge/latest/releases/io/javalin/javalin-openapi-plugin?color=007ec6&name=Stable) ![Version / Snapshot](https://maven.reposilite.com/api/badge/latest/snapshots/io/javalin/javalin-openapi-plugin?color=A97BFF&name=Snapshot)
+Compile-time OpenAPI integration for Javalin 5.x ecosystem.
 This is a new plugin that replaces [old built-in OpenApi module](https://github.com/javalin/javalin/tree/javalin-4x/javalin-openapi), 
 the API looks quite the same despite of some minor changes.
 
