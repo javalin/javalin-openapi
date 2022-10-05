@@ -8,7 +8,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin"
-    version = "5.0.1"
+    version = "5.0.1-SNAPSHOT"
 
     repositories {
         mavenCentral()
