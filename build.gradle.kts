@@ -1,14 +1,18 @@
 plugins {
     `java-library`
-    `maven-publish`
     kotlin("jvm") version "1.7.10"
+    `maven-publish`
+    signing
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
 allprojects {
+    apply(plugin = "java-library")
+    apply(plugin = "signing")
     apply(plugin = "maven-publish")
 
-    group = "io.javalin"
-    version = "5.0.1-SNAPSHOT"
+    group = "io.javalin.community.openapi"
+    version = "5.0.0"
 
     repositories {
         mavenCentral()
@@ -22,16 +26,64 @@ allprojects {
                 url = uri("https://maven.reposilite.com/${if (version.toString().endsWith("-SNAPSHOT")) "snapshots" else "releases"}")
 
                 credentials {
-                    username = System.getenv("MAVEN_NAME") ?: property("mavenUser").toString()
-                    password = System.getenv("MAVEN_TOKEN") ?: property("mavenPassword").toString()
+                    username = getEnvOrProperty("MAVEN_NAME", "mavenUser")
+                    password = getEnvOrProperty("MAVEN_TOKEN", "mavenPassword")
                 }
             }
         }
     }
+
+    publishing {
+        publications {
+            create<MavenPublication>("library") {
+                from(components.getByName("java"))
+
+                pom {
+                    name.set("Javalin OpenAPI Plugin")
+                    description.set("Compile-time OpenAPI integration for Javalin 5.x")
+                    url.set("https://github.com/javalin/javalin-openapi")
+
+                    licenses {
+                        license {
+                            name.set("The Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("dzikoysk")
+                            name.set("dzikoysk")
+                            email.set("dzikoysk@dzikoysk.net")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/javalin/javalin-openapi.git")
+                        developerConnection.set("scm:git:ssh://github.com/javalin/javalin-openapi.git")
+                        url.set("https://github.com/javalin/javalin-openapi.git")
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        if (findProperty("signing.keyId") != null) {
+            sign(publishing.publications.getByName("library"))
+        }
+    }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 }
 
 subprojects {
-    apply(plugin = "java-library")
     apply(plugin = "application")
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
@@ -44,25 +96,19 @@ subprojects {
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
     }
 
-    java {
-        withJavadocJar()
-        withSourcesJar()
-    }
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    publishing {
-        publications {
-            create<MavenPublication>("library") {
-                from(components.getByName("java"))
-            }
-        }
-    }
-
     tasks.withType<Test> {
         useJUnitPlatform()
     }
 }
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
+            password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
+        }
+    }
+}
+
+fun getEnvOrProperty(env: String, property: String): String? =
+    System.getenv(env) ?: findProperty(property)?.toString()

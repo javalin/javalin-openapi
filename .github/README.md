@@ -141,7 +141,7 @@ This plugin is also compatibile with Javalin 4.x, see: [Javalin RFC - OpenApi pl
 ### Notes
 * Reflection free, does not perform any extra operations at runtime
 * Uses `@OpenApi` to simplify migration from bundled OpenApi implementation
-* Supports Java 8+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
+* Supports Java 11+ (also 16 and any further releases) and Kotlin (through [Kapt](https://kotlinlang.org/docs/kapt.html))
 * Uses internal WebJar handler that works with `/*` route out of the box
 * Provides better projection of OpenAPI specification
 * Schema validation through Swagger core module
