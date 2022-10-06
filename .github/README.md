@@ -21,13 +21,13 @@ dependencies {
     def openapi = "5.0.1"
     
     // For Java projects
-    annotationProcessor("io.javalin:openapi-annotation-processor:$openapi")
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
     // For Kotlin projects
     kapt("io.javalin:openapi-annotation-processor:$openapi")
 
-    implementation("io.javalin:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
-    implementation("io.javalin:javalin-swagger-plugin:$openapi") // for Swagger UI
-    implementation("io.javalin:javalin-redoc-plugin:$openapi") // for ReDoc UI
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi") // for Swagger UI
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi") // for ReDoc UI
 }
 ```
 
@@ -53,19 +53,19 @@ dependencies {
     <dependencies>
         <!-- OpenApi plugin -->
         <dependency>
-            <groupId>io.javalin</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
             <version>${javalin.version}</version>
         </dependency>
         <!-- Swagger plugin -->
         <dependency>
-            <groupId>io.javalin</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-swagger-plugin</artifactId>
             <version>${javalin.version}</version>
         </dependency>
         <!-- ReDoc plugin -->
         <dependency>
-            <groupId>io.javalin</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-redoc-plugin</artifactId>
             <version>${javalin.version}</version>
         </dependency>
@@ -92,7 +92,7 @@ dependencies {
                     <configuration>
                         <annotationProcessorPaths>
                             <annotationProcessorPath>
-                                <groupId>io.javalin</groupId>
+                                <groupId>io.javalin.community.openapi</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
                                 <version>${javalin.version}</version>
                             </annotationProcessorPath>
@@ -114,15 +114,17 @@ Javalin.create(config -> {
     String deprecatedDocsPath = "/swagger-docs";
     
     OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-    openApiConfiguration.setTitle("AwesomeApp");
+    openApiConfiguration.getInfo().setTitle("AwesomeApp");
     openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
     config.plugins.register(new OpenApiPlugin(openApiConfiguration));
     
     SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
+    swaggerConfiguration.setUiPath("/swagger"); // by default it's /swagger
     swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
     config.plugins.register(new SwaggerPlugin(swaggerConfiguration));
     
     ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
+    reDocConfiguration.setUiPath("/redoc"); // by default it's /redoc
     reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
     config.plugins.register(new ReDocPlugin(reDocConfiguration));
 })
