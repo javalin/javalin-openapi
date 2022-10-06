@@ -12,7 +12,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "5.0.0"
+    version = "5.0.1"
 
     repositories {
         mavenCentral()
