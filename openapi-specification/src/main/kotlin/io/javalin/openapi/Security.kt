@@ -1,6 +1,6 @@
 package io.javalin.openapi
 
-data class Security(
+data class Security @JvmOverloads constructor(
     val name: String,
     val scopes: List<String> = listOf()
 )

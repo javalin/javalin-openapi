@@ -14,7 +14,7 @@ class ReDocConfiguration {
     var roles: Array<RouteRole> = emptyArray()
 }
 
-class ReDocPlugin(private val configuration: ReDocConfiguration) : Plugin, PluginLifecycleInit {
+class ReDocPlugin @JvmOverloads constructor(private val configuration: ReDocConfiguration = ReDocConfiguration()) : Plugin, PluginLifecycleInit {
 
     override fun init(app: Javalin) {}
 

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `java-library`
     kotlin("jvm") version "1.7.10"
@@ -83,6 +85,14 @@ allprojects {
     java {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "11"
+            languageVersion = "1.7"
+            freeCompilerArgs = listOf("-Xjvm-default=all") // For generating default methods in interfaces
+        }
     }
 }
 

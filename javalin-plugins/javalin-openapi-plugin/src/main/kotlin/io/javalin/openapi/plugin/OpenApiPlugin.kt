@@ -22,12 +22,12 @@ class OpenApiConfiguration {
     var roles: Array<RouteRole> = emptyArray()
 }
 
-data class SecurityConfiguration(
+data class SecurityConfiguration @JvmOverloads constructor(
     val securitySchemes: Map<String, SecurityScheme> = emptyMap(),
     val globalSecurity: List<Security> = emptyList()
 )
 
-class OpenApiPlugin(private val configuration: OpenApiConfiguration) : Plugin, PluginLifecycleInit {
+class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiConfiguration = OpenApiConfiguration()) : Plugin, PluginLifecycleInit {
 
     private var documentation: String? = null
     private val logger = LoggerFactory.getLogger(OpenApiPlugin::class.java)
