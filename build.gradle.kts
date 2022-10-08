@@ -19,58 +19,61 @@ allprojects {
         maven("https://maven.reposilite.com/snapshots")
     }
 
-    publishing {
-        repositories {
-            maven {
-                name = "reposilite-repository"
-                url = uri("https://maven.reposilite.com/${if (version.toString().endsWith("-SNAPSHOT")) "snapshots" else "releases"}")
+    description
+        ?.takeIf { it.isNotEmpty() }
+        ?.split("|")
+        ?.let { (projectName, projectDescription) ->
+            publishing {
+                publications {
+                    create<MavenPublication>("library") {
+                        pom {
+                            name.set(projectName)
+                            description.set(projectDescription)
+                            url.set("https://github.com/javalin/javalin-openapi")
 
-                credentials {
-                    username = getEnvOrProperty("MAVEN_NAME", "mavenUser")
-                    password = getEnvOrProperty("MAVEN_TOKEN", "mavenPassword")
+                            licenses {
+                                license {
+                                    name.set("The Apache License, Version 2.0")
+                                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                                }
+                            }
+                            developers {
+                                developer {
+                                    id.set("dzikoysk")
+                                    name.set("dzikoysk")
+                                    email.set("dzikoysk@dzikoysk.net")
+                                }
+                            }
+                            scm {
+                                connection.set("scm:git:git://github.com/javalin/javalin-openapi.git")
+                                developerConnection.set("scm:git:ssh://github.com/javalin/javalin-openapi.git")
+                                url.set("https://github.com/javalin/javalin-openapi.git")
+                            }
+                        }
+
+                        from(components.getByName("java"))
+                    }
+                }
+
+                repositories {
+                    maven {
+                        name = "reposilite-repository"
+                        url = uri("https://maven.reposilite.com/${if (version.toString().endsWith("-SNAPSHOT")) "snapshots" else "releases"}")
+
+                        credentials {
+                            username = getEnvOrProperty("MAVEN_NAME", "mavenUser")
+                            password = getEnvOrProperty("MAVEN_TOKEN", "mavenPassword")
+                        }
+                    }
+                }
+            }
+
+            signing {
+                if (findProperty("signing.keyId") != null) {
+                    sign(publishing.publications.getByName("library"))
                 }
             }
         }
-    }
-
-    publishing {
-        publications {
-            create<MavenPublication>("library") {
-                from(components.getByName("java"))
-
-                pom {
-                    name.set("Javalin OpenAPI Plugin")
-                    description.set("Compile-time OpenAPI integration for Javalin 5.x")
-                    url.set("https://github.com/javalin/javalin-openapi")
-
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("dzikoysk")
-                            name.set("dzikoysk")
-                            email.set("dzikoysk@dzikoysk.net")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:git://github.com/javalin/javalin-openapi.git")
-                        developerConnection.set("scm:git:ssh://github.com/javalin/javalin-openapi.git")
-                        url.set("https://github.com/javalin/javalin-openapi.git")
-                    }
-                }
-            }
-        }
-    }
-
-    signing {
-        if (findProperty("signing.keyId") != null) {
-            sign(publishing.publications.getByName("library"))
-        }
-    }
 
     java {
         withJavadocJar()
