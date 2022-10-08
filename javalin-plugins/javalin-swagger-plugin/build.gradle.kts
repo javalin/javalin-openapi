@@ -1,3 +1,5 @@
+description = "Javalin Swagger Plugin | Serve Swagger UI for OpenAPI specification"
+
 dependencies {
     api(project(":openapi-specification"))
     @Suppress("GradlePackageUpdate")
