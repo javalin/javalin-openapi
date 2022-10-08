@@ -107,34 +107,34 @@ public final class JavalinTest implements Handler {
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
             openApiConfiguration.setSecurity(new SecurityConfiguration(
-                    Map.ofEntries(
-                        entry("BasicAuth", new BasicAuth()),
-                        entry("BearerAuth", new BearerAuth()),
-                        entry("ApiKeyAuth", new ApiKeyAuth()),
-                        entry("CookieAuth", new CookieAuth("JSESSIONID")),
-                        entry("OpenID", new OpenID("https://example.com/.well-known/openid-configuration")),
-                        entry("OAuth2", new OAuth2(
-                                "This API uses OAuth 2 with the implicit grant flow.",
-                                List.of(
-                                        new ImplicitFlow(
-                                                "https://api.example.com/oauth2/authorize",
-                                                new HashMap<>() {{
-                                                    put("read_pets", "read your pets");
-                                                    put("write_pets", "modify pets in your account");
-                                                }}
-                                        )
-                                )
-                        ))
-                    ),
-                    List.of(
-                            new Security(
-                                    "oauth2",
-                                    List.of(
-                                            "write_pets",
-                                            "read_pets"
-                                    )
+                Map.ofEntries(
+                    entry("BasicAuth", new BasicAuth()),
+                    entry("BearerAuth", new BearerAuth()),
+                    entry("ApiKeyAuth", new ApiKeyAuth()),
+                    entry("CookieAuth", new CookieAuth("JSESSIONID")),
+                    entry("OpenID", new OpenID("https://example.com/.well-known/openid-configuration")),
+                    entry("OAuth2", new OAuth2(
+                        "This API uses OAuth 2 with the implicit grant flow.",
+                        List.of(
+                            new ImplicitFlow(
+                                "https://api.example.com/oauth2/authorize",
+                                new HashMap<>() {{
+                                    put("read_pets", "read your pets");
+                                    put("write_pets", "modify pets in your account");
+                                }}
                             )
+                        )
+                    ))
+                ),
+                List.of(
+                    new Security(
+                        "oauth2",
+                        List.of(
+                            "write_pets",
+                            "read_pets"
+                        )
                     )
+                )
             ));
             openApiConfiguration.setDocumentProcessor(docs -> { // you can add whatever you want to this document using your favourite json api
                 docs.set("test", new TextNode("Value"));
@@ -157,49 +157,50 @@ public final class JavalinTest implements Handler {
 
     @Override
     @OpenApi(
-            path = ROUTE,
-            operationId = "cli",
-            methods = HttpMethod.POST,
-            summary = "Remote command execution",
-            description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
-            tags = { "Cli" },
-            security = {
-                    @OpenApiSecurity(name = "BasicAuth")
-            },
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = String.class), // simple type
-                            @OpenApiContent(from = EntityDto[].class), // array
-                            @OpenApiContent(from = LombokEntity.class), // lombok
-                            @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
-                            @OpenApiContent(mimeType = "multipart/form-data", properties = {
-                                    @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
-                                    @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
-                            })
-                    }
-            ),
-            headers = {
-                    //@OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
-                    @OpenApiParam(name = "Optional"),
-                    @OpenApiParam(name = "X-Rick", example = "Rolled"),
-                    @OpenApiParam(name = "X-SomeNumber", required = true, type = Integer.class, example = "500")
-            },
-            pathParams = {
-                    @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
-            },
-            responses = {
-                    @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
-                            @OpenApiContent(from = EntityDto[].class)
-                    }),
-                    @OpenApiResponse(
-                            status = "400",
-                            description = "Error message related to the invalid command format (0 < command length < " + 10 + ")",
-                            content = @OpenApiContent(from = EntityDto[].class)
-                    ),
-                    @OpenApiResponse(status = "401", description = "Error message related to the unauthorized access", content = {
-                            @OpenApiContent(from = EntityDto[].class)
-                    })
+        path = ROUTE,
+        operationId = "cli",
+        methods = HttpMethod.POST,
+        summary = "Remote command execution",
+        description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
+        tags = { "Cli" },
+        security = {
+            @OpenApiSecurity(name = "BasicAuth")
+        },
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = String.class), // simple type
+                @OpenApiContent(from = EntityDto[].class), // array
+                @OpenApiContent(from = LombokEntity.class), // lombok
+                @OpenApiContent(from = KotlinEntity.class), // kotlin
+                @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
+                @OpenApiContent(mimeType = "multipart/form-data", properties = {
+                        @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
+                        @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
+                })
             }
+        ),
+        headers = {
+            //@OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
+            @OpenApiParam(name = "Optional"),
+            @OpenApiParam(name = "X-Rick", example = "Rolled"),
+            @OpenApiParam(name = "X-SomeNumber", required = true, type = Integer.class, example = "500")
+        },
+        pathParams = {
+            @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
+        },
+        responses = {
+            @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
+                @OpenApiContent(from = EntityDto[].class)
+            }),
+            @OpenApiResponse(
+                status = "400",
+                description = "Error message related to the invalid command format (0 < command length < " + 10 + ")",
+                content = @OpenApiContent(from = EntityDto[].class)
+            ),
+            @OpenApiResponse(status = "401", description = "Error message related to the unauthorized access", content = {
+                @OpenApiContent(from = EntityDto[].class)
+            })
+        }
     )
     public void handle(@NotNull Context ctx) { }
 

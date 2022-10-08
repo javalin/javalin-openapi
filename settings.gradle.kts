@@ -3,8 +3,10 @@ rootProject.name = "javalin-openapi"
 include(
     "openapi-specification",
     "openapi-annotation-processor",
-    "openapi-test",
-    "javalin-openapi-plugin",
-    "javalin-swagger-plugin",
-    "javalin-redoc-plugin",
+    "javalin-plugins",
+    "javalin-plugins:javalin-openapi-plugin",
+    "javalin-plugins:javalin-swagger-plugin",
+    "javalin-plugins:javalin-redoc-plugin",
+    "examples",
+    "examples:javalin-gradle-kotlin"
 )
