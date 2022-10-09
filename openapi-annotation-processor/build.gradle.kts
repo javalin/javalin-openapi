@@ -1,7 +1,8 @@
 description = "Javalin OpenAPI Annotation Processor | Generates OpenApi specification from @OpenApi annotations"
 
 dependencies {
-    implementation(project(":openapi-specification"))
+    api(project(":openapi-specification"))
+
     implementation("com.google.code.gson:gson:2.9.0")
     @Suppress("GradlePackageUpdate")
     implementation("io.swagger.parser.v3:swagger-parser:2.0.32")

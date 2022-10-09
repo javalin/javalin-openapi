@@ -1,11 +1,15 @@
 package io.javalin.openapi.processor.utils
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
+import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
+import io.javalin.openapi.processor.utils.TypesUtils.DataType.DEFAULT
+import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
 import javax.lang.model.element.Element
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
+import javax.lang.model.type.TypeVariable
 
 internal object TypesUtils {
 
@@ -39,60 +43,55 @@ internal object TypesUtils {
         "LocalDate" to Data("string", "date"),
 
         "LocalDateTime" to Data("string", "date-time"),
-        "Instant" to Data("string", "date-time")
+        "Instant" to Data("string", "date-time"),
+
+        "Object" to Data("object"),
+        "Map" to Data("object"),
     )
 
-    data class Type(
-        val element: Element,
-        val dimensions: Int
-    ) {
-
-        fun isArray(): Boolean =
-            dimensions > 0
-
-        fun getSimpleName(): String =
-            element.simpleName.toString()
-
+    enum class DataType {
+        DEFAULT,
+        ARRAY,
+        DICTIONARY
     }
 
-    fun getType(typeMirror: TypeMirror): Type {
-        var dimensions = 0
-        var type = typeMirror
+    data class DataModel(
+        val typeMirror: TypeMirror,
+        val sourceElement: Element,
+        var generics: List<DataModel> = emptyList(),
+        val type: DataType = DEFAULT
+    ) {
+        val simpleName: String = sourceElement.simpleName.toString()
+    }
 
-        while (type is ArrayType) {
-            type = type.componentType
-            dimensions++
-        }
+    private fun Element.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel =
+        DataModel(asType(), this, generics, type)
 
+    fun TypeMirror.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel? {
         val types = OpenApiAnnotationProcessor.types
         val collectionType = OpenApiAnnotationProcessor.elements.getTypeElement(Collection::class.java.name)
+        val mapType = OpenApiAnnotationProcessor.elements.getTypeElement(Map::class.java.name)
 
-        while (types.isAssignable(types.erasure(type), collectionType.asType())) {
-            type = (type as DeclaredType).typeArguments[0]
-            dimensions++
+        return when (this) {
+            is TypeVariable -> upperBound?.toModel(generics, type) ?: lowerBound?.toModel(generics, type)
+            is PrimitiveType -> types.boxedClass(this).toModel(generics, type)
+            is ArrayType -> componentType.toModel(generics, type = ARRAY)
+            is DeclaredType -> when {
+                types.isAssignable(types.erasure(this), mapType.asType()) -> DataModel(this, mapType, listOfNotNull(typeArguments[0]?.toModel(), typeArguments[1]?.toModel()), DICTIONARY)
+                types.isAssignable(types.erasure(this), collectionType.asType()) -> typeArguments[0]?.toModel(generics, ARRAY)
+                else -> DataModel(this, asElement(), typeArguments.mapNotNull { it.toModel() }, type)
+            }
+            else -> types.asElement(this)?.toModel(generics, type)
         }
-
-        val element =
-            if (type is PrimitiveType) {
-                types.boxedClass(type)
-            }
-            else {
-                types.asElement(type)
-            }
-
-        return Type(element, dimensions)
     }
 
     fun detectContentType(typeMirror: TypeMirror): String {
-        val type = getType(typeMirror)
+        val model = typeMirror.toModel() ?: return ""
 
-        if (type.isArray()) {
-            return "application/json"
-        }
-
-        return when (type.getSimpleName()) {
-            "String" -> "text/plain"
-            "ByteArray", "[B" -> "application/octet-stream"
+        return when {
+            model.type == ARRAY -> "application/json"
+            model.simpleName == "String" -> "text/plain"
+            model.simpleName == "ByteArray" || model.simpleName == "[B" -> "application/octet-stream"
             else -> "application/json"
         }
     }

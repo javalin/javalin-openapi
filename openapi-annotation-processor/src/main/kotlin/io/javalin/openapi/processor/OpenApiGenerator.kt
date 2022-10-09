@@ -21,6 +21,10 @@ import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.QUERY
 import io.javalin.openapi.processor.annotations.OpenApiPropertyTypeInstance
 import io.javalin.openapi.processor.utils.JsonUtils
 import io.javalin.openapi.processor.utils.TypesUtils
+import io.javalin.openapi.processor.utils.TypesUtils.DataModel
+import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
+import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
+import io.javalin.openapi.processor.utils.TypesUtils.toModel
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
@@ -166,12 +170,18 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val type = TypesUtils.getType(componentReference)
+                val type = componentReference.toModel() ?: continue
+
+                if (type.sourceElement.toString() == "java.lang.Object") {
+                    generatedComponents.add(componentReference)
+                    continue
+                }
+
                 val schema = JsonObject()
                 val properties = JsonObject()
                 val requiredProperties = mutableListOf<String>()
 
-                for (property in type.element.enclosedElements) {
+                for (property in type.sourceElement.enclosedElements) {
                     if (property is ExecutableElement && property.kind == METHOD) {
                         if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
                             continue
@@ -207,7 +217,7 @@ internal class OpenApiGenerator {
 
                 schema.addProperty("type", "object")
                 schema.add("properties", properties)
-                schemas.add(type.getSimpleName(), schema)
+                schemas.add(type.simpleName, schema)
 
                 if (requiredProperties.isNotEmpty()) {
                     val required = JsonArray()
@@ -306,15 +316,22 @@ internal class OpenApiGenerator {
     }
 
     private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String? = null) {
-        val type = TypesUtils.getType(typeMirror)
+        val model = typeMirror.toModel() ?: return
 
-        if (isArray || type.isArray()) {
-            schema.addProperty("type", "array")
-            val items = JsonObject()
-            addType(items, typeMirror)
-            schema.add("items", items)
-        } else {
-            addType(schema, typeMirror)
+        when {
+            isArray || model.type == ARRAY -> {
+                schema.addProperty("type", "array")
+                val items = JsonObject()
+                addType(items, model)
+                schema.add("items", items)
+            }
+            model.type == DICTIONARY -> {
+                schema.addProperty("type", "object")
+                val additionalProperties = JsonObject()
+                addType(additionalProperties, model.generics.get(1))
+                schema.add("additionalProperties", additionalProperties)
+            }
+            else -> addType(schema, model)
         }
 
         if (exampleValue != null) {
@@ -322,13 +339,12 @@ internal class OpenApiGenerator {
         }
     }
 
-    private fun addType(parent: JsonObject, typeMirror: TypeMirror) {
-        val type = TypesUtils.getType(typeMirror)
-        val nonRefType = TypesUtils.NON_REF_TYPES[type.getSimpleName()]
+    private fun addType(parent: JsonObject, model: DataModel) {
+        val nonRefType = TypesUtils.NON_REF_TYPES[model.simpleName]
 
         if (nonRefType == null) {
-            componentReferences.add(typeMirror)
-            parent.addProperty("\$ref", "#/components/schemas/${type.getSimpleName()}")
+            componentReferences.add(model.typeMirror)
+            parent.addProperty("\$ref", "#/components/schemas/${model.simpleName}")
             return
         }
 
