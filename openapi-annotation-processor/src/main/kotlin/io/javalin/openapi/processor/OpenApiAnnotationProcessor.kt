@@ -42,7 +42,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         // messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Annotation Processor :: ${annotations.size} annotation(s) found")
 
         try {
-            val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi.json")
+            val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi-plugin/openapi.json")
             val location = resource.toUri()
 
             val openApiAnnotations = OpenApiLoader.loadAnnotations(annotations, roundEnv)
@@ -63,7 +63,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
                 messager.printMessage(WARNING, it)
             }
         } catch (filerException: FilerException) {
-            // openapi.json has been created during previous compilation phase
+            // openapi-plugin/openapi.json has been created during previous compilation phase
         } catch (throwable: Throwable) {
             ProcessorUtils.printException(throwable)
         }

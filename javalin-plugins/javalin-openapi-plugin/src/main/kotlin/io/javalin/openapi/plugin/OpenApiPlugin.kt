@@ -33,7 +33,7 @@ class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApi
     private val logger = LoggerFactory.getLogger(OpenApiPlugin::class.java)
 
     override fun init(app: Javalin) {
-        this.documentation = readResource("/openapi.json")?.let { modifyDocumentation(it) }
+        this.documentation = readResource("/openapi-plugin/openapi.json")?.let { modifyDocumentation(it) }
     }
 
     private fun modifyDocumentation(rawDocs: String): String =

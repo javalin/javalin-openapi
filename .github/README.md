@@ -147,12 +147,12 @@ This plugin is also compatibile with Javalin 4.x, see: [Javalin RFC - OpenApi pl
 * [Javalin OpenApi Example](https://github.com/paulkagiri/JavalinOpenApiExample) by [paulkagiri](https://github.com/paulkagiri)
 
 ### Repository structure
-* `openapi-annotation-processor` - compile-time annotation processor, should generate `openapi.json` resource or just a class
+* `openapi-annotation-processor` - compile-time annotation processor, should generate `/openapi-plugin/openapi.json` resource
 * `openapi-specification` - annotations & classes used to describe OpenAPI specification
 * `openapi-test` - example Javalin application that uses OpenApi plugin in Gradle & Maven
 
 Javalin:
 
-* `javalin-openapi-plugin` - loads `openapi.json` resource and serves OpenApi endpoint
+* `javalin-openapi-plugin` - loads `/openapi-plugin/openapi.json` resource and serves main OpenApi endpoint
 * `javalin-swagger-plugin` - serves Swagger UI
 * `javalin-redoc-plugin` - serves ReDoc UI
