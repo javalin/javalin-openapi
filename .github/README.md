@@ -23,7 +23,7 @@ dependencies {
     // For Java projects
     annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
     // For Kotlin projects
-    kapt("io.javalin:openapi-annotation-processor:$openapi")
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
 
     implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi") // for /openapi route with JSON scheme
     implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi") // for Swagger UI
