@@ -75,8 +75,8 @@ allprojects {
                     }
                 }
 
-                signing {
-                    if (findProperty("signing.keyId") != null) {
+                if (findProperty("signing.keyId").takeIf { it != null && it.toString().trim().isNotEmpty() } != null) {
+                    signing {
                         sign(publishing.publications.getByName("library"))
                     }
                 }
