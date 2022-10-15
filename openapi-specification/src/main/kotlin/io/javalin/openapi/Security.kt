@@ -1,9 +1,17 @@
 package io.javalin.openapi
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 data class Security @JvmOverloads constructor(
     val name: String,
-    val scopes: List<String> = listOf()
-)
+    val scopes: MutableList<String> = mutableListOf()
+) {
+
+    fun withScope(scope: String): Security = also {
+        scopes.add(scope)
+    }
+
+}
 
 interface SecurityScheme {
     val type: String
@@ -35,32 +43,51 @@ class OpenID (val openIdConnectUrl: String) : SecurityScheme {
 
 class OAuth2 @JvmOverloads constructor(
     val description: String,
-    val flows: List<OAuth2Flow> = emptyList(),
+    val flows: MutableMap<String, OAuth2Flow<*>> = mutableMapOf(),
 ) : SecurityScheme {
     override val type: String = "oauth2"
+
+    fun withFlow(flow: OAuth2Flow<*>): OAuth2 = also {
+        flows[flow.flowType] = flow
+    }
 }
 
-interface OAuth2Flow {
-    val scopes: Map<String, String>
+interface OAuth2Flow<I : OAuth2Flow<I>> {
+    @get:JsonIgnore
+    val flowType: String
+    val scopes: MutableMap<String, String>
+
+    @Suppress("UNCHECKED_CAST")
+    fun withScope(scope: String, description: String): I = also {
+        scopes[scope] = description
+    } as I
 }
 
 class AuthorizationCodeFlow @JvmOverloads constructor(
     val authorizationUrl: String,
     val tokenUrl: String,
-    override val scopes: Map<String, String> = emptyMap()
-) : OAuth2Flow
+    override val scopes: MutableMap<String, String> = mutableMapOf()
+) : OAuth2Flow<AuthorizationCodeFlow> {
+    override val flowType: String = "authorizationCode"
+}
 
 class ImplicitFlow @JvmOverloads constructor(
     val authorizationUrl: String,
-    override val scopes: Map<String, String> = emptyMap()
-) : OAuth2Flow
+    override val scopes: MutableMap<String, String> = mutableMapOf()
+) : OAuth2Flow<ImplicitFlow> {
+    override val flowType: String = "implicit"
+}
 
 class PasswordFlow @JvmOverloads constructor(
     val tokenUrl: String,
-    override val scopes: Map<String, String> = emptyMap()
-) : OAuth2Flow
+    override val scopes: MutableMap<String, String> = mutableMapOf()
+) : OAuth2Flow<PasswordFlow> {
+    override val flowType: String = "password"
+}
 
 class ClientCredentials @JvmOverloads constructor(
     val tokenUrl: String,
-    override val scopes: Map<String, String> = emptyMap()
-) : OAuth2Flow
+    override val scopes: MutableMap<String, String> = mutableMapOf()
+) : OAuth2Flow<ClientCredentials> {
+    override val flowType: String = "clientCredentials "
+}

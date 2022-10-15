@@ -105,37 +105,23 @@ public final class JavalinTest implements Handler {
             openApiConfiguration.setInfo(openApiInfo);
             openApiConfiguration.setServers(servers);
             openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
+
             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-            openApiConfiguration.setSecurity(new SecurityConfiguration(
-                Map.ofEntries(
-                    entry("BasicAuth", new BasicAuth()),
-                    entry("BearerAuth", new BearerAuth()),
-                    entry("ApiKeyAuth", new ApiKeyAuth()),
-                    entry("CookieAuth", new CookieAuth("JSESSIONID")),
-                    entry("OpenID", new OpenID("https://example.com/.well-known/openid-configuration")),
-                    entry("OAuth2", new OAuth2(
-                        "This API uses OAuth 2 with the implicit grant flow.",
-                        List.of(
-                            new ImplicitFlow(
-                                "https://api.example.com/oauth2/authorize",
-                                new HashMap<>() {{
-                                    put("read_pets", "read your pets");
-                                    put("write_pets", "modify pets in your account");
-                                }}
-                            )
-                        )
-                    ))
-                ),
-                List.of(
-                    new Security(
-                        "oauth2",
-                        List.of(
-                            "write_pets",
-                            "read_pets"
-                        )
-                    )
-                )
-            ));
+            openApiConfiguration.setSecurity(new SecurityConfiguration()
+                .withSecurityScheme("BasicAuth", new BasicAuth())
+                .withSecurityScheme("BearerAuth", new BearerAuth())
+                .withSecurityScheme("ApiKeyAuth", new ApiKeyAuth())
+                .withSecurityScheme("CookieAuth", new CookieAuth("JSESSIONID"))
+                .withSecurityScheme("OpenID", new OpenID("https://example.com/.well-known/openid-configuration"))
+                .withSecurityScheme("OAuth2", new OAuth2("This API uses OAuth 2 with the implicit grant flow.")
+                    .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
+                        .withScope("read_pets", "read your pets")
+                        .withScope("write_pets", "modify pets in your account")))
+                .withSecurity(new Security("oauth2")
+                    .withScope("write_pets")
+                    .withScope("read_pets"))
+            );
+
             openApiConfiguration.setDocumentProcessor(docs -> { // you can add whatever you want to this document using your favourite json api
                 docs.set("test", new TextNode("Value"));
                 return docs.toPrettyString();

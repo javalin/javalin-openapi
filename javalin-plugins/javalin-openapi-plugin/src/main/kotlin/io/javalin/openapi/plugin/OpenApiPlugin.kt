@@ -23,9 +23,19 @@ class OpenApiConfiguration {
 }
 
 data class SecurityConfiguration @JvmOverloads constructor(
-    val securitySchemes: Map<String, SecurityScheme> = emptyMap(),
-    val globalSecurity: List<Security> = emptyList()
-)
+    val securitySchemes: MutableMap<String, SecurityScheme> = mutableMapOf(),
+    val globalSecurity: MutableList<Security> = mutableListOf()
+) {
+
+    fun withSecurityScheme(schemeName: String, securityScheme: SecurityScheme): SecurityConfiguration = also {
+        securitySchemes[schemeName] = securityScheme
+    }
+
+    fun withSecurity(security: Security): SecurityConfiguration = also {
+        globalSecurity.add(security)
+    }
+
+}
 
 class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiConfiguration = OpenApiConfiguration()) : Plugin, PluginLifecycleInit {
 
