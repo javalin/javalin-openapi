@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
 
-    implementation("io.javalin:javalin:5.0.1")
+    implementation("io.javalin:javalin:5.1.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0-rc1")
 
     val logback = "1.4.3"
