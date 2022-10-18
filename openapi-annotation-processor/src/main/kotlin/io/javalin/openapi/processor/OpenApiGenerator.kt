@@ -319,6 +319,10 @@ internal class OpenApiGenerator {
         val model = typeMirror.toModel() ?: return
 
         when {
+            (model.type == ARRAY || isArray) && model.simpleName == "Byte" -> {
+                schema.addProperty("type", "string")
+                schema.addProperty("format", "binary")
+            }
             isArray || model.type == ARRAY -> {
                 schema.addProperty("type", "array")
                 val items = JsonObject()
