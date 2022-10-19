@@ -142,7 +142,7 @@ This plugin is also compatibile with Javalin 4.x, see: [Javalin RFC - OpenApi pl
 * Schema validation through Swagger core module
 
 ### Other examples
-* [Test module](https://github.com/javalin/javalin-openapi/blob/main/openapi-test/src/main/java/io/javalin/openapi/plugin/test/JavalinTest.java) - `JavalinTest` shows how this plugin work in Java codebase using various features
+* [Test module](https://github.com/javalin/javalin-openapi/blob/main/examples/javalin-gradle-kotlin/src/main/java/io/javalin/openapi/plugin/test/JavalinTest.java) - `JavalinTest` shows how this plugin work in Java codebase using various features
 * [Reposilite](https://github.com/dzikoysk/reposilite) - real world app using Javalin and OpenApi integration
 * [Javalin OpenApi Example](https://github.com/paulkagiri/JavalinOpenApiExample) by [paulkagiri](https://github.com/paulkagiri)
 
