@@ -16,11 +16,16 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
 
+    // javalin
     implementation("io.javalin:javalin:5.1.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0-rc1")
 
+    // logging
     val logback = "1.4.3"
     implementation("ch.qos.logback:logback-core:$logback")
     implementation("ch.qos.logback:logback-classic:$logback")
     implementation("org.slf4j:slf4j-api:2.0.3")
+
+    // some test integrations
+    implementation("org.mongodb:bson:4.7.2")
 }

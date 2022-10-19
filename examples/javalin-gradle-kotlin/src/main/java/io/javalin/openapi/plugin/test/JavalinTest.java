@@ -37,6 +37,7 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import lombok.Data;
+import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -199,7 +200,6 @@ public final class JavalinTest implements Handler {
         private final @NotNull Foo foo;
         private final @NotNull List<Foo> foos;
         private final @NotNull Map<String, Bar> bars = new HashMap<>();
-
         private Bar bar;
 
         public EntityDto(int status, @NotNull String message, @NotNull Foo foo, @NotNull List<Foo> foos, @Nullable Bar bar) {
@@ -264,6 +264,11 @@ public final class JavalinTest implements Handler {
         @OpenApiExample("5050")
         public int getVeryImportantNumber() {
             return status + 1;
+        }
+
+        // should be displayed as string
+        public ObjectId getObjectId() {
+            return new ObjectId();
         }
 
     }
