@@ -89,9 +89,9 @@ internal object TypesUtils {
         val model = typeMirror.toModel() ?: return ""
 
         return when {
+            (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" -> "application/octet-stream"
             model.type == ARRAY -> "application/json"
             model.simpleName == "String" -> "text/plain"
-            model.simpleName == "ByteArray" || model.simpleName == "[B" -> "application/octet-stream"
             else -> "application/json"
         }
     }
