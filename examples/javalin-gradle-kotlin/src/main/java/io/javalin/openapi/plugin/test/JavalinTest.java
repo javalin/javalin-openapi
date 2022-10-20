@@ -12,6 +12,7 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.ImplicitFlow;
 import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiByFields;
 import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
@@ -160,7 +161,8 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = LombokEntity.class), // lombok
                 @OpenApiContent(from = KotlinEntity.class), // kotlin
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
-                @OpenApiContent(from = RecordEntity.class),
+                @OpenApiContent(from = RecordEntity.class), // record class
+                @OpenApiContent(from = DtoWithFields.class), // map only fields
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                         @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
@@ -323,6 +325,12 @@ public final class JavalinTest implements Handler {
 
     }
 
+    // should match properties of record class
     record RecordEntity(String name, String surname) {}
+
+    @OpenApiByFields
+    static final class DtoWithFields {
+        public String name;
+    }
 
 }
