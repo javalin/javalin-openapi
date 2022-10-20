@@ -1,3 +1,18 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+        languageVersion = "1.7"
+        freeCompilerArgs = listOf("-Xjvm-default=all") // For generating default methods in interfaces
+    }
+}
+
 sourceSets.getByName("main") {
     java.srcDir("src/main/kotlin")
 }

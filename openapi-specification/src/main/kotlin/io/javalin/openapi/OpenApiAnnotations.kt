@@ -5,6 +5,7 @@
 
 package io.javalin.openapi
 
+import io.javalin.openapi.Visibility.PUBLIC
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
@@ -40,6 +41,7 @@ annotation class OpenApi(
 )
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiResponse(
     val status: String,
     val content: Array<OpenApiContent> = [],
@@ -47,6 +49,7 @@ annotation class OpenApiResponse(
 )
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiParam(
     val name: String,
     val type: KClass<*> = String::class,
@@ -59,6 +62,7 @@ annotation class OpenApiParam(
 )
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiRequestBody(
     val content: Array<OpenApiContent>,
     val required: Boolean = false,
@@ -75,6 +79,7 @@ annotation class OpenApiRequestBody(
 //)
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiContent(
     val from: KClass<*> = NULL_CLASS::class,
     val mimeType: String = ContentType.AUTODETECT,
@@ -84,6 +89,7 @@ annotation class OpenApiContent(
 )
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiContentProperty(
     val name: String,
     val isArray: Boolean = false,
@@ -92,27 +98,45 @@ annotation class OpenApiContentProperty(
 )
 
 @Target()
+@Retention(SOURCE)
 annotation class OpenApiSecurity(
     val name: String,
     val scopes: Array<String> = []
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(SOURCE)
 annotation class OpenApiIgnore
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(SOURCE)
 annotation class OpenApiName(
     val value: String
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(SOURCE)
 annotation class OpenApiExample(
     val value: String
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(SOURCE)
 annotation class OpenApiPropertyType(
     val definedBy: KClass<*>
+)
+
+enum class Visibility(val priority: Int) {
+    PUBLIC(4),
+    DEFAULT(3),
+    PROTECTED(2),
+    PRIVATE(1)
+}
+
+@Target(CLASS)
+@Retention(SOURCE)
+annotation class OpenApiByFields(
+    val value: Visibility = PUBLIC
 )
 
 /** Null class because annotations do not support null values */

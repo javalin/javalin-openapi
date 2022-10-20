@@ -6,9 +6,11 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
+import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.Visibility
 import io.javalin.openapi.processor.annotations.OpenApiContentInstance
 import io.javalin.openapi.processor.annotations.OpenApiInstance
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance
@@ -25,8 +27,11 @@ import io.javalin.openapi.processor.utils.TypesUtils.DataModel
 import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
 import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
 import io.javalin.openapi.processor.utils.TypesUtils.toModel
+import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 
 internal class OpenApiGenerator {
@@ -164,6 +169,9 @@ internal class OpenApiGenerator {
         val schemas = JsonObject()
         val generatedComponents = mutableSetOf<TypeMirror>()
 
+        val objectType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object")
+        val recordType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record")
+
         while (generatedComponents.size < componentReferences.size) {
             for (componentReference in componentReferences.toMutableList()) {
                 if (generatedComponents.contains(componentReference)) {
@@ -181,9 +189,40 @@ internal class OpenApiGenerator {
                 val properties = JsonObject()
                 val requiredProperties = mutableListOf<String>()
 
+                val isRecord = when (recordType) {
+                    null -> false
+                    else -> OpenApiAnnotationProcessor.types.isAssignable(type.typeMirror, recordType.asType())
+                }
+
+                val acceptFields = type.sourceElement.getAnnotation(OpenApiByFields::class.java)
+
                 for (property in type.sourceElement.enclosedElements) {
-                    if (property is ExecutableElement && property.kind == METHOD) {
+                    if (property is Element) {
+                        if (property.kind != METHOD && acceptFields == null) {
+                            continue
+                        }
+
+                        if (acceptFields != null) {
+                            val modifiers = property.modifiers
+
+                            val fieldVisibility = when {
+                                modifiers.contains(Modifier.PRIVATE) -> Visibility.PRIVATE
+                                modifiers.contains(Modifier.PROTECTED) -> Visibility.PROTECTED
+                                modifiers.contains(Modifier.DEFAULT) -> Visibility.DEFAULT
+                                modifiers.contains(Modifier.PUBLIC) -> Visibility.PUBLIC
+                                else -> Visibility.DEFAULT
+                            }
+
+                            if (acceptFields.value.priority > fieldVisibility.priority) {
+                                continue
+                            }
+                        }
+
                         if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
+                            continue
+                        }
+
+                        if (objectType.enclosedElements.any { it.simpleName == property.simpleName }) {
                             continue
                         }
 
@@ -192,6 +231,7 @@ internal class OpenApiGenerator {
 
                         val name = when {
                             customName != null -> customName.value
+                            isRecord || acceptFields != null -> simpleName
                             simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").replaceFirstChar { it.lowercase() }
                             simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").replaceFirstChar { it.lowercase() }
                             else -> continue
@@ -200,7 +240,9 @@ internal class OpenApiGenerator {
                         val propertyType = property.annotationMirrors
                             .firstOrNull { it.annotationType.asElement().simpleName.contentEquals("OpenApiPropertyType") }
                             ?.let { OpenApiPropertyTypeInstance(it).definedBy() }
-                            ?: property.returnType
+                            ?: (property as? ExecutableElement)?.returnType
+                            ?: (property as? VariableElement)?.asType()
+                            ?: continue
 
                         val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
                             ?.value
