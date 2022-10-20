@@ -164,6 +164,9 @@ internal class OpenApiGenerator {
         val schemas = JsonObject()
         val generatedComponents = mutableSetOf<TypeMirror>()
 
+        val objectType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object")
+        val recordType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record")
+
         while (generatedComponents.size < componentReferences.size) {
             for (componentReference in componentReferences.toMutableList()) {
                 if (generatedComponents.contains(componentReference)) {
@@ -181,9 +184,18 @@ internal class OpenApiGenerator {
                 val properties = JsonObject()
                 val requiredProperties = mutableListOf<String>()
 
+                val isRecord = when (recordType) {
+                    null -> false
+                    else -> OpenApiAnnotationProcessor.types.isAssignable(type.typeMirror, recordType.asType())
+                }
+
                 for (property in type.sourceElement.enclosedElements) {
                     if (property is ExecutableElement && property.kind == METHOD) {
                         if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
+                            continue
+                        }
+
+                        if (objectType.enclosedElements.any { it.simpleName == property.simpleName }) {
                             continue
                         }
 
@@ -192,6 +204,7 @@ internal class OpenApiGenerator {
 
                         val name = when {
                             customName != null -> customName.value
+                            isRecord -> simpleName
                             simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").replaceFirstChar { it.lowercase() }
                             simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").replaceFirstChar { it.lowercase() }
                             else -> continue

@@ -160,6 +160,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = LombokEntity.class), // lombok
                 @OpenApiContent(from = KotlinEntity.class), // kotlin
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
+                @OpenApiContent(from = RecordEntity.class),
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                         @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
@@ -307,6 +308,7 @@ public final class JavalinTest implements Handler {
     }
 
     // should pick upper/lower bound type for generics
+    @SuppressWarnings("ClassCanBeRecord")
     static final class EntityWithGenericType<V extends Bar> {
 
         private final V value;
@@ -320,5 +322,7 @@ public final class JavalinTest implements Handler {
         }
 
     }
+
+    record RecordEntity(String name, String surname) {}
 
 }
