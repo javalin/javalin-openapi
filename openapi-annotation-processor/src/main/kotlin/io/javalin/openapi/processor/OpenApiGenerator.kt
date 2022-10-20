@@ -6,9 +6,11 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
+import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.processor.annotations.OpenApiByFieldsInstance
 import io.javalin.openapi.processor.annotations.OpenApiContentInstance
 import io.javalin.openapi.processor.annotations.OpenApiInstance
 import io.javalin.openapi.processor.annotations.OpenApiParamInstance
@@ -189,8 +191,18 @@ internal class OpenApiGenerator {
                     else -> OpenApiAnnotationProcessor.types.isAssignable(type.typeMirror, recordType.asType())
                 }
 
+                val acceptFields = type.sourceElement.getAnnotation(OpenApiByFields::class.java)?.value
+
                 for (property in type.sourceElement.enclosedElements) {
-                    if (property is ExecutableElement && property.kind == METHOD) {
+                    if (property is ExecutableElement) {
+                        if (property.kind != METHOD && acceptFields == null) {
+                            continue
+                        }
+
+                        if (acceptFields != null) {
+                            println(property)
+                        }
+
                         if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
                             continue
                         }
