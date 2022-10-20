@@ -30,6 +30,7 @@ import io.javalin.openapi.OpenApiServer;
 import io.javalin.openapi.OpenApiServerVariable;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
+import io.javalin.openapi.Visibility;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.SecurityConfiguration;
@@ -328,9 +329,13 @@ public final class JavalinTest implements Handler {
     // should match properties of record class
     record RecordEntity(String name, String surname) {}
 
-    @OpenApiByFields
+    // should query fields
+    @OpenApiByFields(Visibility.PROTECTED) // by default: PUBLIC
     static final class DtoWithFields {
-        public String name;
+        public String publicName;
+        String defaultName;
+        protected String protectedName;
+        private String privateName;
     }
 
 }

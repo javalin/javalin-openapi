@@ -126,11 +126,11 @@ annotation class OpenApiPropertyType(
     val definedBy: KClass<*>
 )
 
-enum class Visibility {
-    PUBLIC,
-    PROTECTED,
-    DEFAULT,
-    PRIVATE
+enum class Visibility(val priority: Int) {
+    PUBLIC(4),
+    DEFAULT(3),
+    PROTECTED(2),
+    PRIVATE(1)
 }
 
 @Target(CLASS)
