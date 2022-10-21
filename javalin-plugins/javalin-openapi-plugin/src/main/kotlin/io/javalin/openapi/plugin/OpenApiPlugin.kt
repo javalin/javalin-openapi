@@ -37,7 +37,7 @@ data class SecurityConfiguration @JvmOverloads constructor(
 
 }
 
-class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiConfiguration = OpenApiConfiguration()) : Plugin, PluginLifecycleInit {
+open class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiConfiguration = OpenApiConfiguration()) : Plugin, PluginLifecycleInit {
 
     private var documentation: String? = null
     private val logger = LoggerFactory.getLogger(OpenApiPlugin::class.java)

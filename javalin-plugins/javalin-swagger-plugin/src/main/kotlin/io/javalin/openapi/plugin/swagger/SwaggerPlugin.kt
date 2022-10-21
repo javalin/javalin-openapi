@@ -14,7 +14,7 @@ class SwaggerConfiguration {
     var roles: Array<RouteRole> = emptyArray()
 }
 
-class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin, PluginLifecycleInit {
+open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin, PluginLifecycleInit {
 
     override fun init(app: Javalin) {}
 
