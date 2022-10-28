@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    def openapi = "5.1.1"
+    def openapi = "5.1.2"
     
     // For Java projects
     annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
@@ -39,7 +39,7 @@ dependencies {
 ```xml
 <project>
     <properties>
-        <javalin.version>5.1.1</javalin.version>
+        <javalin.version>5.1.2</javalin.version>
     </properties>
     
     <repositories>

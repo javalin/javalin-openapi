@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
 
     // javalin
-    implementation("io.javalin:javalin:5.1.1")
+    implementation("io.javalin:javalin:5.1.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0-rc1")
 
     // logging
