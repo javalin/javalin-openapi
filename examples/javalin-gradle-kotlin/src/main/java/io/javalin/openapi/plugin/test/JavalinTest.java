@@ -164,6 +164,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
                 @OpenApiContent(from = RecordEntity.class), // record class
                 @OpenApiContent(from = DtoWithFields.class), // map only fields
+                @OpenApiContent(from = EnumEntity.class), // enum
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                         @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
@@ -204,6 +205,7 @@ public final class JavalinTest implements Handler {
         private final @NotNull Foo foo;
         private final @NotNull List<Foo> foos;
         private final @NotNull Map<String, Bar> bars = new HashMap<>();
+        private final @NotNull EnumEntity enumEntity = EnumEntity.TWO;
         private Bar bar;
 
         public EntityDto(int status, @NotNull String message, @NotNull Foo foo, @NotNull List<Foo> foos, @Nullable Bar bar) {
@@ -233,6 +235,11 @@ public final class JavalinTest implements Handler {
         // should be represented by array
         public @NotNull List<Foo> getFoos() {
             return foos;
+        }
+
+        // should display enum
+        public @NotNull EnumEntity getEnumEntity() {
+            return enumEntity;
         }
 
         // should be displayed as string
@@ -336,6 +343,11 @@ public final class JavalinTest implements Handler {
         String defaultName;
         protected String protectedName;
         private String privateName;
+    }
+
+    enum EnumEntity {
+        ONE,
+        TWO
     }
 
 }

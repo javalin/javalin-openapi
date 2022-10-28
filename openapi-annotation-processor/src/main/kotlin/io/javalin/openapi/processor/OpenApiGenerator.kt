@@ -28,6 +28,7 @@ import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
 import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
 import io.javalin.openapi.processor.utils.TypesUtils.toModel
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind.ENUM
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -376,6 +377,15 @@ internal class OpenApiGenerator {
                 val additionalProperties = JsonObject()
                 addType(additionalProperties, model.generics.get(1))
                 schema.add("additionalProperties", additionalProperties)
+            }
+            model.sourceElement.kind == ENUM -> {
+                val values = JsonArray()
+                model.sourceElement.enclosedElements
+                    .filterIsInstance<VariableElement>()
+                    .map { it.simpleName.toString() }
+                    .forEach { values.add(it) }
+                schema.addProperty("type", "string")
+                schema.add("enum", values)
             }
             else -> addType(schema, model)
         }
