@@ -11,6 +11,7 @@ class SwaggerConfiguration {
     var uiPath = "/swagger"
     var webJarPath = "/webjars/swagger-ui"
     var documentationPath = "/openapi"
+    var validatorUrl: String? = "https://validator.swagger.io/validator"
     var roles: Array<RouteRole> = emptyArray()
 }
 
@@ -19,8 +20,10 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
     override fun init(app: Javalin) {}
 
     override fun apply(app: Javalin) {
+        val swaggerHandler = SwaggerHandler(configuration.title, configuration.documentationPath, configuration.version, configuration.validatorUrl)
+
         app
-            .get(configuration.uiPath, SwaggerHandler(configuration.title, configuration.documentationPath, configuration.version), *configuration.roles)
+            .get(configuration.uiPath, swaggerHandler, *configuration.roles)
             .get("${configuration.webJarPath}/*", SwaggerWebJarHandler(configuration.webJarPath), *configuration.roles)
     }
 
