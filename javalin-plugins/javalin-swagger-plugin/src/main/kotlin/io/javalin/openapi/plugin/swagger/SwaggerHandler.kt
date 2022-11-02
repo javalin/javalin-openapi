@@ -10,7 +10,8 @@ import org.intellij.lang.annotations.Language
 class SwaggerHandler(
     private val title: String,
     private val documentationPath: String,
-    private val swaggerVersion: String
+    private val swaggerVersion: String,
+    private val validatorUrl: String?
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -65,7 +66,8 @@ class SwaggerHandler(
                         plugins: [
                           SwaggerUIBundle.plugins.DownloadUrl
                         ],
-                        layout: "StandaloneLayout"
+                        layout: "StandaloneLayout",
+                        validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
                       })
                 }
                 </script>
