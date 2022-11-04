@@ -10,6 +10,7 @@ import io.javalin.openapi.BearerAuth;
 import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.ImplicitFlow;
+import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiByFields;
@@ -66,7 +67,7 @@ public final class JavalinTest implements Handler {
      */
     public static void main(String[] args) {
         Javalin.create(config -> {
-            String deprecatedDocsPath = "/swagger-docs";
+            String deprecatedDocsPath = "/openapi.json";
 
             OpenApiContact openApiContact = new OpenApiContact();
             openApiContact.setName("API Support");
@@ -348,6 +349,11 @@ public final class JavalinTest implements Handler {
     enum EnumEntity {
         ONE,
         TWO
+    }
+
+    @JsonSchema
+    static final class JsonSchemaEntity {
+
     }
 
 }

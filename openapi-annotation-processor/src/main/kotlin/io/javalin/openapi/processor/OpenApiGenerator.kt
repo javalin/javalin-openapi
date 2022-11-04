@@ -6,27 +6,33 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
+import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiByFields
+import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.OpenApiParam
+import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
-import io.javalin.openapi.processor.annotations.OpenApiContentInstance
-import io.javalin.openapi.processor.annotations.OpenApiInstance
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.COOKIE
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.FORM_DATA
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.HEADER
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.PATH
-import io.javalin.openapi.processor.annotations.OpenApiParamInstance.In.QUERY
-import io.javalin.openapi.processor.annotations.OpenApiPropertyTypeInstance
-import io.javalin.openapi.processor.utils.JsonUtils
-import io.javalin.openapi.processor.utils.TypesUtils
-import io.javalin.openapi.processor.utils.TypesUtils.DataModel
-import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
-import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
-import io.javalin.openapi.processor.utils.TypesUtils.toModel
+import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
+import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
+import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
+import io.javalin.openapi.processor.OpenApiGenerator.In.PATH
+import io.javalin.openapi.processor.OpenApiGenerator.In.QUERY
+import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
+import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
+import io.javalin.openapi.processor.shared.ProcessorUtils
+import io.javalin.openapi.processor.shared.JsonTypes
+import io.javalin.openapi.processor.shared.JsonTypes.DataModel
+import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
+import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
+import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
+import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.ParseOptions
+import javax.annotation.processing.FilerException
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind.ENUM
 import javax.lang.model.element.ElementKind.METHOD
@@ -34,6 +40,9 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
+import javax.tools.Diagnostic
+import javax.tools.Diagnostic.Kind.WARNING
+import javax.tools.StandardLocation
 
 internal class OpenApiGenerator {
 
@@ -43,13 +52,45 @@ internal class OpenApiGenerator {
 
     private val componentReferences: MutableSet<TypeMirror> = mutableSetOf()
 
+    fun generate(roundEnvironment: RoundEnvironment) {
+        try {
+            val openApiAnnotations = ArrayList<OpenApi>()
+
+            roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java).forEach { annotatedElement ->
+                annotatedElement.getAnnotation(OpenApi::class.java)?.let { openApiAnnotations.add(it) }
+            }
+
+            val result = generateSchema(openApiAnnotations)
+            val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi-plugin/openapi.json")
+            val location = resource.toUri()
+
+            resource.openWriter().use {
+                it.write(result)
+            }
+
+            val parsedSchema = OpenAPIV3Parser().readLocation(location.toString(), emptyList(), ParseOptions())
+
+            if (parsedSchema.messages.size > 0) {
+                OpenApiAnnotationProcessor.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+            }
+
+            parsedSchema.messages.forEach {
+                OpenApiAnnotationProcessor.messager.printMessage(WARNING, it)
+            }
+        } catch (filerException: FilerException) {
+            // openapi-plugin/openapi.json has been created during previous compilation phase
+        } catch (throwable: Throwable) {
+            ProcessorUtils.printException(throwable)
+        }
+    }
+
     /**
      * Based on https://swagger.io/specification/
      *
      * @param annotations annotation instances to map
      * @return OpenApi JSON response
      */
-    fun generate(annotations: Collection<OpenApiInstance>): String {
+    private fun generateSchema(annotations: Collection<OpenApi>): String {
         val openApi = JsonObject()
         openApi.addProperty("openapi", "3.0.3")
 
@@ -64,49 +105,49 @@ internal class OpenApiGenerator {
         openApi.add("paths", paths)
 
         for (routeAnnotation in annotations) {
-            if (routeAnnotation.ignore()) {
+            if (routeAnnotation.ignore) {
                 continue
             }
 
-            val path = JsonUtils.computeIfAbsent(paths, routeAnnotation.path()) { JsonObject() }
+            val path = paths.computeIfAbsent(routeAnnotation.path) { JsonObject() }
 
             // https://swagger.io/specification/#paths-object
-            for (method in routeAnnotation.methods()) {
+            for (method in routeAnnotation.methods) {
                 val operation = JsonObject()
 
                 // General
-                operation.add("tags", JsonUtils.toArray(routeAnnotation.tags()))
-                addString(operation, "summary", routeAnnotation.summary())
-                addString(operation, "description", routeAnnotation.description())
+                operation.add("tags", routeAnnotation.tags.toJsonArray())
+                addString(operation, "summary", routeAnnotation.summary)
+                addString(operation, "description", routeAnnotation.description)
 
                 // ExternalDocs
                 // ~ https://swagger.io/specification/#external-documentation-object
                 // operation.addProperty("externalDocs", ); UNSUPPORTED
 
                 // OperationId
-                addString(operation, "operationId", routeAnnotation.operationId())
+                addString(operation, "operationId", routeAnnotation.operationId)
 
                 // Parameters
                 // ~ https://swagger.io/specification/#parameter-object
                 val parameters = JsonArray()
 
-                for (queryParameterAnnotation in routeAnnotation.queryParams()) {
+                for (queryParameterAnnotation in routeAnnotation.queryParams) {
                     parameters.add(fromParameter(QUERY, queryParameterAnnotation))
                 }
 
-                for (headerParameterAnnotation in routeAnnotation.headers()) {
+                for (headerParameterAnnotation in routeAnnotation.headers) {
                     parameters.add(fromParameter(HEADER, headerParameterAnnotation))
                 }
 
-                for (pathParameterAnnotation in routeAnnotation.pathParams()) {
+                for (pathParameterAnnotation in routeAnnotation.pathParams) {
                     parameters.add(fromParameter(PATH, pathParameterAnnotation))
                 }
 
-                for (cookieParameterAnnotation in routeAnnotation.cookies()) {
+                for (cookieParameterAnnotation in routeAnnotation.cookies) {
                     parameters.add(fromParameter(COOKIE, cookieParameterAnnotation))
                 }
 
-                for (formParameterAnnotation in routeAnnotation.formParams()) {
+                for (formParameterAnnotation in routeAnnotation.formParams) {
                     parameters.add(fromParameter(FORM_DATA, formParameterAnnotation))
                 }
 
@@ -114,24 +155,24 @@ internal class OpenApiGenerator {
 
                 // RequestBody
                 // ~ https://swagger.io/specification/#request-body-object
-                val requestBodyAnnotation = routeAnnotation.requestBody()
+                val requestBodyAnnotation = routeAnnotation.requestBody
                 val requestBody = JsonObject()
-                addString(requestBody, "description", requestBodyAnnotation.description())
-                addContent(requestBody, requestBodyAnnotation.content())
+                addString(requestBody, "description", requestBodyAnnotation.description)
+                addContent(requestBody, requestBodyAnnotation.content)
                 if (requestBody.size() > 0) {
                     operation.add("requestBody", requestBody)
                 }
-                requestBody.addProperty("required", requestBodyAnnotation.required())
+                requestBody.addProperty("required", requestBodyAnnotation.required)
 
                 // Responses
                 // ~ https://swagger.io/specification/#responses-object
                 val responses = JsonObject()
 
-                for (responseAnnotation in routeAnnotation.responses()) {
+                for (responseAnnotation in routeAnnotation.responses) {
                     val response = JsonObject()
-                    addString(response, "description", responseAnnotation.description())
-                    addContent(response, responseAnnotation.content())
-                    responses.add(responseAnnotation.status(), response)
+                    addString(response, "description", responseAnnotation.description)
+                    addContent(response, responseAnnotation.content)
+                    responses.add(responseAnnotation.status, response)
                 }
 
                 operation.add("responses", responses)
@@ -141,21 +182,21 @@ internal class OpenApiGenerator {
                 // operation.addProperty("callbacks, ); UNSUPPORTED
 
                 // Deprecated
-                operation.addProperty("deprecated", routeAnnotation.deprecated())
+                operation.addProperty("deprecated", routeAnnotation.deprecated)
 
                 // Security
                 // ~ https://swagger.io/specification/#security-requirement-object
                 val security = JsonArray()
 
-                for (securityAnnotation in routeAnnotation.security()) {
+                for (securityAnnotation in routeAnnotation.security) {
                     val securityEntry = JsonObject()
                     val scopes = JsonArray()
 
-                    for (scopeAnnotation in securityAnnotation.scopes()) {
+                    for (scopeAnnotation in securityAnnotation.scopes) {
                         scopes.add(scopeAnnotation)
                     }
 
-                    securityEntry.add(securityAnnotation.name(), scopes)
+                    securityEntry.add(securityAnnotation.name, scopes)
                     security.add(securityEntry)
                 }
 
@@ -238,9 +279,8 @@ internal class OpenApiGenerator {
                             else -> continue
                         }
 
-                        val propertyType = property.annotationMirrors
-                            .firstOrNull { it.annotationType.asElement().simpleName.contentEquals("OpenApiPropertyType") }
-                            ?.let { OpenApiPropertyTypeInstance(it).definedBy() }
+                        val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
+                            ?.getTypeMirror { definedBy }
                             ?: (property as? ExecutableElement)?.returnType
                             ?: (property as? VariableElement)?.asType()
                             ?: continue
@@ -278,20 +318,28 @@ internal class OpenApiGenerator {
         return gson.toJson(openApi)
     }
 
+    enum class In(val identifier: String) {
+        QUERY("query"),
+        HEADER("header"),
+        PATH("path"),
+        COOKIE("cookie"),
+        FORM_DATA("formData")
+    }
+
     // Parameter
     // https://swagger.io/specification/#parameter-object
-    private fun fromParameter(`in`: In, parameterInstance: OpenApiParamInstance?): JsonObject {
+    private fun fromParameter(`in`: In, parameterInstance: OpenApiParam?): JsonObject {
         val parameter = JsonObject()
-        addString(parameter, "name", parameterInstance!!.name())
+        addString(parameter, "name", parameterInstance!!.name)
         addString(parameter, "in", `in`.identifier)
-        addString(parameter, "description", parameterInstance.description())
-        parameter.addProperty("required", parameterInstance.required())
-        parameter.addProperty("deprecated", parameterInstance.deprecated())
-        parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue())
+        addString(parameter, "description", parameterInstance.description)
+        parameter.addProperty("required", parameterInstance.required)
+        parameter.addProperty("deprecated", parameterInstance.deprecated)
+        parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue)
 
         val schema = JsonObject()
-        addSchema(schema, parameterInstance.type() /*OpenApiAnnotationProcessor.elements.getTypeElement(String::class.java.name).asType() */, false)
-        parameterInstance.example()
+        addSchema(schema, parameterInstance.getTypeMirror { type }, false)
+        parameterInstance.example
             .takeIf { it.isNotEmpty() }
             .let { schema.addProperty("example", it) }
         parameter.add("schema", schema)
@@ -299,18 +347,18 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun addContent(parent: JsonObject, annotations: List<OpenApiContentInstance>) {
+    private fun addContent(parent: JsonObject, annotations: Array<OpenApiContent>) {
         val requestBodyContent = JsonObject()
 
         for (contentAnnotation in annotations) {
-            val from = contentAnnotation.from()
-            val type = contentAnnotation.type()
-            val format = contentAnnotation.format().takeIf { it != NULL_STRING }
-            val properties = contentAnnotation.properties()
-            var mimeType = contentAnnotation.mimeType()
+            val from = contentAnnotation.getTypeMirror { from }
+            val type = contentAnnotation.type
+            val format = contentAnnotation.format.takeIf { it != NULL_STRING }
+            val properties = contentAnnotation.properties
+            var mimeType = contentAnnotation.mimeType
 
             if (AUTODETECT == mimeType) {
-                mimeType = TypesUtils.detectContentType(contentAnnotation.from())
+                mimeType = JsonTypes.detectContentType(from)
             }
 
             val mediaType = JsonObject()
@@ -328,21 +376,21 @@ internal class OpenApiGenerator {
 
                     for (contentProperty in properties) {
                         val propertyScheme = JsonObject()
-                        val propertyFormat = contentProperty.format().takeIf { it != NULL_STRING }
+                        val propertyFormat = contentProperty.format.takeIf { it != NULL_STRING }
 
-                        if (contentProperty.isArray()) {
+                        if (contentProperty.isArray) {
                             propertyScheme.addProperty("type", "array")
 
                             val items = JsonObject()
-                            items.addProperty("type", contentProperty.type())
+                            items.addProperty("type", contentProperty.type)
                             propertyFormat?.let { items.addProperty("format", it) }
                             propertyScheme.add("items", items)
                         } else {
-                            propertyScheme.addProperty("type", contentProperty.type())
+                            propertyScheme.addProperty("type", contentProperty.type)
                             propertyFormat?.let { propertyScheme.addProperty("format", it) }
                         }
 
-                        propertiesSchema.add(contentProperty.name(), propertyScheme)
+                        propertiesSchema.add(contentProperty.name, propertyScheme)
                     }
 
                     schema.add("properties", propertiesSchema)
@@ -396,7 +444,7 @@ internal class OpenApiGenerator {
     }
 
     private fun addType(parent: JsonObject, model: DataModel) {
-        val nonRefType = TypesUtils.NON_REF_TYPES[model.simpleName]
+        val nonRefType = JsonTypes.NON_REF_TYPES[model.simpleName]
 
         if (nonRefType == null) {
             componentReferences.add(model.typeMirror)

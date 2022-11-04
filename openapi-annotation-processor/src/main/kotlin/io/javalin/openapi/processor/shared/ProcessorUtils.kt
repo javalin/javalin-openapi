@@ -1,4 +1,4 @@
-package io.javalin.openapi.processor.utils
+package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import javax.tools.Diagnostic.Kind.ERROR

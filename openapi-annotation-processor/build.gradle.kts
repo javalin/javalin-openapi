@@ -3,8 +3,8 @@ description = "Javalin OpenAPI Annotation Processor | Generates OpenApi specific
 dependencies {
     api(project(":openapi-specification"))
 
-    implementation("com.google.code.gson:gson:2.9.0")
-    @Suppress("GradlePackageUpdate")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20")
+    implementation("com.google.code.gson:gson:2.10")
     implementation("io.swagger.parser.v3:swagger-parser:2.0.32")
 
     val logback = "1.4.3"
