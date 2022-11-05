@@ -7,19 +7,14 @@ import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiContent
-import io.javalin.openapi.OpenApiExample
-import io.javalin.openapi.OpenApiIgnore
-import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiParam
-import io.javalin.openapi.OpenApiPropertyType
-import io.javalin.openapi.Visibility
 import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
 import io.javalin.openapi.processor.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.OpenApiGenerator.In.QUERY
+import io.javalin.openapi.processor.shared.JsonExtensions.addString
 import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
 import io.javalin.openapi.processor.shared.ProcessorUtils
@@ -33,11 +28,7 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind.ENUM
-import javax.lang.model.element.ElementKind.METHOD
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
@@ -117,15 +108,15 @@ internal class OpenApiGenerator {
 
                 // General
                 operation.add("tags", routeAnnotation.tags.toJsonArray())
-                addString(operation, "summary", routeAnnotation.summary)
-                addString(operation, "description", routeAnnotation.description)
+                operation.addString("summary", routeAnnotation.summary)
+                operation.addString("description", routeAnnotation.description)
 
                 // ExternalDocs
                 // ~ https://swagger.io/specification/#external-documentation-object
                 // operation.addProperty("externalDocs", ); UNSUPPORTED
 
                 // OperationId
-                addString(operation, "operationId", routeAnnotation.operationId)
+                operation.addString("operationId", routeAnnotation.operationId)
 
                 // Parameters
                 // ~ https://swagger.io/specification/#parameter-object
@@ -157,8 +148,8 @@ internal class OpenApiGenerator {
                 // ~ https://swagger.io/specification/#request-body-object
                 val requestBodyAnnotation = routeAnnotation.requestBody
                 val requestBody = JsonObject()
-                addString(requestBody, "description", requestBodyAnnotation.description)
-                addContent(requestBody, requestBodyAnnotation.content)
+                requestBody.addString("description", requestBodyAnnotation.description)
+                requestBody.addContent(requestBodyAnnotation.content)
                 if (requestBody.size() > 0) {
                     operation.add("requestBody", requestBody)
                 }
@@ -170,8 +161,8 @@ internal class OpenApiGenerator {
 
                 for (responseAnnotation in routeAnnotation.responses) {
                     val response = JsonObject()
-                    addString(response, "description", responseAnnotation.description)
-                    addContent(response, responseAnnotation.content)
+                    response.addString("description", responseAnnotation.description)
+                    response.addContent(responseAnnotation.content)
                     responses.add(responseAnnotation.status, response)
                 }
 
@@ -211,9 +202,6 @@ internal class OpenApiGenerator {
         val schemas = JsonObject()
         val generatedComponents = mutableSetOf<TypeMirror>()
 
-        val objectType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object")
-        val recordType = OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record")
-
         while (generatedComponents.size < componentReferences.size) {
             for (componentReference in componentReferences.toMutableList()) {
                 if (generatedComponents.contains(componentReference)) {
@@ -227,87 +215,9 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val schema = JsonObject()
-                val properties = JsonObject()
-                val requiredProperties = mutableListOf<String>()
-
-                val isRecord = when (recordType) {
-                    null -> false
-                    else -> OpenApiAnnotationProcessor.types.isAssignable(type.typeMirror, recordType.asType())
-                }
-
-                val acceptFields = type.sourceElement.getAnnotation(OpenApiByFields::class.java)
-
-                for (property in type.sourceElement.enclosedElements) {
-                    if (property is Element) {
-                        if (property.kind != METHOD && acceptFields == null) {
-                            continue
-                        }
-
-                        if (acceptFields != null) {
-                            val modifiers = property.modifiers
-
-                            val fieldVisibility = when {
-                                modifiers.contains(Modifier.PRIVATE) -> Visibility.PRIVATE
-                                modifiers.contains(Modifier.PROTECTED) -> Visibility.PROTECTED
-                                modifiers.contains(Modifier.DEFAULT) -> Visibility.DEFAULT
-                                modifiers.contains(Modifier.PUBLIC) -> Visibility.PUBLIC
-                                else -> Visibility.DEFAULT
-                            }
-
-                            if (acceptFields.value.priority > fieldVisibility.priority) {
-                                continue
-                            }
-                        }
-
-                        if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
-                            continue
-                        }
-
-                        if (objectType.enclosedElements.any { it.simpleName == property.simpleName }) {
-                            continue
-                        }
-
-                        val simpleName = property.simpleName.toString()
-                        val customName = property.getAnnotation(OpenApiName::class.java)
-
-                        val name = when {
-                            customName != null -> customName.value
-                            isRecord || acceptFields != null -> simpleName
-                            simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").replaceFirstChar { it.lowercase() }
-                            simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").replaceFirstChar { it.lowercase() }
-                            else -> continue
-                        }
-
-                        val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
-                            ?.getTypeMirror { definedBy }
-                            ?: (property as? ExecutableElement)?.returnType
-                            ?: (property as? VariableElement)?.asType()
-                            ?: continue
-
-                        val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
-                            ?.value
-
-                        if (propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") }) {
-                            requiredProperties.add(name)
-                        }
-
-                        val propertyEntry = JsonObject()
-                        addSchema(propertyEntry, propertyType, false, exampleProperty)
-                        properties.add(name, propertyEntry)
-                    }
-                }
-
-                schema.addProperty("type", "object")
-                schema.add("properties", properties)
+                val (schema, references) = createTypeSchema(type, false)
                 schemas.add(type.simpleName, schema)
-
-                if (requiredProperties.isNotEmpty()) {
-                    val required = JsonArray()
-                    requiredProperties.forEach { required.add(it) }
-                    schema.add("required", required)
-                }
-
+                generatedComponents.addAll(references)
                 generatedComponents.add(componentReference)
             }
         }
@@ -330,15 +240,14 @@ internal class OpenApiGenerator {
     // https://swagger.io/specification/#parameter-object
     private fun fromParameter(`in`: In, parameterInstance: OpenApiParam?): JsonObject {
         val parameter = JsonObject()
-        addString(parameter, "name", parameterInstance!!.name)
-        addString(parameter, "in", `in`.identifier)
-        addString(parameter, "description", parameterInstance.description)
+        parameter.addString("name", parameterInstance!!.name)
+        parameter.addString("in", `in`.identifier)
+        parameter.addString("description", parameterInstance.description)
         parameter.addProperty("required", parameterInstance.required)
         parameter.addProperty("deprecated", parameterInstance.deprecated)
         parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue)
 
-        val schema = JsonObject()
-        addSchema(schema, parameterInstance.getTypeMirror { type }, false)
+        val schema = createTypeDescriptionWithReferences(parameterInstance.getTypeMirror { type })
         parameterInstance.example
             .takeIf { it.isNotEmpty() }
             .let { schema.addProperty("example", it) }
@@ -347,7 +256,7 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun addContent(parent: JsonObject, annotations: Array<OpenApiContent>) {
+    private fun JsonObject.addContent(annotations: Array<OpenApiContent>) {
         val requestBodyContent = JsonObject()
 
         for (contentAnnotation in annotations) {
@@ -361,16 +270,16 @@ internal class OpenApiGenerator {
                 mimeType = JsonTypes.detectContentType(from)
             }
 
-            val mediaType = JsonObject()
-            val schema = JsonObject()
-
-            when {
-                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name -> addSchema(schema, from, false)
+            val schema: JsonObject = when {
+                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name -> createTypeDescriptionWithReferences(from)
                 properties.isEmpty() -> {
+                    val schema = JsonObject()
                     schema.addProperty("type", type)
                     format?.also { schema.addProperty("format", it) }
+                    schema
                 }
                 else -> {
+                    val schema = JsonObject()
                     val propertiesSchema = JsonObject()
                     schema.addProperty("type", "object")
 
@@ -394,75 +303,25 @@ internal class OpenApiGenerator {
                     }
 
                     schema.add("properties", propertiesSchema)
+                    schema
                 }
             }
 
+            val mediaType = JsonObject()
             mediaType.add("schema", schema)
             requestBodyContent.add(mimeType, mediaType)
         }
 
         if (requestBodyContent.size() > 0) {
-            parent.add("content", requestBodyContent)
+            add("content", requestBodyContent)
         }
     }
 
-    private fun addSchema(schema: JsonObject, typeMirror: TypeMirror, isArray: Boolean, exampleValue: String? = null) {
-        val model = typeMirror.toModel() ?: return
-
-        when {
-            (model.type == ARRAY || isArray) && model.simpleName == "Byte" -> {
-                schema.addProperty("type", "string")
-                schema.addProperty("format", "binary")
-            }
-            isArray || model.type == ARRAY -> {
-                schema.addProperty("type", "array")
-                val items = JsonObject()
-                addType(items, model)
-                schema.add("items", items)
-            }
-            model.type == DICTIONARY -> {
-                schema.addProperty("type", "object")
-                val additionalProperties = JsonObject()
-                addType(additionalProperties, model.generics.get(1))
-                schema.add("additionalProperties", additionalProperties)
-            }
-            model.sourceElement.kind == ENUM -> {
-                val values = JsonArray()
-                model.sourceElement.enclosedElements
-                    .filterIsInstance<VariableElement>()
-                    .map { it.simpleName.toString() }
-                    .forEach { values.add(it) }
-                schema.addProperty("type", "string")
-                schema.add("enum", values)
-            }
-            else -> addType(schema, model)
-        }
-
-        if (exampleValue != null) {
-            schema.addProperty("example", exampleValue)
-        }
-    }
-
-    private fun addType(parent: JsonObject, model: DataModel) {
-        val nonRefType = JsonTypes.NON_REF_TYPES[model.simpleName]
-
-        if (nonRefType == null) {
-            componentReferences.add(model.typeMirror)
-            parent.addProperty("\$ref", "#/components/schemas/${model.simpleName}")
-            return
-        }
-
-        parent.addProperty("type", nonRefType.type)
-
-        nonRefType.format
-            .takeIf { it.isNotEmpty() }
-            ?.also { parent.addProperty("format", it) }
-    }
-
-    private fun addString(parent: JsonObject, key: String, value: String?) {
-        if (NULL_STRING != value) {
-            parent.addProperty(key, value)
-        }
+    private fun createTypeDescriptionWithReferences(type: TypeMirror, exampleValue: String? = null): JsonObject {
+        val model = type.toModel()!!
+        val (json, references) = createTypeDescription(model, false, exampleValue)
+        componentReferences.addAll(references)
+        return json
     }
 
 }

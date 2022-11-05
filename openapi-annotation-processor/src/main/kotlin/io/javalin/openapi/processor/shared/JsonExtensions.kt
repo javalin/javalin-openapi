@@ -2,6 +2,7 @@ package io.javalin.openapi.processor.shared
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import io.javalin.openapi.NULL_STRING
 
 internal object JsonExtensions {
 
@@ -23,6 +24,12 @@ internal object JsonExtensions {
         }
 
         return getAsJsonObject(key)
+    }
+
+    fun JsonObject.addString(key: String, value: String?) {
+        if (NULL_STRING != value) {
+            addProperty(key, value)
+        }
     }
 
 }

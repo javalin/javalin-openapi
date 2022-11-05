@@ -1,6 +1,8 @@
 package io.javalin.openapi.processor
 
+import com.google.gson.JsonObject
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.ProcessorUtils
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.RoundEnvironment
@@ -27,8 +29,9 @@ class JsonSchemaGenerator {
 
     private fun generate(element: Element): String {
         val type = element.asType()
-
-        return ""
+        val (entityScheme) = createTypeSchema(type.toModel()!!, true)
+        entityScheme.addProperty("${'$'}schema", "http://json-schema.org/draft-07/schema#")
+        return entityScheme.toString()
     }
 
 }
