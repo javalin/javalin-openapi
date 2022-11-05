@@ -308,9 +308,9 @@ internal class OpenApiGenerator {
         }
     }
 
-    private fun createTypeDescriptionWithReferences(type: TypeMirror, exampleValue: String? = null): JsonObject {
+    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
         val model = type.toModel()!!
-        val (json, references) = createTypeDescription(model, false, exampleValue)
+        val (json, references) = createTypeDescription(model)
         componentReferences.addAll(references)
         return json
     }

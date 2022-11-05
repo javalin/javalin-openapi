@@ -14,6 +14,7 @@ import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.JsonSchemaLoader;
 import io.javalin.openapi.JsonSchemaResource;
 import io.javalin.openapi.OAuth2;
+import io.javalin.openapi.OneOf;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiByFields;
 import io.javalin.openapi.OpenApiContact;
@@ -369,6 +370,35 @@ public final class JavalinTest implements Handler {
 
         public List<EntityDto> getEntities() {
             return Collections.emptyList();
+        }
+
+        @OneOf({ Panda.class, Cat.class })
+        public Animal getAnimal() {
+            return new Panda();
+        }
+
+    }
+
+    interface Animal {
+
+        default boolean isAnimal() {
+            return true;
+        }
+
+    }
+
+    static class Panda implements Animal {
+
+        public boolean isPanda() {
+            return true;
+        }
+
+    }
+
+    static class Cat implements Animal {
+
+        public boolean isCat() {
+            return true;
         }
 
     }

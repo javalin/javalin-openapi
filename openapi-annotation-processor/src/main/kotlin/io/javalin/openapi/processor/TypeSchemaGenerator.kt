@@ -2,6 +2,10 @@ package io.javalin.openapi.processor
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import io.javalin.openapi.AllOf
+import io.javalin.openapi.AnyOf
+import io.javalin.openapi.Combinator
+import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
@@ -13,6 +17,7 @@ import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
+import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind.ENUM
@@ -21,6 +26,7 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
+import kotlin.reflect.KClass
 
 data class ResultScheme(
     val json: JsonObject,
@@ -34,7 +40,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
     val references = ArrayList<TypeMirror>()
 
     properties.forEach { property ->
-        val (propertySchema, refs) = createTypeDescription(property.type.toModel()!!, inlineRefs, property.example)
+        val (propertySchema, refs) = createTypeDescription(property.type.toModel()!!, inlineRefs, property.combinator, property.example)
         propertiesObject.add(property.name, propertySchema)
         references.addAll(refs)
     }
@@ -53,13 +59,23 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
 
 internal fun createTypeDescription(
     model: DataModel,
-    inlineRefs: Boolean,
-    example: String?
+    inlineRefs: Boolean = false,
+    propertyCombinator: PropertyCombinator? = null,
+    example: String? = null
 ): ResultScheme {
     val scheme = JsonObject()
     val references = mutableListOf<TypeMirror>()
 
     when {
+        propertyCombinator != null -> {
+            val combinatorObject = JsonArray()
+            propertyCombinator.second.forEach { variantType ->
+                val (variantScheme, refs) = createTypeSchema(variantType.toModel()!!, inlineRefs)
+                combinatorObject.add(variantScheme)
+                references.addAll(refs)
+            }
+            scheme.add(propertyCombinator.first.propertyName, combinatorObject)
+        }
         model.type == ARRAY && model.simpleName == "Byte" -> {
             scheme.addProperty("type", "string")
             scheme.addProperty("format", "binary")
@@ -117,9 +133,12 @@ internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, reference
         ?.also { addProperty("format", it) }
 }
 
+typealias PropertyCombinator = Pair<Combinator, Collection<TypeMirror>>
+
 data class Property(
     val name: String,
     val type: TypeMirror,
+    val combinator: PropertyCombinator?,
     val required: Boolean,
     val example: String?
 )
@@ -182,6 +201,10 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 else -> continue
             }
 
+            val combinator = property.getAnnotation(OneOf::class.java)?.let { Combinator.ONE_OF to it.getTypeMirrors { value } }
+                ?: property.getAnnotation(AnyOf::class.java)?.let { Combinator.ANY_OF to it.getTypeMirrors { value } }
+                ?: property.getAnnotation(AllOf::class.java)?.let { Combinator.ALL_OF to it.getTypeMirrors { value } }
+
             val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
                 ?.getTypeMirror { definedBy }
                 ?: (property as? ExecutableElement)?.returnType
@@ -192,6 +215,7 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 Property(
                     name = name,
                     type = propertyType,
+                    combinator = combinator,
                     required = propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") },
                     example =  property.getAnnotation(OpenApiExample::class.java)?.value
                 )

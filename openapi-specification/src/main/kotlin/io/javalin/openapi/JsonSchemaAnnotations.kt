@@ -4,10 +4,35 @@ import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
 import kotlin.annotation.AnnotationTarget.FUNCTION
+import kotlin.reflect.KClass
 
 @Target(CLASS, FIELD, FUNCTION)
 @Retention(SOURCE)
 annotation class JsonSchema
+
+@Target(CLASS, FIELD, FUNCTION)
+@Retention(SOURCE)
+annotation class OneOf(
+    vararg val value: KClass<*>
+)
+
+@Target(CLASS, FIELD, FUNCTION)
+@Retention(SOURCE)
+annotation class AnyOf(
+    vararg val value: KClass<*>
+)
+
+@Target(CLASS, FIELD, FUNCTION)
+@Retention(SOURCE)
+annotation class AllOf(
+    vararg val value: KClass<*>
+)
+
+enum class Combinator(val propertyName: String) {
+    ONE_OF("oneOf"),
+    ANY_OF("anyOf"),
+    ALL_OF("allOf")
+}
 
 data class JsonSchemaResource(
     val name: String,

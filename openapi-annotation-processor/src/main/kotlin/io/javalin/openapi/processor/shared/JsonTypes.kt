@@ -8,6 +8,7 @@ import javax.lang.model.element.Element
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.MirroredTypeException
+import javax.lang.model.type.MirroredTypesException
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
@@ -98,6 +99,13 @@ internal object JsonTypes {
             else -> "application/json"
         }
     }
+
+    fun <A : Annotation> A.getTypeMirrors(supplier: A.() -> Array<out KClass<*>>): List<TypeMirror> =
+        try {
+            throw Error(supplier().toString()) // always throws MirroredTypesException, because we cannot get Class instance from annotation at compile-time
+        } catch (mirroredTypeException: MirroredTypesException) {
+            mirroredTypeException.typeMirrors
+        }
 
     fun <A : Annotation> A.getTypeMirror(supplier: A.() -> KClass<*>): TypeMirror =
         try {
