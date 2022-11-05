@@ -217,7 +217,7 @@ internal class OpenApiGenerator {
 
                 val (schema, references) = createTypeSchema(type, false)
                 schemas.add(type.simpleName, schema)
-                generatedComponents.addAll(references)
+                componentReferences.addAll(references)
                 generatedComponents.add(componentReference)
             }
         }

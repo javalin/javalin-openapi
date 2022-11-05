@@ -184,15 +184,12 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 ?: (property as? VariableElement)?.asType()
                 ?: continue
 
-            val exampleProperty = property.getAnnotation(OpenApiExample::class.java)
-                ?.value
-
             properties.add(
                 Property(
                     name = name,
-                    type = typeMirror,
+                    type = propertyType,
                     required = propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") },
-                    example = exampleProperty
+                    example =  property.getAnnotation(OpenApiExample::class.java)?.value
                 )
             )
         }
