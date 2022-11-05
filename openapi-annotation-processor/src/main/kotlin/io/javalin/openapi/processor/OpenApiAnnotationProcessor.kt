@@ -1,5 +1,6 @@
 package io.javalin.openapi.processor
 
+import com.google.gson.GsonBuilder
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import javax.annotation.processing.AbstractProcessor
@@ -15,6 +16,11 @@ import javax.lang.model.util.Types
 open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     companion object {
+
+        val gson = GsonBuilder()
+            .setPrettyPrinting()
+            .create()
+
         lateinit var messager: Messager
         lateinit var elements: Elements
         lateinit var types: Types

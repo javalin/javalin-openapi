@@ -9,3 +9,23 @@ import kotlin.annotation.AnnotationTarget.FUNCTION
 @Retention(SOURCE)
 annotation class JsonSchema
 
+data class JsonSchemaResource(
+    val name: String,
+    val content: String
+)
+
+class JsonSchemaLoader {
+
+    fun loadGeneratedSchemes(): Collection<JsonSchemaResource> =
+        JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/")
+            ?.readAllBytes()
+            ?.decodeToString()
+            ?.split(System.lineSeparator())
+            ?.asSequence()
+            ?.map { it.trim() }
+            ?.map { it to JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! }
+            ?.map { (name, source) -> JsonSchemaResource(name, source.readBytes().decodeToString()) }
+            ?.toList()
+            ?: emptyList()
+
+}

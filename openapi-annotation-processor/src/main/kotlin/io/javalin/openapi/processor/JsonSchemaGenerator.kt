@@ -28,10 +28,14 @@ class JsonSchemaGenerator {
     }
 
     private fun generate(element: Element): String {
+        val scheme = JsonObject()
+        scheme.addProperty("${'$'}schema", "http://json-schema.org/draft-07/schema#")
+
         val type = element.asType()
         val (entityScheme) = createTypeSchema(type.toModel()!!, true)
-        entityScheme.addProperty("${'$'}schema", "http://json-schema.org/draft-07/schema#")
-        return entityScheme.toString()
+        entityScheme.entrySet().forEach { (key, value) -> scheme.add(key, value) }
+
+        return OpenApiAnnotationProcessor.gson.toJson(scheme)
     }
 
 }

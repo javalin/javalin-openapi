@@ -11,6 +11,8 @@ import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.ImplicitFlow;
 import io.javalin.openapi.JsonSchema;
+import io.javalin.openapi.JsonSchemaLoader;
+import io.javalin.openapi.JsonSchemaResource;
 import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiByFields;
@@ -40,6 +42,7 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import lombok.Data;
+import lombok.val;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,12 +51,11 @@ import java.io.Serializable;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static java.util.Map.entry;
 
 /**
  * Starts Javalin server with OpenAPI plugin
@@ -139,6 +141,12 @@ public final class JavalinTest implements Handler {
             ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
             reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
             config.plugins.register(new ReDocPlugin(reDocConfiguration));
+
+            JsonSchemaLoader loader = new JsonSchemaLoader();
+            for (JsonSchemaResource generatedJsonSchema : loader.loadGeneratedSchemes()) {
+                System.out.println(generatedJsonSchema.getName());
+                System.out.println(generatedJsonSchema.getContent());
+            }
         })
         .start(8080);
     }
@@ -218,7 +226,7 @@ public final class JavalinTest implements Handler {
             this.timestamp = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
         }
 
-        // should ignore
+        // should be ignored
         public void setBar(Bar bar) {
             this.bar = bar;
         }
@@ -260,7 +268,7 @@ public final class JavalinTest implements Handler {
             return message;
         }
 
-        // should ignore
+        // should be ignored
         @OpenApiIgnore
         public String getFormattedMessage() {
             return status + message;
@@ -283,9 +291,9 @@ public final class JavalinTest implements Handler {
             return new ObjectId();
         }
 
-        // should ignore
-        public static int getSomeCoolStuff(int number1, int number2) {
-            return number1 + number2;
+        // static should be ignored
+        public static String getStatic() {
+            return "static";
         }
 
     }
@@ -358,6 +366,10 @@ public final class JavalinTest implements Handler {
 
     @JsonSchema
     static final class JsonSchemaEntity {
+
+        public List<EntityDto> getEntities() {
+            return Collections.emptyList();
+        }
 
     }
 

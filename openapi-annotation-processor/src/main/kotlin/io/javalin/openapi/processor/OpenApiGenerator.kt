@@ -19,27 +19,18 @@ import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
 import io.javalin.openapi.processor.shared.ProcessorUtils
 import io.javalin.openapi.processor.shared.JsonTypes
-import io.javalin.openapi.processor.shared.JsonTypes.DataModel
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.element.ElementKind.ENUM
-import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 import javax.tools.Diagnostic.Kind.WARNING
 import javax.tools.StandardLocation
 
 internal class OpenApiGenerator {
-
-    private val gson = GsonBuilder()
-        .setPrettyPrinting()
-        .create()
 
     private val componentReferences: MutableSet<TypeMirror> = mutableSetOf()
 
@@ -225,7 +216,7 @@ internal class OpenApiGenerator {
         components.add("schemas", schemas)
         openApi.add("components", components)
 
-        return gson.toJson(openApi)
+        return OpenApiAnnotationProcessor.gson.toJson(openApi)
     }
 
     enum class In(val identifier: String) {

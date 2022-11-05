@@ -139,6 +139,10 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
 
     for (property in sourceElement.enclosedElements) {
         if (property is Element) {
+            if (property.modifiers.contains(Modifier.STATIC)) {
+                continue
+            }
+
             if (property.kind != METHOD && acceptFields == null) {
                 continue
             }
