@@ -283,6 +283,11 @@ public final class JavalinTest implements Handler {
             return new ObjectId();
         }
 
+        // should ignore
+        public static int getSomeCoolStuff(int number1, int number2) {
+            return number1 + number2;
+        }
+
     }
 
     static final class Foo {
