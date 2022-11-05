@@ -203,6 +203,10 @@ internal class OpenApiGenerator {
                             continue
                         }
 
+                        if (property.modifiers.contains(Modifier.STATIC)) {
+                            continue
+                        }
+
                         if (acceptFields != null) {
                             val modifiers = property.modifiers
 
