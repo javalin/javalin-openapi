@@ -1,17 +1,19 @@
-package io.javalin.openapi.processor.utils
+package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.utils.TypesUtils.DataType.ARRAY
-import io.javalin.openapi.processor.utils.TypesUtils.DataType.DEFAULT
-import io.javalin.openapi.processor.utils.TypesUtils.DataType.DICTIONARY
+import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
+import io.javalin.openapi.processor.shared.JsonTypes.DataType.DEFAULT
+import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import javax.lang.model.element.Element
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
+import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
+import kotlin.reflect.KClass
 
-internal object TypesUtils {
+internal object JsonTypes {
 
     data class Data(
         val type: String,
@@ -96,5 +98,12 @@ internal object TypesUtils {
             else -> "application/json"
         }
     }
+
+    fun <A : Annotation> A.getTypeMirror(supplier: A.() -> KClass<*>): TypeMirror =
+        try {
+            throw Error(supplier().toString()) // always throws MirroredTypeException, because we cannot get Class instance from annotation at compile-time
+        } catch (mirroredTypeException: MirroredTypeException) {
+            mirroredTypeException.typeMirror
+        }
 
 }
