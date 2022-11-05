@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Combinator
+import io.javalin.openapi.Custom
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
@@ -26,7 +27,6 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
-import kotlin.reflect.KClass
 
 data class ResultScheme(
     val json: JsonObject,
@@ -40,7 +40,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
     val references = ArrayList<TypeMirror>()
 
     properties.forEach { property ->
-        val (propertySchema, refs) = createTypeDescription(property.type.toModel()!!, inlineRefs, property.combinator, property.example)
+        val (propertySchema, refs) = createTypeDescription(property.type.toModel()!!, inlineRefs, property.combinator, property.extra)
         propertiesObject.add(property.name, propertySchema)
         references.addAll(refs)
     }
@@ -50,7 +50,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
 
     if (properties.any { it.required }) {
         val required = JsonArray()
-        properties.filter { it.required }.forEach { required.add(it.name) }
+        properties.filter { it.required}.forEach { required.add(it.name) }
         schema.add("required", required)
     }
 
@@ -61,7 +61,7 @@ internal fun createTypeDescription(
     model: DataModel,
     inlineRefs: Boolean = false,
     propertyCombinator: PropertyCombinator? = null,
-    example: String? = null
+    extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
     val scheme = JsonObject()
     val references = mutableListOf<TypeMirror>()
@@ -104,9 +104,15 @@ internal fun createTypeDescription(
         else -> scheme.addType(model, inlineRefs, references)
     }
 
-    if (example != null) {
-        scheme.addProperty("example", example)
-    }
+    extra
+        .filterValues { it != null }
+        .forEach { (key, value) ->
+            when (value) {
+                is Boolean -> scheme.addProperty(key, value)
+                is Number -> scheme.addProperty(key, value)
+                else -> scheme.addProperty(key, value.toString())
+            }
+        }
 
     return ResultScheme(scheme, references)
 }
@@ -140,7 +146,7 @@ data class Property(
     val type: TypeMirror,
     val combinator: PropertyCombinator?,
     val required: Boolean,
-    val example: String?
+    val extra: MutableMap<String, Any?> = mutableMapOf()
 )
 
 private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object") }
@@ -211,13 +217,21 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 ?: (property as? VariableElement)?.asType()
                 ?: continue
 
+            val extra = mutableMapOf<String, Any?>(
+                "example" to property.getAnnotation(OpenApiExample::class.java)?.value
+            )
+
+            property.getAnnotationsByType(Custom::class.java).forEach { custom ->
+                extra[custom.name] = custom.value
+            }
+
             properties.add(
                 Property(
                     name = name,
                     type = propertyType,
                     combinator = combinator,
                     required = propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") },
-                    example =  property.getAnnotation(OpenApiExample::class.java)?.value
+                    extra = extra
                 )
             )
         }

@@ -8,6 +8,7 @@ import io.javalin.openapi.ApiKeyAuth;
 import io.javalin.openapi.BasicAuth;
 import io.javalin.openapi.BearerAuth;
 import io.javalin.openapi.CookieAuth;
+import io.javalin.openapi.Custom;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.ImplicitFlow;
 import io.javalin.openapi.JsonSchema;
@@ -43,7 +44,6 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import lombok.Data;
-import lombok.val;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -389,6 +389,8 @@ public final class JavalinTest implements Handler {
 
     static class Panda implements Animal {
 
+        @Custom(name = "title", value = "Panda")
+        @Custom(name = "description", value = "Only Panda")
         public boolean isPanda() {
             return true;
         }

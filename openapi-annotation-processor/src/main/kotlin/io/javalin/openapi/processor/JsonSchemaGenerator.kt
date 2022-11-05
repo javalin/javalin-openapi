@@ -29,7 +29,7 @@ class JsonSchemaGenerator {
 
     private fun generate(element: Element): String {
         val scheme = JsonObject()
-        scheme.addProperty("${'$'}schema", "http://json-schema.org/draft-07/schema#")
+        scheme.addProperty("\$schema", "http://json-schema.org/draft-07/schema#")
 
         val type = element.asType()
         val (entityScheme) = createTypeSchema(type.toModel()!!, true)

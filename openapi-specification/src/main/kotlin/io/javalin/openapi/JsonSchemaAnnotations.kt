@@ -28,6 +28,14 @@ annotation class AllOf(
     vararg val value: KClass<*>
 )
 
+@Target(FIELD, FUNCTION)
+@Retention(SOURCE)
+@Repeatable
+annotation class Custom(
+    val name: String,
+    val value: String
+)
+
 enum class Combinator(val propertyName: String) {
     ONE_OF("oneOf"),
     ANY_OF("anyOf"),
