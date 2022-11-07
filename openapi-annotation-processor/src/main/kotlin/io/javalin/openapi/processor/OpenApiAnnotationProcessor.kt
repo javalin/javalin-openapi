@@ -39,8 +39,6 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             return false
         }
 
-        // messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Annotation Processor :: ${annotations.size} annotation(s) found")
-
         val openApiGenerator = OpenApiGenerator()
         openApiGenerator.generate(roundEnv)
 

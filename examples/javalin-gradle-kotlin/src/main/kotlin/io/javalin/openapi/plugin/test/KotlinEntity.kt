@@ -1,6 +1,7 @@
 package io.javalin.openapi.plugin.test
 
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.OneOf
 import io.javalin.openapi.plugin.test.JavalinTest.Description
 
 data class KotlinEntity(
@@ -18,5 +19,7 @@ data class KotlinEntity(
     statusCode = -1)
 data class KotlinScheme(
     @get:Description(title = "Value", description = "Int value", statusCode = 200)
-    val value: Int
+    val value: Int,
+    @get:OneOf(KotlinEntity::class)
+    val any: Any
 )

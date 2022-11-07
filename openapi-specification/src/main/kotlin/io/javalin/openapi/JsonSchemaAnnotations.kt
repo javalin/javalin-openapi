@@ -5,31 +5,33 @@ import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
 import kotlin.annotation.AnnotationTarget.FUNCTION
+import kotlin.annotation.AnnotationTarget.PROPERTY_GETTER
+import kotlin.annotation.AnnotationTarget.PROPERTY_SETTER
 import kotlin.reflect.KClass
 
-@Target(CLASS, FIELD, FUNCTION)
+@Target(CLASS)
 @Retention(SOURCE)
 annotation class JsonSchema
 
-@Target(CLASS, FIELD, FUNCTION)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class OneOf(
     vararg val value: KClass<*>
 )
 
-@Target(CLASS, FIELD, FUNCTION)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class AnyOf(
     vararg val value: KClass<*>
 )
 
-@Target(CLASS, FIELD, FUNCTION)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class AllOf(
     vararg val value: KClass<*>
 )
 
-@Target(FIELD, FUNCTION)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 @Repeatable
 annotation class Custom(
