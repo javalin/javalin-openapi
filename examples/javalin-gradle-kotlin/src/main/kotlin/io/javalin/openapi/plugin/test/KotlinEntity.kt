@@ -9,7 +9,13 @@ data class KotlinEntity(
 )
 
 @JsonSchema
-@Description(title = "Kotlin Scheme", description = "Example usage of custom annotation on Kotlin class", statusCode = -1)
+@Description(
+    title = "Kotlin Scheme",
+    description =
+        """
+        Example usage of custom annotation on Kotlin class
+        """,
+    statusCode = -1)
 data class KotlinScheme(
     @get:Description(title = "Value", description = "Int value", statusCode = 200)
     val value: Int

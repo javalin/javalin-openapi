@@ -15,9 +15,10 @@ class JsonSchemaGenerator {
         roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java).forEach { rawElement ->
             try {
                 val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "json-schemes/${rawElement}")
+                val content = generate(rawElement)
 
                 resource.openWriter().use {
-                    it.write(generate(rawElement))
+                    it.write(content)
                 }
             } catch (filerException: FilerException) {
                 // openapi-plugin/openapi.json has been created during previous compilation phase

@@ -40,6 +40,7 @@ data class ResultScheme(
 internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultScheme {
     val schema = JsonObject()
     schema.addProperty("type", "object")
+    schema.addProperty("additionalProperties", false)
 
     val extra = type.sourceElement.findExtra()
     schema.addExtra(extra)
@@ -121,7 +122,7 @@ internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, reference
 
     if (nonRefType == null) {
         if (inlineRefs) {
-            val (subScheme, subReferences) = createTypeSchema(model, inlineRefs)
+            val (subScheme, subReferences) = createTypeSchema(model, true)
             subScheme.asMap().forEach { (key, value) -> add(key, value) }
             references.addAll(subReferences)
         } else {
@@ -215,7 +216,6 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 ?: (property as? ExecutableElement)?.returnType
                 ?: (property as? VariableElement)?.asType()
                 ?: continue
-
 
             properties.add(
                 Property(

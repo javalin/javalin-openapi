@@ -62,7 +62,7 @@ class JsonSchemaLoader {
             ?.asSequence()
             ?.map { it.trim() }
             ?.map { it to JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! }
-            ?.map { (name, source) -> JsonSchemaResource(name, source.readBytes().decodeToString()) }
+            ?.map { (name, source) -> JsonSchemaResource(name, source.reader().readText()) }
             ?.toList()
             ?: emptyList()
 
