@@ -9,6 +9,7 @@ import io.javalin.openapi.BasicAuth;
 import io.javalin.openapi.BearerAuth;
 import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.Custom;
+import io.javalin.openapi.CustomAnnotation;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.ImplicitFlow;
 import io.javalin.openapi.JsonSchema;
@@ -397,8 +398,16 @@ public final class JavalinTest implements Handler {
 
     }
 
+    @CustomAnnotation
+    @interface Description {
+        String title();
+        String description();
+        int statusCode();
+    }
+
     static class Cat implements Animal {
 
+        @Description(title = "Cat", description = "Is it cat?", statusCode = 200)
         public boolean isCat() {
             return true;
         }

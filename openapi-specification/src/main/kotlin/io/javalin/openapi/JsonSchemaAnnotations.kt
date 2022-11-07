@@ -1,6 +1,7 @@
 package io.javalin.openapi
 
 import kotlin.annotation.AnnotationRetention.SOURCE
+import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
 import kotlin.annotation.AnnotationTarget.FUNCTION
@@ -35,6 +36,10 @@ annotation class Custom(
     val name: String,
     val value: String
 )
+
+@Target(ANNOTATION_CLASS)
+@Retention(SOURCE)
+annotation class CustomAnnotation
 
 enum class Combinator(val propertyName: String) {
     ONE_OF("oneOf"),

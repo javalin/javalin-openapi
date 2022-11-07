@@ -6,6 +6,7 @@ import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Combinator
 import io.javalin.openapi.Custom
+import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
@@ -20,6 +21,9 @@ import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import javax.lang.model.element.AnnotationMirror
+import javax.lang.model.element.AnnotationValue
+import javax.lang.model.element.AnnotationValueVisitor
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind.ENUM
 import javax.lang.model.element.ElementKind.METHOD
@@ -224,6 +228,29 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
             property.getAnnotationsByType(Custom::class.java).forEach { custom ->
                 extra[custom.name] = custom.value
             }
+
+            property.annotationMirrors
+                .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
+                .flatMap { OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(it).asSequence() }
+                .forEach { (element, value) ->
+                    extra[element.simpleName.toString()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
+                        override fun visit(av: AnnotationValue, p: Nothing?) = av.value.toString()
+                        override fun visitBoolean(boolean: Boolean, p: Nothing?) = boolean
+                        override fun visitByte(byte: Byte, p: Nothing?) = byte
+                        override fun visitChar(char: Char, p: Nothing?) = char
+                        override fun visitDouble(double: Double, p: Nothing?) = double
+                        override fun visitFloat(float: Float, p: Nothing?) = float
+                        override fun visitInt(int: Int, p: Nothing?) = int
+                        override fun visitLong(long: Long, p: Nothing?) = long
+                        override fun visitShort(short: Short, p: Nothing?) = short
+                        override fun visitString(string: String, p: Nothing?) = string
+                        override fun visitType(type: TypeMirror, p: Nothing?) = type.toString()
+                        override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.simpleName.toString()
+                        override fun visitAnnotation(annotationMirror: AnnotationMirror?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unsupported nested annotations")
+                        override fun visitArray(vals: MutableList<out AnnotationValue>?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Arrays are not supported")
+                        override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unknown value $av")
+                    }, null)
+                }
 
             properties.add(
                 Property(
