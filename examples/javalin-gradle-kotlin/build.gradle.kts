@@ -1,5 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+plugins {
+    kotlin("kapt")
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -26,7 +30,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:$lombok")
 
     // then openapi annotation processor
-    annotationProcessor(project(":openapi-annotation-processor"))
+    kapt(project(":openapi-annotation-processor"))
     implementation(project(":javalin-plugins:javalin-openapi-plugin"))
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))

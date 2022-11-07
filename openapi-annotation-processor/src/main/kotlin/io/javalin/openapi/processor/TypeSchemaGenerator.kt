@@ -39,7 +39,14 @@ data class ResultScheme(
 
 internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultScheme {
     val schema = JsonObject()
+    schema.addProperty("type", "object")
+
+    val extra = type.sourceElement.findExtra()
+    schema.addExtra(extra)
+
     val propertiesObject = JsonObject()
+    schema.add("properties", propertiesObject)
+
     val properties = type.findAllProperties()
     val references = ArrayList<TypeMirror>()
 
@@ -48,9 +55,6 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
         propertiesObject.add(property.name, propertySchema)
         references.addAll(refs)
     }
-
-    schema.addProperty("type", "object")
-    schema.add("properties", propertiesObject)
 
     if (properties.any { it.required }) {
         val required = JsonArray()
@@ -108,16 +112,7 @@ internal fun createTypeDescription(
         else -> scheme.addType(model, inlineRefs, references)
     }
 
-    extra
-        .filterValues { it != null }
-        .forEach { (key, value) ->
-            when (value) {
-                is Boolean -> scheme.addProperty(key, value)
-                is Number -> scheme.addProperty(key, value)
-                else -> scheme.addProperty(key, value.toString())
-            }
-        }
-
+    scheme.addExtra(extra)
     return ResultScheme(scheme, references)
 }
 
@@ -150,7 +145,7 @@ data class Property(
     val type: TypeMirror,
     val combinator: PropertyCombinator?,
     val required: Boolean,
-    val extra: MutableMap<String, Any?> = mutableMapOf()
+    val extra: Map<String, Any?>
 )
 
 private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object") }
@@ -221,36 +216,6 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                 ?: (property as? VariableElement)?.asType()
                 ?: continue
 
-            val extra = mutableMapOf<String, Any?>(
-                "example" to property.getAnnotation(OpenApiExample::class.java)?.value
-            )
-
-            property.getAnnotationsByType(Custom::class.java).forEach { custom ->
-                extra[custom.name] = custom.value
-            }
-
-            property.annotationMirrors
-                .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
-                .flatMap { OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(it).asSequence() }
-                .forEach { (element, value) ->
-                    extra[element.simpleName.toString()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
-                        override fun visit(av: AnnotationValue, p: Nothing?) = av.value.toString()
-                        override fun visitBoolean(boolean: Boolean, p: Nothing?) = boolean
-                        override fun visitByte(byte: Byte, p: Nothing?) = byte
-                        override fun visitChar(char: Char, p: Nothing?) = char
-                        override fun visitDouble(double: Double, p: Nothing?) = double
-                        override fun visitFloat(float: Float, p: Nothing?) = float
-                        override fun visitInt(int: Int, p: Nothing?) = int
-                        override fun visitLong(long: Long, p: Nothing?) = long
-                        override fun visitShort(short: Short, p: Nothing?) = short
-                        override fun visitString(string: String, p: Nothing?) = string
-                        override fun visitType(type: TypeMirror, p: Nothing?) = type.toString()
-                        override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.simpleName.toString()
-                        override fun visitAnnotation(annotationMirror: AnnotationMirror?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unsupported nested annotations")
-                        override fun visitArray(vals: MutableList<out AnnotationValue>?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Arrays are not supported")
-                        override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unknown value $av")
-                    }, null)
-                }
 
             properties.add(
                 Property(
@@ -258,11 +223,58 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                     type = propertyType,
                     combinator = combinator,
                     required = propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") },
-                    extra = extra
+                    extra = property.findExtra()
                 )
             )
         }
     }
 
     return properties
+}
+
+private fun Element.findExtra(): Map<String, Any?> {
+    val extra = mutableMapOf<String, Any?>(
+        "example" to getAnnotation(OpenApiExample::class.java)?.value
+    )
+
+    getAnnotationsByType(Custom::class.java).forEach { custom ->
+        extra[custom.name] = custom.value
+    }
+
+    annotationMirrors
+        .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
+        .flatMap { OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(it).asSequence() }
+        .forEach { (element, value) ->
+            extra[element.simpleName.toString()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
+                override fun visit(av: AnnotationValue, p: Nothing?) = av.value.toString()
+                override fun visitBoolean(boolean: Boolean, p: Nothing?) = boolean
+                override fun visitByte(byte: Byte, p: Nothing?) = byte
+                override fun visitChar(char: Char, p: Nothing?) = char
+                override fun visitDouble(double: Double, p: Nothing?) = double
+                override fun visitFloat(float: Float, p: Nothing?) = float
+                override fun visitInt(int: Int, p: Nothing?) = int
+                override fun visitLong(long: Long, p: Nothing?) = long
+                override fun visitShort(short: Short, p: Nothing?) = short
+                override fun visitString(string: String, p: Nothing?) = string.trimIndent()
+                override fun visitType(type: TypeMirror, p: Nothing?) = type.toString()
+                override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.simpleName.toString()
+                override fun visitAnnotation(annotationMirror: AnnotationMirror?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unsupported nested annotations")
+                override fun visitArray(vals: MutableList<out AnnotationValue>?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Arrays are not supported")
+                override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unknown value $av")
+            }, null)
+        }
+
+    return extra
+}
+
+private fun JsonObject.addExtra(extra: Map<String, Any?>): JsonObject = also {
+    extra
+        .filterValues { it != null }
+        .forEach { (key, value) ->
+            when (value) {
+                is Boolean -> addProperty(key, value)
+                is Number -> addProperty(key, value)
+                else -> addProperty(key, value.toString())
+            }
+        }
 }

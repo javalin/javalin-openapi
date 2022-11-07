@@ -44,12 +44,15 @@ import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import kotlin.annotation.AnnotationTarget;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,6 +61,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static kotlin.annotation.AnnotationTarget.PROPERTY_GETTER;
 
 /**
  * Starts Javalin server with OpenAPI plugin
@@ -398,6 +403,7 @@ public final class JavalinTest implements Handler {
 
     }
 
+    @Target({ElementType.METHOD, ElementType.TYPE})
     @CustomAnnotation
     @interface Description {
         String title();
