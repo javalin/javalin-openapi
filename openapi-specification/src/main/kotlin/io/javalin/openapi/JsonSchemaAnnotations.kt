@@ -58,7 +58,7 @@ class JsonSchemaLoader {
         JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/")
             ?.readAllBytes()
             ?.decodeToString()
-            ?.split(System.lineSeparator())
+            ?.split("\n")
             ?.asSequence()
             ?.map { it.trim() }
             ?.map { it to JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! }
