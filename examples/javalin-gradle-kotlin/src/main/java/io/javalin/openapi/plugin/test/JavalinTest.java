@@ -152,12 +152,7 @@ public final class JavalinTest implements Handler {
 
             for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
                 System.out.println(generatedJsonSchema.getName());
-
-                try {
-                    System.out.println(new String(generatedJsonSchema.getContent().readAllBytes(), StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                System.out.println(generatedJsonSchema.getContentAsString());
             }
         })
         .start(8080);

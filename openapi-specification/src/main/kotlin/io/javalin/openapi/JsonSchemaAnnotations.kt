@@ -80,6 +80,10 @@ data class JsonSchemaResource(
     fun getContent(): InputStream =
         content.get()
 
+    /** Reads [#getContent] as string */
+    fun getContentAsString(): String =
+        getContent().reader().readText()
+
 }
 
 class JsonSchemaLoader {

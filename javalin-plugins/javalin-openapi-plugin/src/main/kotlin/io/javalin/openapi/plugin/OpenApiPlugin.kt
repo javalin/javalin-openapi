@@ -3,7 +3,8 @@ package io.javalin.openapi.plugin
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
-import io.javalin.json.JavalinJackson.Companion.defaultMapper
+import io.javalin.json.JavalinJackson
+import io.javalin.json.jsonMapper
 import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiServer
 import io.javalin.openapi.Security
@@ -43,30 +44,35 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
     private val logger = LoggerFactory.getLogger(OpenApiPlugin::class.java)
 
     override fun init(app: Javalin) {
-        this.documentation = readResource("/openapi-plugin/openapi.json")?.let { modifyDocumentation(it) }
+        this.documentation = readResource("/openapi-plugin/openapi.json")?.let { modifyDocumentation(app, it) }
     }
 
-    private fun modifyDocumentation(rawDocs: String): String =
+    private fun modifyDocumentation(app: Javalin, rawDocs: String): String =
         with(configuration) {
-            val docsNode = defaultMapper().readTree(rawDocs) as ObjectNode
+            val jsonMapper = when (val jsonMapper = app.jsonMapper()) {
+                is JavalinJackson -> jsonMapper.mapper
+                else -> JavalinJackson.defaultMapper()
+            }
+
+            val docsNode = jsonMapper.readTree(rawDocs) as ObjectNode
 
             //process OpenAPI "info"
-            docsNode.replace("info", defaultMapper().convertValue(info, JsonNode::class.java))
+            docsNode.replace("info", jsonMapper.convertValue(info, JsonNode::class.java))
 
             // process OpenAPI "servers"
-            docsNode.replace("servers", defaultMapper().convertValue(servers, JsonNode::class.java))
+            docsNode.replace("servers", jsonMapper.convertValue(servers, JsonNode::class.java))
 
             // process OpenAPI "components"
             val componentsNode = docsNode.get("components") as? ObjectNode?
-                ?: defaultMapper().createObjectNode().also { docsNode.replace("components", it) }
+                ?: jsonMapper.createObjectNode().also { docsNode.replace("components", it) }
 
             // process OpenAPI "securitySchemes"
             val securitySchemes = security?.securitySchemes ?: emptyMap()
-            componentsNode.replace("securitySchemes", defaultMapper().convertValue(securitySchemes, JsonNode::class.java))
+            componentsNode.replace("securitySchemes", jsonMapper.convertValue(securitySchemes, JsonNode::class.java))
 
             //process OpenAPI "security"
             val securityMap = security?.globalSecurity?.associate { it.name to it.scopes.toTypedArray() }
-            docsNode.replace("security", defaultMapper().convertValue(securityMap, JsonNode::class.java))
+            docsNode.replace("security", jsonMapper.convertValue(securityMap, JsonNode::class.java))
 
             return configuration.documentProcessor
                 ?.invoke(docsNode)
