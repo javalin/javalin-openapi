@@ -7,6 +7,7 @@ import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Combinator
 import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
+import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
@@ -21,6 +22,8 @@ import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.hasAnnotation
+import io.javalin.openapi.processor.shared.isPrimitive
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
@@ -153,7 +156,12 @@ private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElem
 private val recordType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record") }
 
 internal fun DataModel.findAllProperties(): Collection<Property> {
+    val requireNonNulls = sourceElement.getAnnotation(JsonSchema::class.java)
+        ?.requireNonNulls
+        ?: true
+
     val acceptFields = sourceElement.getAnnotation(OpenApiByFields::class.java)
+        ?.value
 
     val isRecord = when (recordType) {
         null -> false
@@ -183,7 +191,7 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                     else -> Visibility.DEFAULT
                 }
 
-                if (acceptFields.value.priority > fieldVisibility.priority) {
+                if (acceptFields.priority > fieldVisibility.priority) {
                     continue
                 }
             }
@@ -222,7 +230,7 @@ internal fun DataModel.findAllProperties(): Collection<Property> {
                     name = name,
                     type = propertyType,
                     combinator = combinator,
-                    required = propertyType.kind.isPrimitive || property.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("NotNull") },
+                    required = requireNonNulls && (propertyType.isPrimitive() || property.hasAnnotation("NotNull")),
                     extra = property.findExtra()
                 )
             )

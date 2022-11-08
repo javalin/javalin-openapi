@@ -11,34 +11,52 @@ import kotlin.reflect.KClass
 
 @Target(CLASS)
 @Retention(SOURCE)
-annotation class JsonSchema
+annotation class JsonSchema(
+    /**
+     * By default, each usage of @JsonSchema annotation results in generated `/json-schemas/{type qualifier}` resource file.
+     * If for some reason you need to use @JsonSchema in your OpenAPI specification, you can disable this behaviour.
+     */
+    val generateResource: Boolean = true,
+    /**
+     * By default, all non fields are marked as required.
+     * You can disable this behaviour for given type using this property
+     */
+    val requireNonNulls: Boolean = true
+)
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class OneOf(
+    /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class AnyOf(
+    /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 annotation class AllOf(
+    /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
+/** Allows you to add custom properties to your schemes */
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(SOURCE)
 @Repeatable
 annotation class Custom(
+    /* Define name of key for custom property */
     val name: String,
+    /* Define value of custom property */
     val value: String
 )
 
+/** Allows you to create custom annotations for a group of custom properties */
 @Target(ANNOTATION_CLASS)
 @Retention(SOURCE)
 annotation class CustomAnnotation

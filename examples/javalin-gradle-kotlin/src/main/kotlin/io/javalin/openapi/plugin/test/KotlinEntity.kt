@@ -4,12 +4,18 @@ import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.plugin.test.JavalinTest.Description
 
+@JsonSchema(
+    generateResource = false,
+    requireNonNulls = false
+)
 data class KotlinEntity(
     val name: String,
     val value: Int
 )
 
-@JsonSchema
+@JsonSchema(
+    requireNonNulls = false
+)
 @Description(
     title = "Kotlin Scheme",
     description =

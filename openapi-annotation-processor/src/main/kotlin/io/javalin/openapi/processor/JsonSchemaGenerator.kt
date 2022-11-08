@@ -11,22 +11,23 @@ import javax.tools.StandardLocation
 
 class JsonSchemaGenerator {
 
-    fun generate(roundEnvironment: RoundEnvironment) {
-        roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java).forEach { rawElement ->
-            try {
-                val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "json-schemes/${rawElement}")
-                val content = generate(rawElement)
+    fun generate(roundEnvironment: RoundEnvironment) =
+        roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
+            .filter { it.getAnnotation(JsonSchema::class.java).generateResource }
+            .forEach { rawElement ->
+                try {
+                    val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "json-schemes/${rawElement}")
+                    val content = generate(rawElement)
 
-                resource.openWriter().use {
-                    it.write(content)
+                    resource.openWriter().use {
+                        it.write(content)
+                    }
+                } catch (filerException: FilerException) {
+                    // json-schemes/{this file} has been created during previous compilation phase
+                } catch (throwable: Throwable) {
+                    ProcessorUtils.printException(throwable)
                 }
-            } catch (filerException: FilerException) {
-                // openapi-plugin/openapi.json has been created during previous compilation phase
-            } catch (throwable: Throwable) {
-                ProcessorUtils.printException(throwable)
             }
-        }
-    }
 
     private fun generate(element: Element): String {
         val scheme = JsonObject()
