@@ -88,16 +88,17 @@ data class JsonSchemaResource(
 
 class JsonSchemaLoader {
 
-    fun loadGeneratedSchemes(): Collection<JsonSchemaResource> =
-        JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/")
+    fun loadGeneratedSchemes(): Set<JsonSchemaResource> =
+        JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/index")
             ?.readAllBytes()
             ?.decodeToString()
             ?.trim()
             ?.split("\n")
             ?.asSequence()
+            ?.distinct()
             ?.filter { it.isNotEmpty() }
             ?.map { JsonSchemaResource(it) { JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! } }
-            ?.toList()
-            ?: emptyList()
+            ?.toSet()
+            ?: emptySet()
 
 }

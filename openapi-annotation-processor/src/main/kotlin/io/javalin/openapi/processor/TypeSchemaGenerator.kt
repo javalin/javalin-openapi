@@ -40,7 +40,7 @@ data class ResultScheme(
     val references: Collection<TypeMirror>
 )
 
-internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultScheme {
+internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean, requiresNonNulls: Boolean = false): ResultScheme {
     val schema = JsonObject()
     schema.addProperty("type", "object")
     schema.addProperty("additionalProperties", false)
@@ -51,11 +51,15 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
     val propertiesObject = JsonObject()
     schema.add("properties", propertiesObject)
 
-    val properties = type.findAllProperties()
+    val requireNonNulls = type.sourceElement.getAnnotation(JsonSchema::class.java)
+        ?.requireNonNulls
+        ?: true
+
+    val properties = type.findAllProperties(requireNonNulls)
     val references = ArrayList<TypeMirror>()
 
     properties.forEach { property ->
-        val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, property.combinator, property.extra)
+        val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, requiresNonNulls, property.combinator, property.extra)
         propertiesObject.add(property.name, propertySchema)
         references.addAll(refs)
     }
@@ -72,6 +76,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
 internal fun createTypeDescription(
     model: DataModel,
     inlineRefs: Boolean = false,
+    requiresNonNulls: Boolean = false,
     propertyCombinator: PropertyCombinator? = null,
     extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
@@ -82,7 +87,7 @@ internal fun createTypeDescription(
         propertyCombinator != null -> {
             val combinatorObject = JsonArray()
             propertyCombinator.second.forEach { variantType ->
-                val (variantScheme, refs) = createTypeSchema(variantType.toModel(), inlineRefs)
+                val (variantScheme, refs) = createTypeSchema(variantType.toModel(), inlineRefs, requiresNonNulls)
                 combinatorObject.add(variantScheme)
                 references.addAll(refs)
             }
@@ -95,13 +100,13 @@ internal fun createTypeDescription(
         model.type == ARRAY -> {
             scheme.addProperty("type", "array")
             val items = JsonObject()
-            items.addType(model, inlineRefs, references)
+            items.addType(model, inlineRefs, references, requiresNonNulls)
             scheme.add("items", items)
         }
         model.type == DICTIONARY -> {
             scheme.addProperty("type", "object")
             val additionalProperties = JsonObject()
-            additionalProperties.addType(model.generics[1], inlineRefs, references)
+            additionalProperties.addType(model.generics[1], inlineRefs, references, requiresNonNulls)
             scheme.add("additionalProperties", additionalProperties)
         }
         model.sourceElement.kind == ENUM -> {
@@ -113,19 +118,19 @@ internal fun createTypeDescription(
             scheme.addProperty("type", "string")
             scheme.add("enum", values)
         }
-        else -> scheme.addType(model, inlineRefs, references)
+        else -> scheme.addType(model, inlineRefs, references, requiresNonNulls)
     }
 
     scheme.addExtra(extra)
     return ResultScheme(scheme, references)
 }
 
-internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, references: MutableCollection<TypeMirror>) {
+internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, references: MutableCollection<TypeMirror>, requiresNonNulls: Boolean) {
     val nonRefType = JsonTypes.NON_REF_TYPES[model.simpleName]
 
     if (nonRefType == null) {
         if (inlineRefs) {
-            val (subScheme, subReferences) = createTypeSchema(model, true)
+            val (subScheme, subReferences) = createTypeSchema(model, true, requiresNonNulls)
             subScheme.asMap().forEach { (key, value) -> add(key, value) }
             references.addAll(subReferences)
         } else {
@@ -155,11 +160,7 @@ data class Property(
 private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object") }
 private val recordType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record") }
 
-internal fun DataModel.findAllProperties(): Collection<Property> {
-    val requireNonNulls = sourceElement.getAnnotation(JsonSchema::class.java)
-        ?.requireNonNulls
-        ?: true
-
+internal fun DataModel.findAllProperties(requireNonNulls: Boolean): Collection<Property> {
     val acceptFields = sourceElement.getAnnotation(OpenApiByFields::class.java)
         ?.value
 
