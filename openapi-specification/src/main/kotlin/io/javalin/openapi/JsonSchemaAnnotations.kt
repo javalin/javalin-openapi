@@ -1,5 +1,7 @@
 package io.javalin.openapi
 
+import java.io.InputStream
+import java.util.function.Supplier
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
 import kotlin.annotation.AnnotationTarget.CLASS
@@ -67,10 +69,18 @@ enum class Combinator(val propertyName: String) {
     ALL_OF("allOf")
 }
 
+/** Represents resource file in `/json-schemes` directory. */
 data class JsonSchemaResource(
+    /** The name of resource file. */
     val name: String,
-    val content: String
-)
+    private val content: Supplier<InputStream>
+) {
+
+    /** Returns input stream to the associated resource file. */
+    fun getContent(): InputStream =
+        content.get()
+
+}
 
 class JsonSchemaLoader {
 
@@ -78,11 +88,11 @@ class JsonSchemaLoader {
         JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/")
             ?.readAllBytes()
             ?.decodeToString()
+            ?.trim()
             ?.split("\n")
             ?.asSequence()
-            ?.map { it.trim() }
-            ?.map { it to JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! }
-            ?.map { (name, source) -> JsonSchemaResource(name, source.reader().readText()) }
+            ?.filter { it.isNotEmpty() }
+            ?.map { JsonSchemaResource(it) { JsonSchemaLoader::class.java.getResourceAsStream("/json-schemes/$it")!! } }
             ?.toList()
             ?: emptyList()
 

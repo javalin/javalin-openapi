@@ -44,15 +44,16 @@ import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
-import kotlin.annotation.AnnotationTarget;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -149,10 +150,14 @@ public final class JavalinTest implements Handler {
             reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
             config.plugins.register(new ReDocPlugin(reDocConfiguration));
 
-            JsonSchemaLoader loader = new JsonSchemaLoader();
-            for (JsonSchemaResource generatedJsonSchema : loader.loadGeneratedSchemes()) {
+            for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
                 System.out.println(generatedJsonSchema.getName());
-                System.out.println(generatedJsonSchema.getContent());
+
+                try {
+                    System.out.println(new String(generatedJsonSchema.getContent().readAllBytes(), StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         })
         .start(8080);
