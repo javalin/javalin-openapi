@@ -52,7 +52,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean): ResultSchem
     val references = ArrayList<TypeMirror>()
 
     properties.forEach { property ->
-        val (propertySchema, refs) = createTypeDescription(property.type.toModel()!!, inlineRefs, property.combinator, property.extra)
+        val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, property.combinator, property.extra)
         propertiesObject.add(property.name, propertySchema)
         references.addAll(refs)
     }
@@ -79,7 +79,7 @@ internal fun createTypeDescription(
         propertyCombinator != null -> {
             val combinatorObject = JsonArray()
             propertyCombinator.second.forEach { variantType ->
-                val (variantScheme, refs) = createTypeSchema(variantType.toModel()!!, inlineRefs)
+                val (variantScheme, refs) = createTypeSchema(variantType.toModel(), inlineRefs)
                 combinatorObject.add(variantScheme)
                 references.addAll(refs)
             }

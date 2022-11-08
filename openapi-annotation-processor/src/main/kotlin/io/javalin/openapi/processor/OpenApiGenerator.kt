@@ -199,7 +199,7 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val type = componentReference.toModel() ?: continue
+                val type = componentReference.toModel()
 
                 if (type.sourceElement.toString() == "java.lang.Object") {
                     generatedComponents.add(componentReference)
@@ -309,7 +309,7 @@ internal class OpenApiGenerator {
     }
 
     private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
-        val model = type.toModel()!!
+        val model = type.toModel()
         val (json, references) = createTypeDescription(model)
         componentReferences.addAll(references)
         return json

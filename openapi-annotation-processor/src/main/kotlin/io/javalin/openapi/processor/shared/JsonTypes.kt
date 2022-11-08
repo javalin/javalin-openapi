@@ -71,26 +71,44 @@ internal object JsonTypes {
     private fun Element.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel =
         DataModel(asType(), this, generics, type)
 
-    fun TypeMirror.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel? {
+    private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Object::class.java.name).asType() }
+    private val collectionType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Collection::class.java.name) }
+    private val mapType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Map::class.java.name) }
+
+    fun TypeMirror.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel {
         val types = OpenApiAnnotationProcessor.types
-        val collectionType = OpenApiAnnotationProcessor.elements.getTypeElement(Collection::class.java.name)
-        val mapType = OpenApiAnnotationProcessor.elements.getTypeElement(Map::class.java.name)
 
         return when (this) {
             is TypeVariable -> upperBound?.toModel(generics, type) ?: lowerBound?.toModel(generics, type)
             is PrimitiveType -> types.boxedClass(this).toModel(generics, type)
             is ArrayType -> componentType.toModel(generics, type = ARRAY)
             is DeclaredType -> when {
-                types.isAssignable(types.erasure(this), mapType.asType()) -> DataModel(this, mapType, listOfNotNull(typeArguments[0]?.toModel(), typeArguments[1]?.toModel()), DICTIONARY)
-                types.isAssignable(types.erasure(this), collectionType.asType()) -> typeArguments[0]?.toModel(generics, ARRAY)
-                else -> DataModel(this, asElement(), typeArguments.mapNotNull { it.toModel() }, type)
+                types.isAssignable(types.erasure(this), mapType.asType()) ->
+                    DataModel(
+                        typeMirror = this,
+                        sourceElement = mapType,
+                        generics = listOfNotNull(
+                            typeArguments.getOrElse(0) { objectType }.toModel(),
+                            typeArguments.getOrElse(1) { objectType }.toModel()
+                        ),
+                        type = DICTIONARY
+                    )
+                    types.isAssignable(types.erasure(this), collectionType.asType()) ->
+                        typeArguments.getOrElse(0) { objectType }.toModel(generics, ARRAY)
+                else ->
+                    DataModel(
+                        typeMirror = this,
+                        sourceElement = asElement(),
+                        generics = typeArguments.mapNotNull { it.toModel() },
+                        type = type
+                    )
             }
             else -> types.asElement(this)?.toModel(generics, type)
-        }
+        } ?: objectType.toModel()
     }
 
     fun detectContentType(typeMirror: TypeMirror): String {
-        val model = typeMirror.toModel() ?: return ""
+        val model = typeMirror.toModel()
 
         return when {
             (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" -> "application/octet-stream"

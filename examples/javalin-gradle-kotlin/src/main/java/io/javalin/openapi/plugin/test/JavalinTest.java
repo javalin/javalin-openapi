@@ -253,6 +253,12 @@ public final class JavalinTest implements Handler {
             return foos;
         }
 
+        // should handle fallback to object type
+        @SuppressWarnings("rawtypes")
+        public List getUnknowns() {
+            return foos;
+        }
+
         // should display enum
         public @NotNull EnumEntity getEnumEntity() {
             return enumEntity;

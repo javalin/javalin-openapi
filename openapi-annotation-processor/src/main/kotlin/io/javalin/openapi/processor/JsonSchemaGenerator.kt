@@ -33,7 +33,7 @@ class JsonSchemaGenerator {
         scheme.addProperty("\$schema", "http://json-schema.org/draft-07/schema#")
 
         val type = element.asType()
-        val (entityScheme) = createTypeSchema(type.toModel()!!, true)
+        val (entityScheme) = createTypeSchema(type.toModel(), true)
         entityScheme.entrySet().forEach { (key, value) -> scheme.add(key, value) }
 
         return OpenApiAnnotationProcessor.gson.toJson(scheme)
