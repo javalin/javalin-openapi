@@ -40,7 +40,7 @@ data class ResultScheme(
     val references: Collection<TypeMirror>
 )
 
-internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean, requiresNonNulls: Boolean = false): ResultScheme {
+internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean, requiresNonNulls: Boolean = true): ResultScheme {
     val schema = JsonObject()
     schema.addProperty("type", "object")
     schema.addProperty("additionalProperties", false)
@@ -53,7 +53,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean, requiresNonN
 
     val requireNonNulls = type.sourceElement.getAnnotation(JsonSchema::class.java)
         ?.requireNonNulls
-        ?: true
+        ?: requiresNonNulls
 
     val properties = type.findAllProperties(requireNonNulls)
     val references = ArrayList<TypeMirror>()
@@ -76,7 +76,7 @@ internal fun createTypeSchema(type: DataModel, inlineRefs: Boolean, requiresNonN
 internal fun createTypeDescription(
     model: DataModel,
     inlineRefs: Boolean = false,
-    requiresNonNulls: Boolean = false,
+    requiresNonNulls: Boolean = true,
     propertyCombinator: PropertyCombinator? = null,
     extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
