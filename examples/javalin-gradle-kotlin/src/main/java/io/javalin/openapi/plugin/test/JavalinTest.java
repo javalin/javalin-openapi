@@ -272,6 +272,11 @@ public final class JavalinTest implements Handler {
             return foo;
         }
 
+        // HiddenEntity with @OpenApiPropertyType should be displayed as string
+        public HiddenEntity getHiddenEntity() {
+            return new HiddenEntity();
+        }
+
         // should support primitive types
         public int getStatus() {
             return status;
@@ -425,6 +430,11 @@ public final class JavalinTest implements Handler {
         public boolean isCat() {
             return true;
         }
+
+    }
+
+    @OpenApiPropertyType(definedBy = String.class)
+    static class HiddenEntity {
 
     }
 

@@ -120,7 +120,7 @@ annotation class OpenApiExample(
     val value: String
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(SOURCE)
 annotation class OpenApiPropertyType(
     val definedBy: KClass<*>

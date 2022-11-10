@@ -45,6 +45,12 @@ internal fun createTypeSchema(
     inlineRefs: Boolean,
     requireNonNullsByDefault: Boolean = true
 ): ResultScheme {
+    val definedBy = type.sourceElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+
+    if (definedBy != null) {
+        return createTypeSchema(definedBy.toModel(), inlineRefs, requireNonNullsByDefault)
+    }
+
     val schema = JsonObject()
     schema.addProperty("type", "object")
     schema.addProperty("additionalProperties", false)
@@ -84,6 +90,12 @@ internal fun createTypeDescription(
     propertyCombinator: PropertyCombinator? = null,
     extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
+    val definedBy = model.sourceElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+
+    if (definedBy != null) {
+        return createTypeDescription(definedBy.toModel(), inlineRefs, requiresNonNulls, propertyCombinator, extra)
+    }
+
     val scheme = JsonObject()
     val references = mutableListOf<TypeMirror>()
 
