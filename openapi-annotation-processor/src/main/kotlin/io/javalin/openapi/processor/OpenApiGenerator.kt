@@ -19,10 +19,12 @@ import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
 import io.javalin.openapi.processor.shared.ProcessorUtils
 import io.javalin.openapi.processor.shared.JsonTypes
+import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
+import java.util.TreeMap
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.type.TypeMirror
@@ -86,7 +88,7 @@ internal class OpenApiGenerator {
         val paths = JsonObject()
         openApi.add("paths", paths)
 
-        for (routeAnnotation in annotations) {
+        for (routeAnnotation in annotations.sortedBy { it.path }) {
             if (routeAnnotation.ignore) {
                 continue
             }
@@ -94,7 +96,7 @@ internal class OpenApiGenerator {
             val path = paths.computeIfAbsent(routeAnnotation.path) { JsonObject() }
 
             // https://swagger.io/specification/#paths-object
-            for (method in routeAnnotation.methods) {
+            for (method in routeAnnotation.methods.sortedBy { it.ordinal }) {
                 val operation = JsonObject()
 
                 // General
@@ -170,7 +172,7 @@ internal class OpenApiGenerator {
                 // ~ https://swagger.io/specification/#security-requirement-object
                 val security = JsonArray()
 
-                for (securityAnnotation in routeAnnotation.security) {
+                for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
                     val securityEntry = JsonObject()
                     val scopes = JsonArray()
 
@@ -191,27 +193,30 @@ internal class OpenApiGenerator {
 
         val components = JsonObject()
         val schemas = JsonObject()
-        val generatedComponents = mutableSetOf<TypeMirror>()
+        val generatedComponents = TreeMap<DataModel, JsonObject?> { a, b -> a.toString().compareTo(b.toString()) }
 
         while (generatedComponents.size < componentReferences.size) {
-            for (componentReference in componentReferences.toMutableList()) {
-                if (generatedComponents.contains(componentReference)) {
+            for (componentReference in componentReferences.toMutableSet()) {
+                val type = componentReference.toModel()
+
+                if (generatedComponents.containsKey(type)) {
                     continue
                 }
 
-                val type = componentReference.toModel()
-
                 if (type.sourceElement.toString() == "java.lang.Object") {
-                    generatedComponents.add(componentReference)
+                    generatedComponents[type] = null
                     continue
                 }
 
                 val (schema, references) = createTypeSchema(type, false)
-                schemas.add(type.simpleName, schema)
                 componentReferences.addAll(references)
-                generatedComponents.add(componentReference)
+                generatedComponents[type] = schema
             }
         }
+
+        generatedComponents
+            .filterValues { it != null }
+            .forEach { (type, schema) -> schemas.add(type.simpleName, schema) }
 
         components.add("schemas", schemas)
         openApi.add("components", components)
