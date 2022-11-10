@@ -28,7 +28,7 @@ internal object JsonTypes {
         "Short" to Data("integer", "int32"),
         "Int" to Data("integer", "int32"),
         "Integer" to Data("integer", "int32"),
-        "Long" to Data("number", "int64"),
+        "Long" to Data("integer", "int64"),
 
         "Float" to Data("number", "float"),
         "Double" to Data("number", "double"),

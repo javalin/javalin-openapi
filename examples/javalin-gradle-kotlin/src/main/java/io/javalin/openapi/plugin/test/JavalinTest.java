@@ -307,6 +307,12 @@ public final class JavalinTest implements Handler {
             return status + 1;
         }
 
+        // should support @Custom from JsonSchema
+        @Custom(name = "description", value = "Custom property")
+        public String getCustom() {
+            return "";
+        }
+
         // should be displayed as string
         public ObjectId getObjectId() {
             return new ObjectId();
