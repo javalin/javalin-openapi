@@ -172,6 +172,7 @@ public final class JavalinTest implements Handler {
             @OpenApiSecurity(name = "BasicAuth")
         },
         requestBody = @OpenApiRequestBody(
+            description = "Supports multiple request bodies",
             content = {
                 @OpenApiContent(from = String.class), // simple type
                 @OpenApiContent(from = EntityDto[].class), // array
@@ -181,6 +182,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = RecordEntity.class), // record class
                 @OpenApiContent(from = DtoWithFields.class), // map only fields
                 @OpenApiContent(from = EnumEntity.class), // enum
+                @OpenApiContent(type = "application/json"), // empty
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                         @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data

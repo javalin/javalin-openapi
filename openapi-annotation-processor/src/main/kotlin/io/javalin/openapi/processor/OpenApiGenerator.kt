@@ -247,25 +247,40 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun JsonObject.addContent(annotations: Array<OpenApiContent>) {
+    private fun JsonObject.addContent(contentAnnotations: Array<OpenApiContent>) {
         val requestBodyContent = JsonObject()
+        val requestBodySchemes = TreeMap<String, JsonObject>()
 
-        for (contentAnnotation in annotations) {
+        for (contentAnnotation in contentAnnotations) {
             val from = contentAnnotation.getTypeMirror { from }
-            val type = contentAnnotation.type
             val format = contentAnnotation.format.takeIf { it != NULL_STRING }
             val properties = contentAnnotation.properties
-            var mimeType = contentAnnotation.mimeType
+            var type = contentAnnotation.type.takeIf { it != NULL_STRING }
+            var mimeType = contentAnnotation.mimeType.takeIf { it != AUTODETECT }
 
-            if (AUTODETECT == mimeType) {
-                mimeType = JsonTypes.detectContentType(from)
+            if (mimeType == null) {
+                when (NULL_CLASS::class.qualifiedName) {
+                    // Use 'type` as `mimeType` if there's no other mime-type declaration in @OpenApiContent annotation
+                    // ~ https://github.com/javalin/javalin-openapi/issues/88
+                    from.toString() -> {
+                        mimeType = type
+                        type = null
+                    }
+                    else -> mimeType = JsonTypes.detectContentType(from)
+                }
+            }
+
+            if (mimeType == null) {
+                OpenApiAnnotationProcessor.messager.printMessage(WARNING, "Cannot add $contentAnnotation, OpenApi generator cannot find matching mime type")
+                continue
             }
 
             val schema: JsonObject = when {
-                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name -> createTypeDescriptionWithReferences(from)
+                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name ->
+                    createTypeDescriptionWithReferences(from)
                 properties.isEmpty() -> {
                     val schema = JsonObject()
-                    schema.addProperty("type", type)
+                    type?.also { schema.addProperty("type", it) }
                     format?.also { schema.addProperty("format", it) }
                     schema
                 }
@@ -299,8 +314,16 @@ internal class OpenApiGenerator {
             }
 
             val mediaType = JsonObject()
-            mediaType.add("schema", schema)
-            requestBodyContent.add(mimeType, mediaType)
+
+            if (schema.size() > 0) {
+                mediaType.add("schema", schema)
+            }
+
+            requestBodySchemes[mimeType] = mediaType
+        }
+
+        requestBodySchemes.forEach { (mimeType, scheme) ->
+            requestBodyContent.add(mimeType, scheme)
         }
 
         if (requestBodyContent.size() > 0) {
