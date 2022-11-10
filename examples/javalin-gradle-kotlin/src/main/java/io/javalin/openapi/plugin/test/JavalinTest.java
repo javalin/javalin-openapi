@@ -210,7 +210,8 @@ public final class JavalinTest implements Handler {
             ),
             @OpenApiResponse(status = "401", description = "Error message related to the unauthorized access", content = {
                 @OpenApiContent(from = EntityDto[].class)
-            })
+            }),
+            @OpenApiResponse(status = "500") // fill description with HttpStatus message
         }
     )
     public void handle(@NotNull Context ctx) { }

@@ -2,6 +2,7 @@ package io.javalin.openapi.processor
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import io.javalin.http.HttpStatus
 import io.javalin.openapi.ContentType.AUTODETECT
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
@@ -149,7 +150,14 @@ internal class OpenApiGenerator {
 
                 for (responseAnnotation in routeAnnotation.responses.sortedBy { it.status }) {
                     val response = JsonObject()
-                    response.addString("description", responseAnnotation.description)
+
+                    val description = responseAnnotation.description
+                        .takeIf { it != NULL_STRING }
+                        ?: responseAnnotation.status
+                            .toIntOrNull()
+                            ?.let { HttpStatus.forStatus(it) }?.message
+
+                    response.addString("description", description)
                     response.addContent(responseAnnotation.content)
                     responses.add(responseAnnotation.status, response)
                 }
