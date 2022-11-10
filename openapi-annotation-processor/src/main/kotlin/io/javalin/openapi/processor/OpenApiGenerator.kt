@@ -1,6 +1,5 @@
 package io.javalin.openapi.processor
 
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.javalin.openapi.ContentType.AUTODETECT
@@ -71,10 +70,10 @@ internal class OpenApiGenerator {
     /**
      * Based on https://swagger.io/specification/
      *
-     * @param annotations annotation instances to map
+     * @param openApiAnnotations annotation instances to map
      * @return OpenApi JSON response
      */
-    private fun generateSchema(annotations: Collection<OpenApi>): String {
+    private fun generateSchema(openApiAnnotations: Collection<OpenApi>): String {
         val openApi = JsonObject()
         openApi.addProperty("openapi", "3.0.3")
 
@@ -88,7 +87,7 @@ internal class OpenApiGenerator {
         val paths = JsonObject()
         openApi.add("paths", paths)
 
-        for (routeAnnotation in annotations.sortedBy { it.path }) {
+        for (routeAnnotation in openApiAnnotations.sortedBy { it.path }) {
             if (routeAnnotation.ignore) {
                 continue
             }
@@ -115,24 +114,20 @@ internal class OpenApiGenerator {
                 // ~ https://swagger.io/specification/#parameter-object
                 val parameters = JsonArray()
 
-                for (queryParameterAnnotation in routeAnnotation.queryParams) {
-                    parameters.add(fromParameter(QUERY, queryParameterAnnotation))
-                }
+                val parameterAnnotations = linkedMapOf(
+                    COOKIE to routeAnnotation.cookies,
+                    FORM_DATA to routeAnnotation.formParams,
+                    HEADER to routeAnnotation.headers,
+                    PATH to routeAnnotation.pathParams,
+                    QUERY to routeAnnotation.queryParams
+                )
 
-                for (headerParameterAnnotation in routeAnnotation.headers) {
-                    parameters.add(fromParameter(HEADER, headerParameterAnnotation))
-                }
-
-                for (pathParameterAnnotation in routeAnnotation.pathParams) {
-                    parameters.add(fromParameter(PATH, pathParameterAnnotation))
-                }
-
-                for (cookieParameterAnnotation in routeAnnotation.cookies) {
-                    parameters.add(fromParameter(COOKIE, cookieParameterAnnotation))
-                }
-
-                for (formParameterAnnotation in routeAnnotation.formParams) {
-                    parameters.add(fromParameter(FORM_DATA, formParameterAnnotation))
+                parameterAnnotations.forEach { (parameterType, annotations) ->
+                    annotations
+                        .sortedBy { it.name }
+                        .forEach { parameterAnnotation ->
+                            parameters.add(fromParameter(parameterType, parameterAnnotation))
+                        }
                 }
 
                 operation.add("parameters", parameters)
@@ -152,7 +147,7 @@ internal class OpenApiGenerator {
                 // ~ https://swagger.io/specification/#responses-object
                 val responses = JsonObject()
 
-                for (responseAnnotation in routeAnnotation.responses) {
+                for (responseAnnotation in routeAnnotation.responses.sortedBy { it.status }) {
                     val response = JsonObject()
                     response.addString("description", responseAnnotation.description)
                     response.addContent(responseAnnotation.content)
