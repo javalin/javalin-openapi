@@ -11,7 +11,8 @@ import io.javalin.openapi.plugin.test.JavalinTest.Description
 )
 data class KotlinEntity(
     val name: String,
-    val value: Int
+    val value: Int,
+    val elements: Elements
 )
 
 @JsonSchema(
@@ -40,7 +41,7 @@ annotation class CustomAnnotationInKotlinWithArray(
 )
 
 @JsonSchema
-data class KeypairCreateResponse(
+data class Elements(
     @get:CustomAnnotationInKotlinWithArray(["a", "b"])
     val value: String
 )
