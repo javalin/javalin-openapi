@@ -16,8 +16,11 @@ internal class SwaggerWebJarHandler(private val swaggerWebJarPath: String) : Han
         }
 
         context.result(resource)
-            .contentType(MimeTypes.getDefaultMimeByExtension(context.path()))
-            .res().characterEncoding = "UTF-8"
+        context.res().characterEncoding = "UTF-8"
+
+        MimeTypes.getDefaultMimeByExtension(context.path())?.let { // Swagger returns various non-standard assets like .js.map that are not recognized
+            context.contentType(it)
+        }
     }
 
 }
