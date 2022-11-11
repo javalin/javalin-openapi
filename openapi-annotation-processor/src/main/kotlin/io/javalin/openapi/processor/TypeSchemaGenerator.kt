@@ -1,6 +1,7 @@
 package io.javalin.openapi.processor
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
@@ -283,8 +284,18 @@ private fun Element.findExtra(): Map<String, Any?> {
                 override fun visitString(string: String, p: Nothing?) = string.trimIndent()
                 override fun visitType(type: TypeMirror, p: Nothing?) = type.toString()
                 override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.simpleName.toString()
+                override fun visitArray(values: MutableList<out AnnotationValue>, p: Nothing?): JsonArray = JsonArray().also { array ->
+                    values.forEach {
+                        when (val result = it.accept(this, null)) {
+                            is Boolean -> array.add(result)
+                            is Number -> array.add(result)
+                            is String -> array.add(result)
+                            is JsonElement -> array.add(result)
+                            else -> throw UnsupportedOperationException("[CustomAnnotation] Unsupported array value: $it")
+                        }
+                    }
+                }
                 override fun visitAnnotation(annotationMirror: AnnotationMirror?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unsupported nested annotations")
-                override fun visitArray(vals: MutableList<out AnnotationValue>?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Arrays are not supported")
                 override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unknown value $av")
             }, null)
         }
@@ -297,6 +308,7 @@ private fun JsonObject.addExtra(extra: Map<String, Any?>): JsonObject = also {
         .filterValues { it != null }
         .forEach { (key, value) ->
             when (value) {
+                is JsonElement -> add(key, value)
                 is Boolean -> addProperty(key, value)
                 is Number -> addProperty(key, value)
                 else -> addProperty(key, value.toString())

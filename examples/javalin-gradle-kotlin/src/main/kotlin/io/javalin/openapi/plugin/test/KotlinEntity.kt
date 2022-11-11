@@ -1,5 +1,6 @@
 package io.javalin.openapi.plugin.test
 
+import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.plugin.test.JavalinTest.Description
@@ -22,10 +23,24 @@ data class KotlinEntity(
         """
         Example usage of custom annotation on Kotlin class
         """,
-    statusCode = -1)
+    statusCode = -1
+)
 data class KotlinScheme(
     @get:Description(title = "Value", description = "Int value", statusCode = 200)
     val value: Int,
     @get:OneOf(KotlinEntity::class)
     val any: Any
+)
+
+@CustomAnnotation
+@Target(AnnotationTarget.PROPERTY_GETTER)
+annotation class CustomAnnotationInKotlinWithArray(
+    // should support arrays
+    val value: Array<String> = [],
+)
+
+@JsonSchema
+data class KeypairCreateResponse(
+    @get:CustomAnnotationInKotlinWithArray(["a", "b"])
+    val value: String
 )
