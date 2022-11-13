@@ -36,12 +36,13 @@ data class KotlinScheme(
 @CustomAnnotation
 @Target(AnnotationTarget.PROPERTY_GETTER)
 annotation class CustomAnnotationInKotlinWithArray(
+    val standard: String = "default",
     // should support arrays
     val value: Array<String> = [],
 )
 
 @JsonSchema
 data class Elements(
-    @get:CustomAnnotationInKotlinWithArray(["a", "b"])
+    @get:CustomAnnotationInKotlinWithArray(value = ["a", "b"])
     val value: String
 )

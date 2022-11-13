@@ -2,7 +2,6 @@ package io.javalin.openapi.plugin.swagger
 
 import io.javalin.Javalin
 import io.javalin.plugin.Plugin
-import io.javalin.plugin.PluginLifecycleInit
 import io.javalin.security.RouteRole
 
 class SwaggerConfiguration {
@@ -15,12 +14,16 @@ class SwaggerConfiguration {
     var roles: Array<RouteRole> = emptyArray()
 }
 
-open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin, PluginLifecycleInit {
-
-    override fun init(app: Javalin) {}
+open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin {
 
     override fun apply(app: Javalin) {
-        val swaggerHandler = SwaggerHandler(configuration.title, configuration.documentationPath, configuration.version, configuration.validatorUrl)
+        val swaggerHandler = SwaggerHandler(
+            title = configuration.title,
+            documentationPath = configuration.documentationPath,
+            swaggerVersion = configuration.version,
+            validatorUrl = configuration.validatorUrl,
+            basePath = app.cfg.routing.contextPath
+        )
 
         app
             .get(configuration.uiPath, swaggerHandler, *configuration.roles)

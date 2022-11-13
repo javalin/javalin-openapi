@@ -11,7 +11,8 @@ class SwaggerHandler(
     private val title: String,
     private val documentationPath: String,
     private val swaggerVersion: String,
-    private val validatorUrl: String?
+    private val validatorUrl: String?,
+    private val basePath: String
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -22,7 +23,8 @@ class SwaggerHandler(
     }
 
     private fun createSwaggerUiHtml(): String {
-        val publicBasePath = "/webjars/swagger-ui/$swaggerVersion"
+        val publicSwaggerAssetsPath = "/$basePath/webjars/swagger-ui/$swaggerVersion".replace("//", "/")
+        val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
 
         @Language("html")
         val html = """
@@ -32,8 +34,8 @@ class SwaggerHandler(
             <head>
                 <meta charset="UTF-8">
                 <title>$title</title>
-                <link rel="stylesheet" type="text/css" href="$publicBasePath/swagger-ui.css" >
-                <link rel="icon" type="image/png" href="$publicBasePath/favicon-32x32.png" sizes="32x32" />
+                <link rel="stylesheet" type="text/css" href="$publicSwaggerAssetsPath/swagger-ui.css" >
+                <link rel="icon" type="image/png" href="$publicSwaggerAssetsPath/favicon-32x32.png" sizes="32x32" />
                 <style>
                     html {
                         box-sizing: border-box;
@@ -51,12 +53,12 @@ class SwaggerHandler(
             </head>
             <body>
                 <div id="swagger-ui"></div>
-                <script src="$publicBasePath/swagger-ui-bundle.js"> </script>
-                <script src="$publicBasePath/swagger-ui-standalone-preset.js"> </script>
+                <script src="$publicSwaggerAssetsPath/swagger-ui-bundle.js"> </script>
+                <script src="$publicSwaggerAssetsPath/swagger-ui-standalone-preset.js"> </script>
                 <script>
                 window.onload = function() {
                     window.ui = SwaggerUIBundle({
-                        url: "$documentationPath",
+                        url: '$publicDocumentationPath',
                         dom_id: "#swagger-ui",
                         deepLinking: true,
                         presets: [
