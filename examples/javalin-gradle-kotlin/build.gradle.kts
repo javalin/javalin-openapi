@@ -36,14 +36,11 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
 
     // javalin
-    implementation("io.javalin:javalin:5.1.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0-rc1")
+    implementation("io.javalin:javalin:5.1.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
     // logging
-    val logback = "1.4.3"
-    implementation("ch.qos.logback:logback-core:$logback")
-    implementation("ch.qos.logback:logback-classic:$logback")
-    implementation("org.slf4j:slf4j-api:2.0.3")
+    implementation("ch.qos.logback:logback-classic:1.4.4")
 
     // some test integrations
     implementation("org.mongodb:bson:4.7.2")
