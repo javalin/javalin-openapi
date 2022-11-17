@@ -23,7 +23,7 @@ class SwaggerHandler(
     }
 
     private fun createSwaggerUiHtml(): String {
-        val publicSwaggerAssetsPath = "/$basePath/webjars/swagger-ui/$swaggerVersion".replace("//", "/")
+        val publicSwaggerAssetsPath = "$basePath/webjars/swagger-ui/$swaggerVersion".replace("//", "/")
         val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
 
         @Language("html")

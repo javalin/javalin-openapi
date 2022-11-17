@@ -9,7 +9,8 @@ import io.javalin.http.Handler
 class ReDocHandler(
     private val title: String,
     private val documentationPath: String,
-    private val version: String
+    private val version: String,
+    private val basePath: String
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -19,7 +20,7 @@ class ReDocHandler(
     }
 
     private fun createReDocUI(): String {
-        val publicBasePath = "/webjars/redoc/$version"
+        val publicBasePath = "$basePath/webjars/redoc/$version".replace("//", "")
 
         return """
         |<!DOCTYPE html>

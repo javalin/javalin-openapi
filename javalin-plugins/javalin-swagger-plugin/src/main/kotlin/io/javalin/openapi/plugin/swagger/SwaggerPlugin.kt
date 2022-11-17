@@ -5,13 +5,20 @@ import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
 
 class SwaggerConfiguration {
+    /** Page title **/
     var title = "OpenApi documentation"
-    var version = "3.52.5"
+    /* Swagger UI route */
     var uiPath = "/swagger"
-    var webJarPath = "/webjars/swagger-ui"
-    var documentationPath = "/openapi"
-    var validatorUrl: String? = "https://validator.swagger.io/validator"
+    /** Roles eligible to connect to Swagger routes */
     var roles: Array<RouteRole> = emptyArray()
+    /** Location of OpenApi documentation */
+    var documentationPath = "/openapi"
+    /** Swagger UI Bundle version */
+    var version = "3.52.5"
+    /** Swagger UI Bundler webjar location */
+    var webJarPath = "/webjars/swagger-ui"
+    /** Specification validator */
+    var validatorUrl: String? = "https://validator.swagger.io/validator"
 }
 
 open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin {
