@@ -85,7 +85,7 @@
                             <annotationProcessorPath>
                                 <groupId>io.javalin-rfc</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
-                                <version>5.1.4</version>
+                                <version>5.1.4-1</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
