@@ -20,7 +20,8 @@ class ReDocHandler(
     }
 
     private fun createReDocUI(): String {
-        val publicBasePath = "$basePath/webjars/redoc/$version".replace("//", "")
+        val publicBasePath = "$basePath/webjars/redoc/$version".replace("//", "/")
+        val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
 
         return """
         |<!DOCTYPE html>
@@ -39,7 +40,7 @@ class ReDocHandler(
         |  <script src="$publicBasePath/bundles/redoc.standalone.js"></script>
         |  <script>
         |   window.onload = () => {
-        |     Redoc.init('$documentationPath', {}, document.getElementById('redoc'))
+        |     Redoc.init('$publicDocumentationPath', {}, document.getElementById('redoc'))
         |   }
         | </script>
         |  </body>

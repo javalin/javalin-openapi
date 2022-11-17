@@ -134,7 +134,7 @@ public final class JavalinTest implements Handler {
                     .withScope("read_pets"))
             );
 
-            config.routing.contextPath = "/custom";
+//            config.routing.contextPath = "/custom";
 
             openApiConfiguration.setDocumentProcessor(docs -> { // you can add whatever you want to this document using your favourite json api
                 docs.set("test", new TextNode("Value"));
