@@ -1,7 +1,12 @@
 description = "Javalin OpenAPI Annotation Processor | Generates OpenApi specification from @OpenApi annotations"
 
+plugins {
+    kotlin("kapt")
+}
+
 dependencies {
     api(project(":openapi-specification"))
+    kaptTest(project(":openapi-annotation-processor"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20")
     implementation("com.google.code.gson:gson:2.10")
