@@ -4,20 +4,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>javalin-openapi.openapi-platforms.javalin-modules</groupId>
+    <groupId>io.javalin.community.openapi.examples</groupId>
     <artifactId>javalin-apptest</artifactId>
-    <version>1.1.7</version>
+    <version>1.0.0</version>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <javalin.openapi>5.1.4-2</javalin.openapi>
     </properties>
 
     <repositories>
-        <repository>
-            <id>panda-repository</id>
-            <url>https://maven.reposilite.com/releases</url>
-        </repository>
         <repository>
             <id>panda-repository</id>
             <url>https://maven.reposilite.com/snapshots</url>
@@ -48,17 +45,17 @@
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
-            <version>1.1.7</version>
+            <version>${javlain.openapi}</version>
         </dependency>
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-swagger-plugin</artifactId>
-            <version>1.1.7</version>
+            <version>${javlain.openapi}</version>
         </dependency>
         <dependency>
             <groupId>io.javalin-rfc</groupId>
             <artifactId>javalin-redoc-plugin</artifactId>
-            <version>1.1.7</version>
+            <version>${javlain.openapi}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars.npm</groupId>
@@ -85,7 +82,7 @@
                             <annotationProcessorPath>
                                 <groupId>io.javalin-rfc</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
-                                <version>5.1.4-1</version>
+                                <version>${javlain.openapi}</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
