@@ -22,6 +22,7 @@ import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.getFullName
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
@@ -34,7 +35,7 @@ import javax.tools.StandardLocation
 
 internal class OpenApiGenerator {
 
-    private val componentReferences: MutableSet<TypeMirror> = mutableSetOf()
+    private val componentReferences = mutableMapOf<String, TypeMirror>()
 
     fun generate(roundEnvironment: RoundEnvironment) {
         try {
@@ -196,29 +197,29 @@ internal class OpenApiGenerator {
 
         val components = JsonObject()
         val schemas = JsonObject()
-        val generatedComponents = TreeMap<DataModel, JsonObject?> { a, b -> a.toString().compareTo(b.toString()) }
+        val generatedComponents = TreeMap<String, Pair<DataModel, JsonObject>?> { a, b -> a.compareTo(b) }
 
         while (generatedComponents.size < componentReferences.size) {
-            for (componentReference in componentReferences.toMutableSet()) {
-                val type = componentReference.toModel()
-
-                if (generatedComponents.containsKey(type)) {
+            for ((name, componentReference) in componentReferences.toMutableMap()) {
+                if (generatedComponents.containsKey(name)) {
                     continue
                 }
 
-                if (type.sourceElement.toString() == "java.lang.Object") {
-                    generatedComponents[type] = null
+                val type = componentReference.toModel()
+
+                if (type.fullName == "java.lang.Object") {
+                    generatedComponents[name] = null
                     continue
                 }
 
                 val (schema, references) = createTypeSchema(type, false)
-                componentReferences.addAll(references)
-                generatedComponents[type] = schema
+                componentReferences.putAll(references.associateBy { it.getFullName() })
+                generatedComponents[name] = type to schema
             }
         }
 
         generatedComponents
-            .filterValues { it != null }
+            .mapNotNull { it.value }
             .forEach { (type, schema) -> schemas.add(type.simpleName, schema) }
 
         components.add("schemas", schemas)
@@ -270,7 +271,7 @@ internal class OpenApiGenerator {
                 when (NULL_CLASS::class.qualifiedName) {
                     // Use 'type` as `mimeType` if there's no other mime-type declaration in @OpenApiContent annotation
                     // ~ https://github.com/javalin/javalin-openapi/issues/88
-                    from.toString() -> {
+                    from.getFullName() -> {
                         mimeType = type
                         type = null
                     }
@@ -284,7 +285,7 @@ internal class OpenApiGenerator {
             }
 
             val schema: JsonObject = when {
-                properties.isEmpty() && from.toString() != NULL_CLASS::class.java.name ->
+                properties.isEmpty() && from.getFullName() != NULL_CLASS::class.java.name ->
                     createTypeDescriptionWithReferences(from)
                 properties.isEmpty() -> {
                     val schema = JsonObject()
@@ -342,7 +343,7 @@ internal class OpenApiGenerator {
     private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
         val model = type.toModel()
         val (json, references) = createTypeDescription(model)
-        componentReferences.addAll(references)
+        componentReferences.putAll(references.associateBy { it.getFullName() })
         return json
     }
 

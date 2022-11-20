@@ -1,6 +1,8 @@
 package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
+import io.javalin.openapi.processor.shared.JsonTypes.DataModel
+import io.javalin.openapi.processor.shared.JsonTypes.DataType
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.DEFAULT
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
@@ -59,13 +61,24 @@ internal object JsonTypes {
         DICTIONARY
     }
 
-    data class DataModel(
+    class DataModel(
         val typeMirror: TypeMirror,
         val sourceElement: Element,
         var generics: List<DataModel> = emptyList(),
         val type: DataType = DEFAULT
     ) {
-        val simpleName: String = sourceElement.simpleName.toString()
+        val simpleName: String = sourceElement.toSimpleName()
+        val fullName: String = sourceElement.toString()
+
+        override fun equals(other: Any?): Boolean =
+            when {
+                this === other -> true
+                other is DataModel -> this.fullName == other.fullName
+                else -> false
+            }
+
+        override fun hashCode(): Int = fullName.hashCode()
+
     }
 
     private fun Element.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel =

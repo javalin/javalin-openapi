@@ -49,6 +49,7 @@ import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -182,6 +183,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = RecordEntity.class), // record class
                 @OpenApiContent(from = DtoWithFields.class), // map only fields
                 @OpenApiContent(from = EnumEntity.class), // enum
+                @OpenApiContent(from = File.class), // file
                 @OpenApiContent(type = "application/json"), // empty
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {

@@ -23,8 +23,10 @@ import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.getFullName
 import io.javalin.openapi.processor.shared.hasAnnotation
 import io.javalin.openapi.processor.shared.isPrimitive
+import io.javalin.openapi.processor.shared.toSimpleName
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
@@ -130,7 +132,7 @@ internal fun createTypeDescription(
             val values = JsonArray()
             model.sourceElement.enclosedElements
                 .filterIsInstance<VariableElement>()
-                .map { it.simpleName.toString() }
+                .map { it.toSimpleName() }
                 .forEach { values.add(it) }
             scheme.addProperty("type", "string")
             scheme.add("enum", values)
@@ -218,11 +220,11 @@ internal fun DataModel.findAllProperties(requireNonNulls: Boolean): Collection<P
                 continue
             }
 
-            if (objectType.enclosedElements.any { it.simpleName == property.simpleName }) {
+            if (objectType.enclosedElements.any { it.toSimpleName() == property.toSimpleName() }) {
                 continue
             }
 
-            val simpleName = property.simpleName.toString()
+            val simpleName = property.toSimpleName()
             val customName = property.getAnnotation(OpenApiName::class.java)
 
             val name = when {
@@ -271,7 +273,7 @@ private fun Element.findExtra(): Map<String, Any?> {
         .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
         .flatMap { OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(it).asSequence() }
         .forEach { (element, value) ->
-            extra[element.simpleName.toString()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
+            extra[element.toSimpleName()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
                 override fun visit(av: AnnotationValue, p: Nothing?) = av.value.toString()
                 override fun visitBoolean(boolean: Boolean, p: Nothing?) = boolean
                 override fun visitByte(byte: Byte, p: Nothing?) = byte
@@ -282,8 +284,8 @@ private fun Element.findExtra(): Map<String, Any?> {
                 override fun visitLong(long: Long, p: Nothing?) = long
                 override fun visitShort(short: Short, p: Nothing?) = short
                 override fun visitString(string: String, p: Nothing?) = string.trimIndent()
-                override fun visitType(type: TypeMirror, p: Nothing?) = type.toString()
-                override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.simpleName.toString()
+                override fun visitType(type: TypeMirror, p: Nothing?) = type.getFullName()
+                override fun visitEnumConstant(variable: VariableElement, p: Nothing?) = variable.toSimpleName()
                 override fun visitArray(values: MutableList<out AnnotationValue>, p: Nothing?): JsonArray = JsonArray().also { array ->
                     values.forEach {
                         when (val result = it.accept(this, null)) {
