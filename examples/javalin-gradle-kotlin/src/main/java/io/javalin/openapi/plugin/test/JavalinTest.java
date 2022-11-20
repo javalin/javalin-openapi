@@ -161,7 +161,6 @@ public final class JavalinTest implements Handler {
 
     private static final String ROUTE = "/main/{name}";
 
-    @Override
     @OpenApi(
         path = ROUTE,
         operationId = "cli",
@@ -176,20 +175,12 @@ public final class JavalinTest implements Handler {
             description = "Supports multiple request bodies",
             content = {
                 @OpenApiContent(from = String.class), // simple type
-                @OpenApiContent(from = EntityDto[].class), // array
                 @OpenApiContent(from = LombokEntity.class), // lombok
                 @OpenApiContent(from = KotlinEntity.class), // kotlin
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
                 @OpenApiContent(from = RecordEntity.class), // record class
                 @OpenApiContent(from = DtoWithFields.class), // map only fields
                 @OpenApiContent(from = EnumEntity.class), // enum
-                @OpenApiContent(from = File.class), // file
-                @OpenApiContent(type = "application/json"), // empty
-                @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
-                @OpenApiContent(mimeType = "multipart/form-data", properties = {
-                        @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
-                        @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
-                })
             }
         ),
         headers = {
@@ -216,8 +207,30 @@ public final class JavalinTest implements Handler {
             @OpenApiResponse(status = "500") // fill description with HttpStatus message
         }
     )
+    @OpenApi(
+        path = "/repeatable",
+        methods = { HttpMethod.POST },
+        requestBody = @OpenApiRequestBody(
+            description = "Complex bodies",
+            content = {
+                @OpenApiContent(from = EntityDto[].class), // array
+                @OpenApiContent(from = File.class), // file
+                @OpenApiContent(type = "application/json"), // empty
+                @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
+                @OpenApiContent(mimeType = "multipart/form-data", properties = {
+                    @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
+                    @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
+                })
+            }
+        )
+    )
+    @Override
     public void handle(@NotNull Context ctx) { }
 
+    @OpenApi(
+        path = "/standalone",
+        methods = HttpMethod.DELETE
+    )
     static final class EntityDto implements Serializable {
 
         private final int status;

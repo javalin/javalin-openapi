@@ -6,6 +6,7 @@
 package io.javalin.openapi
 
 import io.javalin.openapi.Visibility.PUBLIC
+import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
@@ -17,6 +18,7 @@ import kotlin.reflect.KClass
 /**
  * Provide metadata for the generation of the open api documentation to the annotated Handler.
  */
+@Repeatable(value = OpenApis::class)
 @Target(CLASS, FIELD, FUNCTION)
 @Retention(SOURCE)
 annotation class OpenApi(
@@ -38,6 +40,12 @@ annotation class OpenApi(
     val security: Array<OpenApiSecurity> = [],
     val path: String,
     val methods: Array<HttpMethod>
+)
+
+@Target(CLASS, FIELD, FUNCTION)
+@Retention(SOURCE)
+annotation class OpenApis(
+    val value: Array<OpenApi> = []
 )
 
 @Target()

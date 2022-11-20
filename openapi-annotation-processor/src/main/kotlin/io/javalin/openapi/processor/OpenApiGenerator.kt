@@ -9,6 +9,7 @@ import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
+import io.javalin.openapi.OpenApis
 import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
@@ -39,18 +40,20 @@ internal class OpenApiGenerator {
 
     fun generate(roundEnvironment: RoundEnvironment) {
         try {
-            val openApiAnnotations = ArrayList<OpenApi>()
+            val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
+                .flatMap { it.getAnnotation(OpenApis::class.java).value.asSequence() }
 
-            roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java).forEach { annotatedElement ->
-                annotatedElement.getAnnotation(OpenApi::class.java)?.let { openApiAnnotations.add(it) }
-            }
+            val standaloneOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
+                .map { it.getAnnotation(OpenApi::class.java) }
 
-            val result = generateSchema(openApiAnnotations)
+            val openApiAnnotations = aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations
+            val generatedOpenApiSchema = generateSchema(openApiAnnotations)
+
             val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi-plugin/openapi.json")
             val location = resource.toUri()
 
             resource.openWriter().use {
-                it.write(result)
+                it.write(generatedOpenApiSchema)
             }
 
             val parsedSchema = OpenAPIV3Parser().readLocation(location.toString(), emptyList(), ParseOptions())
