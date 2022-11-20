@@ -44,6 +44,7 @@ internal object JsonTypes {
 
         "ByteArray" to Data("string", "binary"),
         "InputStream" to Data("string", "binary"),
+        "File" to Data("string", "binary"),
 
         "Date" to Data("string", "date"),
         "LocalDate" to Data("string", "date"),
@@ -124,7 +125,7 @@ internal object JsonTypes {
         val model = typeMirror.toModel()
 
         return when {
-            (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" -> "application/octet-stream"
+            (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
             model.type == ARRAY -> "application/json"
             model.simpleName == "String" -> "text/plain"
             else -> "application/json"
