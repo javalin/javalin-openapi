@@ -6,6 +6,7 @@
 package io.javalin.openapi
 
 import io.javalin.openapi.Visibility.PUBLIC
+import io.javalin.util.FileUtil.readResource
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
@@ -17,31 +18,61 @@ import kotlin.reflect.KClass
 
 /**
  * Provide metadata for the generation of the open api documentation to the annotated Handler.
+ * Source: [Specification](https://swagger.io/specification/)
  */
 @Repeatable(value = OpenApis::class)
 @Target(CLASS, FIELD, FUNCTION)
 @Retention(SOURCE)
 annotation class OpenApi(
+    /** The described path */
+    val path: String,
+    /** List of methods to describe **/
+    val methods: Array<HttpMethod>,
+    /** Schema version **/
+    val versions: Array<String> = ["default"],
     /** Ignore the endpoint in the open api documentation */
     val ignore: Boolean = false,
+    /** An optional, string summary, intended to apply to all operations in this path. **/
     val summary: String = NULL_STRING,
+    /** An optional, string description, intended to apply to all operations in this path. **/
     val description: String = NULL_STRING,
+    /**
+     * Unique string used to identify the operation.
+     * The id MUST be unique among all operations described in the API.
+     * The operationId value is case-sensitive.
+     **/
     val operationId: String = NULL_STRING,
+    /** Declares this operation to be deprecated. Consumers SHOULD refrain from usage of the declared operation. **/
     val deprecated: Boolean = false,
+    /**
+     *  A list of tags for API documentation control.
+     *  Tags can be used for logical grouping of operations by resources or any other qualifier.
+     **/
     val tags: Array<String> = [],
+    /** Describes applicable cookies */
     val cookies: Array<OpenApiParam> = [],
+    /** Describes applicable headers */
     val headers: Array<OpenApiParam> = [],
+    /** Describes applicable path parameters */
     val pathParams: Array<OpenApiParam> = [],
+    /** Describes applicable query parameters */
     val queryParams: Array<OpenApiParam> = [],
+    /** Describes applicable form parameters */
     val formParams: Array<OpenApiParam> = [],
+    /**
+     * The request body applicable for this operation.
+     * The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined semantics for request bodies.
+     * In other cases where the HTTP spec is vague, requestBody SHALL be ignored by consumers.
+     */
     val requestBody: OpenApiRequestBody = OpenApiRequestBody([]),
     // val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]), ?
+    /** The list of possible responses as they are returned from executing this operation. */
     val responses: Array<OpenApiResponse> = [],
+    /** A declaration of which security mechanisms can be used for this operation. */
     val security: Array<OpenApiSecurity> = [],
-    val path: String,
-    val methods: Array<HttpMethod>
 )
 
+/** Utility annotation to aggregate multiple [OpenApi] instances */
 @Target(CLASS, FIELD, FUNCTION)
 @Retention(SOURCE)
 annotation class OpenApis(
@@ -177,4 +208,20 @@ enum class HttpMethod {
     HEAD,
     OPTIONS,
     TRACE;
+}
+
+class OpenApiLoader {
+
+    fun loadVersions(): Set<String> =
+        OpenApiLoader::class.java.getResourceAsStream("/openapi-plugin/.index")
+            ?.readAllBytes()
+            ?.decodeToString()
+            ?.split("\n")
+            ?.asSequence()
+            ?.map { it.trim() }
+            ?.map { it.removePrefix("openapi-") }
+            ?.map { it.removeSuffix(".json") }
+            ?.toSet()
+            ?: emptySet()
+
 }

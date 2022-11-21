@@ -6,6 +6,7 @@ import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import io.javalin.json.jsonMapper
 import io.javalin.openapi.OpenApiInfo
+import io.javalin.openapi.OpenApiLoader
 import io.javalin.openapi.OpenApiServer
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
@@ -46,43 +47,46 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
         )
     }
 
-    private fun createDocumentation(app: Javalin): Lazy<String> =
+    private fun createDocumentation(app: Javalin): Lazy<Map<String, String>> =
         lazy {
             with(configuration) {
-                val rawDocs = readResource("/openapi-plugin/openapi.json")
-
                 val jsonMapper = when (val jsonMapper = app.jsonMapper()) {
                     is JavalinJackson -> jsonMapper.mapper
                     else -> JavalinJackson.defaultMapper()
                 }
 
-                val docsNode = jsonMapper.readTree(rawDocs) as ObjectNode
+                OpenApiLoader()
+                    .loadVersions()
+                    .associateWith { identifier ->
+                        val rawDocs = OpenApiPlugin::class.java.getResource("/openapi-plugin/openapi-$identifier.json")
+                            ?.readText()
+                            ?: "{}"
 
-                //process OpenAPI "info"
-                docsNode.replace("info", jsonMapper.convertValue(info, JsonNode::class.java))
+                        val docsNode = jsonMapper.readTree(rawDocs) as ObjectNode
 
-                // process OpenAPI "servers"
-                docsNode.replace("servers", jsonMapper.convertValue(servers, JsonNode::class.java))
+                        //process OpenAPI "info"
+                        docsNode.replace("info", jsonMapper.convertValue(info, JsonNode::class.java))
 
-                // process OpenAPI "components"
-                val componentsNode = docsNode.get("components") as? ObjectNode?
-                    ?: jsonMapper.createObjectNode().also { docsNode.replace("components", it) }
+                        // process OpenAPI "servers"
+                        docsNode.replace("servers", jsonMapper.convertValue(servers, JsonNode::class.java))
 
-                // process OpenAPI "securitySchemes"
-                val securitySchemes = security?.securitySchemes ?: emptyMap()
-                componentsNode.replace("securitySchemes", jsonMapper.convertValue(securitySchemes, JsonNode::class.java))
+                        // process OpenAPI "components"
+                        val componentsNode = docsNode.get("components") as? ObjectNode?
+                            ?: jsonMapper.createObjectNode().also { docsNode.replace("components", it) }
 
-                //process OpenAPI "security"
-                val securityMap = security?.globalSecurity?.associate { it.name to it.scopes.toTypedArray() }
-                docsNode.replace("security", jsonMapper.convertValue(securityMap, JsonNode::class.java))
+                        // process OpenAPI "securitySchemes"
+                        val securitySchemes = security?.securitySchemes ?: emptyMap()
+                        componentsNode.replace("securitySchemes", jsonMapper.convertValue(securitySchemes, JsonNode::class.java))
 
-                configuration.documentProcessor
-                    ?.invoke(docsNode)
-                    ?: docsNode.toPrettyString()
-            }
+                        //process OpenAPI "security"
+                        val securityMap = security?.globalSecurity?.associate { it.name to it.scopes.toTypedArray() }
+                        docsNode.replace("security", jsonMapper.convertValue(securityMap, JsonNode::class.java))
+
+                        configuration.documentProcessor
+                            ?.invoke(docsNode)
+                            ?: docsNode.toPrettyString()
+                    }
+                }
         }
-
-    private fun readResource(path: String): String =
-        OpenApiPlugin::class.java.getResource(path)?.readText() ?: "{}"
 
 }

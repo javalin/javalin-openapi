@@ -163,8 +163,8 @@ public final class JavalinTest implements Handler {
 
     @OpenApi(
         path = ROUTE,
-        operationId = "cli",
         methods = HttpMethod.POST,
+        operationId = "cli",
         summary = "Remote command execution",
         description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
         tags = { "Cli" },
@@ -210,6 +210,7 @@ public final class JavalinTest implements Handler {
     @OpenApi(
         path = "/repeatable",
         methods = { HttpMethod.POST },
+        versions = "v1",
         requestBody = @OpenApiRequestBody(
             description = "Complex bodies",
             content = {
@@ -229,7 +230,8 @@ public final class JavalinTest implements Handler {
 
     @OpenApi(
         path = "/standalone",
-        methods = HttpMethod.DELETE
+        methods = HttpMethod.DELETE,
+        versions = "v2"
     )
     static final class EntityDto implements Serializable {
 

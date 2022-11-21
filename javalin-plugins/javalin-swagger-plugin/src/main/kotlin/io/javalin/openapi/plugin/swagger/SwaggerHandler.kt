@@ -2,6 +2,7 @@ package io.javalin.openapi.plugin.swagger
 
 import io.javalin.http.Context
 import io.javalin.http.Handler
+import io.javalin.openapi.OpenApiLoader
 import org.intellij.lang.annotations.Language
 
 /**
@@ -25,6 +26,10 @@ class SwaggerHandler(
     private fun createSwaggerUiHtml(): String {
         val publicSwaggerAssetsPath = "$basePath/webjars/swagger-ui/$swaggerVersion".replace("//", "/")
         val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
+
+        val allDocumentations = OpenApiLoader()
+            .loadVersions()
+            .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
 
         @Language("html")
         val html = """
@@ -58,7 +63,9 @@ class SwaggerHandler(
                 <script>
                 window.onload = function() {
                     window.ui = SwaggerUIBundle({
-                        url: '$publicDocumentationPath',
+                        urls: [
+                            $allDocumentations
+                        ],
                         dom_id: "#swagger-ui",
                         deepLinking: true,
                         presets: [

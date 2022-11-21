@@ -27,49 +27,52 @@ import io.javalin.openapi.processor.shared.getFullName
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
-import javax.annotation.processing.FilerException
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 import javax.tools.Diagnostic.Kind.WARNING
-import javax.tools.StandardLocation
 
 internal class OpenApiGenerator {
 
     private val componentReferences = mutableMapOf<String, TypeMirror>()
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        try {
-            val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
-                .flatMap { it.getAnnotation(OpenApis::class.java).value.asSequence() }
+        val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
+            .flatMap { it.getAnnotation(OpenApis::class.java).value.asSequence() }
 
-            val standaloneOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
-                .map { it.getAnnotation(OpenApi::class.java) }
+        val standaloneOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
+            .map { it.getAnnotation(OpenApi::class.java) }
 
-            val openApiAnnotations = aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations
-            val generatedOpenApiSchema = generateSchema(openApiAnnotations)
+        val openApiAnnotationsByVersion = (aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations)
+            .flatMap { it.versions.map { version -> version to it } }
+            .groupBy { (version, _) -> version }
+            .mapValues { (_, annotations) -> annotations.map { it.second } }
 
-            val resource = OpenApiAnnotationProcessor.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "openapi-plugin/openapi.json")
-            val location = resource.toUri()
+        openApiAnnotationsByVersion
+            .map { (version, openApiAnnotations) ->
+                val preparedOpenApiAnnotations = openApiAnnotations.toSet()
+                val generatedOpenApiSchema = generateSchema(preparedOpenApiAnnotations)
 
-            resource.openWriter().use {
-                it.write(generatedOpenApiSchema)
+                val resourceName = "openapi-$version.json"
+                val resource = ProcessorUtils.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
+                    ?.toUri()
+                    ?.toString()
+                    ?: return
+
+                val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
+
+                if (parsedSchema.messages.size > 0) {
+                    OpenApiAnnotationProcessor.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+                }
+
+                parsedSchema.messages.forEach {
+                    OpenApiAnnotationProcessor.messager.printMessage(WARNING, it)
+                }
+
+                resourceName
             }
-
-            val parsedSchema = OpenAPIV3Parser().readLocation(location.toString(), emptyList(), ParseOptions())
-
-            if (parsedSchema.messages.size > 0) {
-                OpenApiAnnotationProcessor.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
-            }
-
-            parsedSchema.messages.forEach {
-                OpenApiAnnotationProcessor.messager.printMessage(WARNING, it)
-            }
-        } catch (filerException: FilerException) {
-            // openapi-plugin/openapi.json has been created during previous compilation phase
-        } catch (throwable: Throwable) {
-            ProcessorUtils.printException(throwable)
-        }
+            .joinToString(separator = "\n")
+            .let { ProcessorUtils.saveResource("openapi-plugin/.index", it) }
     }
 
     /**
