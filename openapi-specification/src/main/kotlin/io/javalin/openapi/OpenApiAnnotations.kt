@@ -212,6 +212,9 @@ enum class HttpMethod {
 
 class OpenApiLoader {
 
+    fun loadOpenApiSchemes(): Map<String, String> =
+        loadVersions().associateWith { loadVersion(it) ?: "{}" }
+
     fun loadVersions(): Set<String> =
         OpenApiLoader::class.java.getResourceAsStream("/openapi-plugin/.index")
             ?.readAllBytes()
@@ -223,5 +226,8 @@ class OpenApiLoader {
             ?.map { it.removeSuffix(".json") }
             ?.toSet()
             ?: emptySet()
+
+    fun loadVersion(version: String): String? =
+        OpenApiLoader::class.java.getResource("/openapi-plugin/openapi-$version.json")?.readText()
 
 }

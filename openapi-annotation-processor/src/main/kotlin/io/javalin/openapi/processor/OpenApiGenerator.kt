@@ -53,7 +53,7 @@ internal class OpenApiGenerator {
                 val preparedOpenApiAnnotations = openApiAnnotations.toSet()
                 val generatedOpenApiSchema = generateSchema(preparedOpenApiAnnotations)
 
-                val resourceName = "openapi-$version.json"
+                val resourceName = "openapi-${version.replace(" ", "-")}.json"
                 val resource = ProcessorUtils.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
                     ?.toUri()
                     ?.toString()

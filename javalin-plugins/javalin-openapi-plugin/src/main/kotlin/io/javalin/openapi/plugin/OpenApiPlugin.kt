@@ -56,12 +56,8 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
                 }
 
                 OpenApiLoader()
-                    .loadVersions()
-                    .associateWith { identifier ->
-                        val rawDocs = OpenApiPlugin::class.java.getResource("/openapi-plugin/openapi-$identifier.json")
-                            ?.readText()
-                            ?: "{}"
-
+                    .loadOpenApiSchemes()
+                    .mapValues { (_, rawDocs) ->
                         val docsNode = jsonMapper.readTree(rawDocs) as ObjectNode
 
                         //process OpenAPI "info"
@@ -86,7 +82,7 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
                             ?.invoke(docsNode)
                             ?: docsNode.toPrettyString()
                     }
-                }
+            }
         }
 
 }

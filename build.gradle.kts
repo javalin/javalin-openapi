@@ -111,8 +111,12 @@ subprojects {
         compileOnly("io.javalin:javalin:$javalin")
 
         val junit = "5.8.2"
+        testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
+
+        testImplementation("org.assertj:assertj-core:3.23.1")
+        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
     }
 
     tasks.withType<Test> {
