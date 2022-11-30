@@ -30,7 +30,6 @@ class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
         operationId = "Test operation id",
         description = "Test description",
         deprecated = true,
-
     )
     @Test
     fun should_contain_all_basic_properties_from_openapi_annotation() = withOpenApi("should contain all basic properties from openapi annotation") {

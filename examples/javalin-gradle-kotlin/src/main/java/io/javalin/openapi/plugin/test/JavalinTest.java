@@ -404,8 +404,21 @@ public final class JavalinTest implements Handler {
     }
 
     enum EnumEntity {
-        ONE,
-        TWO
+
+        ONE("A"),
+        TWO("B");
+
+        private final String name;
+
+        EnumEntity(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            Enum<?> e = EnumEntity.TWO;
+            return name;
+        }
+
     }
 
     @JsonSchema

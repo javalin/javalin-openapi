@@ -16,6 +16,7 @@ import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.types
 import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
@@ -132,6 +133,8 @@ internal fun createTypeDescription(
             val values = JsonArray()
             model.sourceElement.enclosedElements
                 .filterIsInstance<VariableElement>()
+                .filter { it.modifiers.contains(Modifier.STATIC) }
+                .filter { types.isAssignable(it.asType(), model.typeMirror) }
                 .map { it.toSimpleName() }
                 .forEach { values.add(it) }
             scheme.addProperty("type", "string")
@@ -185,7 +188,7 @@ internal fun DataModel.findAllProperties(requireNonNulls: Boolean): Collection<P
 
     val isRecord = when (recordType) {
         null -> false
-        else -> OpenApiAnnotationProcessor.types.isAssignable(typeMirror, recordType.asType())
+        else -> types.isAssignable(typeMirror, recordType.asType())
     }
 
     val properties = mutableListOf<Property>()
