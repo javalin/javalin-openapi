@@ -17,14 +17,12 @@ import java.awt.SystemColor
 import java.util.function.BiConsumer
 import java.util.function.Consumer
 
-const val DEFAULT_DOCS_ID = "*"
-
 /** Configure OpenApi plugin */
-class OpenApiConfiguration {
-
-    @JvmSynthetic internal var documentationPath = "/openapi"
-    @JvmSynthetic internal var roles: Array<out RouteRole> = emptyArray()
-    @JvmSynthetic internal var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
+data class OpenApiConfiguration @JvmOverloads constructor(
+    @JvmField @JvmSynthetic internal var documentationPath: String = "/openapi",
+    @JvmField @JvmSynthetic internal var roles: List<RouteRole>? = null,
+    @JvmField @JvmSynthetic internal var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
+) {
 
     /** Path to host documentation as JSON */
     fun withDocumentationPath(path: String): OpenApiConfiguration = also {
@@ -33,7 +31,7 @@ class OpenApiConfiguration {
 
     /** List of roles eligible to access OpenApi routes */
     fun withRoles(vararg roles: RouteRole): OpenApiConfiguration = also {
-        this.roles = roles
+        this.roles = roles.toList()
     }
 
     /* */
@@ -48,12 +46,12 @@ fun interface DefinitionProcessor {
     fun process(content: ObjectNode): String
 }
 
-class DefinitionConfiguration {
-
-    internal var info: OpenApiInfo? = null
-    internal var servers: MutableList<OpenApiServer> = mutableListOf()
-    internal var security: SecurityConfiguration? = null
-    internal var definitionProcessor: DefinitionProcessor? = null
+data class DefinitionConfiguration @JvmOverloads constructor(
+    @JvmField @JvmSynthetic internal var info: OpenApiInfo? = null,
+    @JvmField @JvmSynthetic internal var servers: MutableList<OpenApiServer> = mutableListOf(),
+    @JvmField @JvmSynthetic internal var security: SecurityConfiguration? = null,
+    @JvmField @JvmSynthetic internal var definitionProcessor: DefinitionProcessor? = null
+) {
 
     /** Define custom info object */
     fun withOpenApiInfo(openApiInfo: Consumer<OpenApiInfo>): DefinitionConfiguration = also {
@@ -78,8 +76,8 @@ class DefinitionConfiguration {
 }
 
 data class SecurityConfiguration @JvmOverloads constructor(
-    internal val securitySchemes: MutableMap<String, SecurityScheme> = mutableMapOf(),
-    internal val globalSecurity: MutableList<Security> = mutableListOf()
+    @JvmField @JvmSynthetic internal val securitySchemes: MutableMap<String, SecurityScheme> = mutableMapOf(),
+    @JvmField @JvmSynthetic internal val globalSecurity: MutableList<Security> = mutableListOf()
 ) {
 
     fun withSecurityScheme(schemeName: String, securityScheme: SecurityScheme): SecurityConfiguration = also {
@@ -98,7 +96,7 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
         app.get(
             configuration.documentationPath,
             OpenApiHandler(createDocumentation(app)),
-            *configuration.roles
+            *configuration.roles?.toTypedArray() ?: emptyArray()
         )
     }
 

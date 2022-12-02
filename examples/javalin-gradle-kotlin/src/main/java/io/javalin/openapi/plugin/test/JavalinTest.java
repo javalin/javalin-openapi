@@ -75,59 +75,57 @@ public final class JavalinTest implements Handler {
      */
     public static void main(String[] args) {
         Javalin.create(config -> {
+            // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/openapi.json"; // by default it's /openapi
 
-            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration()
-                .withDocumentationPath(deprecatedDocsPath)
-                .withDefinitionConfiguration((version, definition) -> definition
-                    .withOpenApiInfo((openApiInfo) -> {
-                        OpenApiContact openApiContact = new OpenApiContact();
-                        openApiContact.setName("API Support");
-                        openApiContact.setUrl("https://www.example.com/support");
-                        openApiContact.setEmail("support@example.com");
+            config.plugins.register(new OpenApiPlugin(
+                new OpenApiConfiguration()
+                    .withDocumentationPath(deprecatedDocsPath)
+                    .withDefinitionConfiguration((version, definition) -> definition
+                        .withOpenApiInfo((openApiInfo) -> {
+                            OpenApiContact openApiContact = new OpenApiContact();
+                            openApiContact.setName("API Support");
+                            openApiContact.setUrl("https://www.example.com/support");
+                            openApiContact.setEmail("support@example.com");
 
-                        OpenApiLicense openApiLicense = new OpenApiLicense();
-                        openApiLicense.setName("Apache 2.0");
-                        openApiLicense.setIdentifier("Apache-2.0");
+                            OpenApiLicense openApiLicense = new OpenApiLicense();
+                            openApiLicense.setName("Apache 2.0");
+                            openApiLicense.setIdentifier("Apache-2.0");
 
-                        openApiInfo.setTitle("Awesome App");
-                        openApiInfo.setSummary("App summary");
-                        openApiInfo.setDescription("App description goes right here");
-                        openApiInfo.setTermsOfService("https://example.com/tos");
-                        openApiInfo.setContact(openApiContact);
-                        openApiInfo.setLicense(openApiLicense);
-                        openApiInfo.setVersion("1.0.0");
-                    })
-                    .withServer((openApiServer) -> {
-                        openApiServer.setUrl("http://localhost:{port}/{basePath}/" + version + "/");
-                        openApiServer.setDescription("Server description goes here");
-
-                        openApiServer.addVariable("port", "8080", new String[] { "7070", "8080" }, "Port of the server");
-                        openApiServer.addVariable("basePath", "", new String[] { "", "v1" }, "Base path of the server");
-                    })
-                    // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-                    .withSecurity(new SecurityConfiguration()
-                        .withSecurityScheme("BasicAuth", new BasicAuth())
-                        .withSecurityScheme("BearerAuth", new BearerAuth())
-                        .withSecurityScheme("ApiKeyAuth", new ApiKeyAuth())
-                        .withSecurityScheme("CookieAuth", new CookieAuth("JSESSIONID"))
-                        .withSecurityScheme("OpenID", new OpenID("https://example.com/.well-known/openid-configuration"))
-                        .withSecurityScheme("OAuth2", new OAuth2("This API uses OAuth 2 with the implicit grant flow.")
-                            .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
-                                .withScope("read_pets", "read your pets")
-                                .withScope("write_pets", "modify pets in your account")))
-                        .withSecurity(new Security("oauth2")
-                            .withScope("write_pets")
-                            .withScope("read_pets"))
-                    )
-                    .withDefinitionProcessor((content -> { // you can add whatever you want to this document using your favourite json api
-                        content.set("test", new TextNode("Value"));
-                        return content.toPrettyString();
-                    })));
-
-//            config.routing.contextPath = "/custom";
-
-            config.plugins.register(new OpenApiPlugin(openApiConfiguration));
+                            openApiInfo.setTitle("Awesome App");
+                            openApiInfo.setSummary("App summary");
+                            openApiInfo.setDescription("App description goes right here");
+                            openApiInfo.setTermsOfService("https://example.com/tos");
+                            openApiInfo.setContact(openApiContact);
+                            openApiInfo.setLicense(openApiLicense);
+                            openApiInfo.setVersion("1.0.0");
+                        })
+                        .withServer((openApiServer) -> {
+                            openApiServer.setUrl("http://localhost:{port}/{basePath}/" + version + "/");
+                            openApiServer.setDescription("Server description goes here");
+                            openApiServer.addVariable("port", "8080", new String[] { "7070", "8080" }, "Port of the server");
+                            openApiServer.addVariable("basePath", "", new String[] { "", "v1" }, "Base path of the server");
+                        })
+                        // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
+                        .withSecurity(new SecurityConfiguration()
+                            .withSecurityScheme("BasicAuth", new BasicAuth())
+                            .withSecurityScheme("BearerAuth", new BearerAuth())
+                            .withSecurityScheme("ApiKeyAuth", new ApiKeyAuth())
+                            .withSecurityScheme("CookieAuth", new CookieAuth("JSESSIONID"))
+                            .withSecurityScheme("OpenID", new OpenID("https://example.com/.well-known/openid-configuration"))
+                            .withSecurityScheme("OAuth2", new OAuth2("This API uses OAuth 2 with the implicit grant flow.")
+                                .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
+                                    .withScope("read_pets", "read your pets")
+                                    .withScope("write_pets", "modify pets in your account")))
+                            .withSecurity(new Security("oauth2")
+                                .withScope("write_pets")
+                                .withScope("read_pets"))
+                        )
+                        .withDefinitionProcessor((content -> { // you can add whatever you want to this document using your favourite json api
+                            content.set("test", new TextNode("Value"));
+                            return content.toPrettyString();
+                        })))
+            ));
 
             SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
             swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
