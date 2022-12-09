@@ -219,7 +219,7 @@ public final class JavalinTest implements Handler {
         headers = { @OpenApiParam(name = "V2") }
     )
     @OpenApi(
-        path = "/standalone",
+        path = "standalone",
         methods = HttpMethod.DELETE,
         versions = "v1",
         headers = { @OpenApiParam(name = "V1") }

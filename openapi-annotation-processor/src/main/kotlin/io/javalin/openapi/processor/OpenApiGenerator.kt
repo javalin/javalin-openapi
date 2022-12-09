@@ -10,6 +10,7 @@ import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
+import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
@@ -95,12 +96,12 @@ internal class OpenApiGenerator {
         val paths = JsonObject()
         openApi.add("paths", paths)
 
-        for (routeAnnotation in openApiAnnotations.sortedBy { it.path }) {
+        for (routeAnnotation in openApiAnnotations.sortedBy { it.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
                 continue
             }
 
-            val path = paths.computeIfAbsent(routeAnnotation.path) { JsonObject() }
+            val path = paths.computeIfAbsent(routeAnnotation.getFormattedPath()) { JsonObject() }
 
             // https://swagger.io/specification/#paths-object
             for (method in routeAnnotation.methods.sortedBy { it.ordinal }) {

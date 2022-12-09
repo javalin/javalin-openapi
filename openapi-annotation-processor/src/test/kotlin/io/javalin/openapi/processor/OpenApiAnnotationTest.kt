@@ -23,7 +23,7 @@ class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
     }
 
     @OpenApi(
-        path = "/basic",
+        path = "basic",
         methods = [GET],
         versions = ["should contain all basic properties from openapi annotation"],
         summary = "Test summary",

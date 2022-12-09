@@ -72,6 +72,12 @@ annotation class OpenApi(
     val security: Array<OpenApiSecurity> = [],
 )
 
+fun OpenApi.getFormattedPath(): String =
+    when {
+        !path.startsWith("/") -> "/$path"
+        else -> path
+    }
+
 /** Utility annotation to aggregate multiple [OpenApi] instances */
 @Target(CLASS, FIELD, FUNCTION)
 @Retention(SOURCE)
