@@ -1,8 +1,6 @@
 package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.shared.JsonTypes.DataModel
-import io.javalin.openapi.processor.shared.JsonTypes.DataType
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.DEFAULT
 import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY

@@ -2,6 +2,7 @@ package io.javalin.openapi.processor
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.sun.source.util.Trees
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import javax.annotation.processing.AbstractProcessor
@@ -21,6 +22,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             .setPrettyPrinting()
             .create()
 
+        lateinit var trees: Trees
         lateinit var messager: Messager
         lateinit var elements: Elements
         lateinit var types: Types
@@ -28,6 +30,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
     }
 
     override fun init(processingEnv: ProcessingEnvironment) {
+        trees = Trees.instance(processingEnv)
         messager = processingEnv.messager
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils

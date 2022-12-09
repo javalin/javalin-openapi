@@ -24,7 +24,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
 import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiIgnore;
-import io.javalin.openapi.OpenApiInfo;
 import io.javalin.openapi.OpenApiLicense;
 import io.javalin.openapi.OpenApiName;
 import io.javalin.openapi.OpenApiParam;
@@ -32,12 +31,9 @@ import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-import io.javalin.openapi.OpenApiServer;
-import io.javalin.openapi.OpenApiServerVariable;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
 import io.javalin.openapi.Visibility;
-import io.javalin.openapi.plugin.DefinitionConfiguration;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.SecurityConfiguration;
@@ -201,6 +197,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = EntityDto[].class), // array
                 @OpenApiContent(from = File.class), // file
                 @OpenApiContent(type = "application/json"), // empty
+                @OpenApiContent(), // empty
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                     @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data

@@ -11,6 +11,7 @@ import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.getFormattedPath
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.trees
 import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
@@ -29,6 +30,7 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
 import javax.annotation.processing.RoundEnvironment
+import javax.lang.model.element.Element
 import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 import javax.tools.Diagnostic.Kind.WARNING
@@ -39,13 +41,18 @@ internal class OpenApiGenerator {
 
     fun generate(roundEnvironment: RoundEnvironment) {
         val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
-            .flatMap { it.getAnnotation(OpenApis::class.java).value.asSequence() }
+            .flatMap { element ->
+                element.getAnnotation(OpenApis::class.java)
+                    .value
+                    .asSequence()
+                    .map { element to it }
+            }
 
         val standaloneOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
-            .map { it.getAnnotation(OpenApi::class.java) }
+            .map { it to it.getAnnotation(OpenApi::class.java) }
 
         val openApiAnnotationsByVersion = (aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations)
-            .flatMap { it.versions.map { version -> version to it } }
+            .flatMap { it.second.versions.map { version -> version to it } }
             .groupBy { (version, _) -> version }
             .mapValues { (_, annotations) -> annotations.map { it.second } }
 
@@ -82,7 +89,7 @@ internal class OpenApiGenerator {
      * @param openApiAnnotations annotation instances to map
      * @return OpenApi JSON response
      */
-    private fun generateSchema(openApiAnnotations: Collection<OpenApi>): String {
+    private fun generateSchema(openApiAnnotations: Collection<Pair<Element, OpenApi>>): String {
         val openApi = JsonObject()
         openApi.addProperty("openapi", "3.0.3")
 
@@ -96,7 +103,7 @@ internal class OpenApiGenerator {
         val paths = JsonObject()
         openApi.add("paths", paths)
 
-        for (routeAnnotation in openApiAnnotations.sortedBy { it.getFormattedPath() }) {
+        for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
                 continue
             }
@@ -146,7 +153,7 @@ internal class OpenApiGenerator {
                 val requestBodyAnnotation = routeAnnotation.requestBody
                 val requestBody = JsonObject()
                 requestBody.addString("description", requestBodyAnnotation.description)
-                requestBody.addContent(requestBodyAnnotation.content)
+                requestBody.addContent(openApiElement, requestBodyAnnotation.content)
                 if (requestBody.size() > 0) {
                     operation.add("requestBody", requestBody)
                 }
@@ -166,7 +173,7 @@ internal class OpenApiGenerator {
                             ?.let { HttpStatus.forStatus(it) }?.message
 
                     response.addString("description", description)
-                    response.addContent(responseAnnotation.content)
+                    response.addContent(openApiElement, responseAnnotation.content)
                     responses.add(responseAnnotation.status, response)
                 }
 
@@ -263,7 +270,7 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun JsonObject.addContent(contentAnnotations: Array<OpenApiContent>) {
+    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) {
         val requestBodyContent = JsonObject()
         val requestBodySchemes = TreeMap<String, JsonObject>()
 
@@ -287,7 +294,21 @@ internal class OpenApiGenerator {
             }
 
             if (mimeType == null) {
-                OpenApiAnnotationProcessor.messager.printMessage(WARNING, "Cannot add $contentAnnotation, OpenApi generator cannot find matching mime type")
+                val compilationUnit = trees.getPath(element).compilationUnit
+                val tree = trees.getTree(element)
+                val startPosition = trees.sourcePositions.getStartPosition(compilationUnit, tree)
+
+                OpenApiAnnotationProcessor.messager.printMessage(
+                    WARNING,
+                    """
+                    OpenApi generator cannot find matching mime type defined.
+                    Source: 
+                        Annotation in ${compilationUnit.lineMap.getLineNumber(startPosition)} at ${compilationUnit.sourceFile.name} line
+                    Annotation: 
+                        $contentAnnotation
+                    """.trimIndent()
+                )
+
                 continue
             }
 
