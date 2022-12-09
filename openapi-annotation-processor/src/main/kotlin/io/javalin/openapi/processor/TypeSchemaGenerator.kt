@@ -41,7 +41,6 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
-import kotlin.reflect.KClass
 
 data class ResultScheme(
     val json: JsonObject,
@@ -64,6 +63,18 @@ internal fun createTypeSchema(
     val references = mutableListOf<TypeMirror>()
 
     when {
+        typeElement.kind == ENUM -> {
+            val values = JsonArray()
+            typeElement.enclosedElements
+                .filterIsInstance<VariableElement>()
+                .filter { it.modifiers.contains(Modifier.STATIC) }
+                .filter { types.isAssignable(it.asType(), type.typeMirror) }
+                .map { it.toSimpleName() }
+                .forEach { values.add(it) }
+
+            schema.addProperty("type", "string")
+            schema.add("enum", values)
+        }
         typeElement.getAnnotation(OneOf::class.java) != null -> {
             references.addAll(
                 schema.createCombinatorList(
@@ -175,17 +186,6 @@ internal fun createTypeDescription(
             val additionalProperties = JsonObject()
             additionalProperties.addType(model.generics[1], inlineRefs, references, requiresNonNulls)
             scheme.add("additionalProperties", additionalProperties)
-        }
-        model.sourceElement.kind == ENUM -> {
-            val values = JsonArray()
-            model.sourceElement.enclosedElements
-                .filterIsInstance<VariableElement>()
-                .filter { it.modifiers.contains(Modifier.STATIC) }
-                .filter { types.isAssignable(it.asType(), model.typeMirror) }
-                .map { it.toSimpleName() }
-                .forEach { values.add(it) }
-            scheme.addProperty("type", "string")
-            scheme.add("enum", values)
         }
         else -> scheme.addType(model, inlineRefs, references, requiresNonNulls)
     }
