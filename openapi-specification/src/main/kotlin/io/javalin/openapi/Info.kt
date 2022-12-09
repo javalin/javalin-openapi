@@ -3,7 +3,7 @@ package io.javalin.openapi
 /** https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#infoObject */
 class OpenApiInfo {
     /** REQUIRED. The title of the API */
-    var title = "OpenApi Title"
+    var title: String? = null
     /** A short summary of the API */
     var summary: String? = null
     /** A description of the API. CommonMark's syntax MAY be used for rich text representation */
@@ -15,7 +15,7 @@ class OpenApiInfo {
     /** The license information for the exposed API */
     var license: OpenApiLicense? = null
     /** REQUIRED. The version of the OpenAPI document (which is distinct from the OpenAPI Specification version or the API implementation version). */
-    var version = ""
+    var version: String? = null
 }
 
 /** https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#contactObject */
@@ -31,7 +31,7 @@ class OpenApiContact {
 /** https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#licenseObject */
 class OpenApiLicense {
     /** REQUIRED. The license name used for the API */
-    var name = ""
+    var name: String? = null
     /** An SPDX license expression for the API. The identifier field is mutually exclusive of the url field. */
     var identifier: String? = null
     /** A URL to the license used for the API. This MUST be in the form of a URL. The url field is mutually exclusive of the identifier field */
