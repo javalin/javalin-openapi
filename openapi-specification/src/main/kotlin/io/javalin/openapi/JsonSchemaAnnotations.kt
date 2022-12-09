@@ -26,21 +26,21 @@ annotation class JsonSchema(
     val requireNonNulls: Boolean = true
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(SOURCE)
 annotation class OneOf(
     /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(SOURCE)
 annotation class AnyOf(
     /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(SOURCE)
 annotation class AllOf(
     /** List of associated classes to list */
@@ -63,10 +63,10 @@ annotation class Custom(
 @Retention(SOURCE)
 annotation class CustomAnnotation
 
-enum class Combinator(val propertyName: String) {
-    ONE_OF("oneOf"),
-    ANY_OF("anyOf"),
-    ALL_OF("allOf")
+enum class Combinator(val propertyName: String, val type: KClass<*>) {
+    ONE_OF("oneOf", OneOf::class),
+    ANY_OF("anyOf", AnyOf::class),
+    ALL_OF("allOf", AllOf::class)
 }
 
 /** Represents resource file in `/json-schemes` directory. */

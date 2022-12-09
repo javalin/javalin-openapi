@@ -11,8 +11,9 @@ import io.javalin.openapi.plugin.test.JavalinTest.Description
 )
 data class KotlinEntity(
     val name: String,
-    val value: Int,
-    val elements: Elements
+    val primitive: Int,
+    val custom: Elements,
+    val oneOfResult: Result
 )
 
 @JsonSchema(
@@ -30,7 +31,7 @@ data class KotlinScheme(
     @get:Description(title = "Value", description = "Int value", statusCode = 200)
     val value: Int,
     @get:OneOf(KotlinEntity::class)
-    val any: Any
+    val any: Any,
 )
 
 @CustomAnnotation
@@ -46,3 +47,8 @@ data class Elements(
     @get:CustomAnnotationInKotlinWithArray(value = ["a", "b"])
     val value: String
 )
+
+@OneOf(Ok::class, Error::class)
+sealed interface Result
+object Ok : Result
+object Error : Result

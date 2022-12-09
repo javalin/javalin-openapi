@@ -6,6 +6,9 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Combinator
+import io.javalin.openapi.Combinator.ALL_OF
+import io.javalin.openapi.Combinator.ANY_OF
+import io.javalin.openapi.Combinator.ONE_OF
 import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
@@ -38,6 +41,7 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
+import kotlin.reflect.KClass
 
 data class ResultScheme(
     val json: JsonObject,
@@ -49,42 +53,85 @@ internal fun createTypeSchema(
     inlineRefs: Boolean,
     requireNonNullsByDefault: Boolean = true
 ): ResultScheme {
-    val definedBy = type.sourceElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+    val typeElement = type.sourceElement
+    val definedBy = typeElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
 
     if (definedBy != null) {
         return createTypeSchema(definedBy.toModel(), inlineRefs, requireNonNullsByDefault)
     }
 
     val schema = JsonObject()
-    schema.addProperty("type", "object")
-    schema.addProperty("additionalProperties", false)
+    val references = mutableListOf<TypeMirror>()
 
-    val extra = type.sourceElement.findExtra()
-    schema.addExtra(extra)
+    when {
+        typeElement.getAnnotation(OneOf::class.java) != null -> {
+            references.addAll(
+                schema.createCombinatorList(
+                    combinator = ONE_OF,
+                    classes = typeElement.getAnnotation(OneOf::class.java).getTypeMirrors { value }
+                )
+            )
+        }
+        typeElement.getAnnotation(AnyOf::class.java) != null -> {
+            references.addAll(
+                schema.createCombinatorList(
+                    combinator = ANY_OF,
+                    classes = typeElement.getAnnotation(AnyOf::class.java).getTypeMirrors { value }
+                )
+            )
+        }
+        typeElement.getAnnotation(AllOf::class.java) != null -> {
+            references.addAll(
+                schema.createCombinatorList(
+                    combinator = ALL_OF,
+                    classes = typeElement.getAnnotation(AllOf::class.java).getTypeMirrors { value }
+                )
+            )
+        }
+        else -> {
+            schema.addProperty("type", "object")
+            schema.addProperty("additionalProperties", false)
 
-    val propertiesObject = JsonObject()
-    schema.add("properties", propertiesObject)
+            val extra = typeElement.findExtra()
+            schema.addExtra(extra)
 
-    val requireNonNulls = type.sourceElement.getAnnotation(JsonSchema::class.java)
-        ?.requireNonNulls
-        ?: requireNonNullsByDefault
+            val propertiesObject = JsonObject()
+            schema.add("properties", propertiesObject)
 
-    val properties = type.findAllProperties(requireNonNulls)
-    val references = ArrayList<TypeMirror>()
+            val requireNonNulls = typeElement.getAnnotation(JsonSchema::class.java)
+                ?.requireNonNulls
+                ?: requireNonNullsByDefault
 
-    properties.forEach { property ->
-        val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, requireNonNulls, property.combinator, property.extra)
-        propertiesObject.add(property.name, propertySchema)
-        references.addAll(refs)
-    }
+            val properties = type.findAllProperties(requireNonNulls)
 
-    if (properties.any { it.required }) {
-        val required = JsonArray()
-        properties.filter { it.required}.forEach { required.add(it.name) }
-        schema.add("required", required)
+            properties.forEach { property ->
+                val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, requireNonNulls, property.combinator, property.extra)
+                propertiesObject.add(property.name, propertySchema)
+                references.addAll(refs)
+            }
+
+            if (properties.any { it.required }) {
+                val required = JsonArray()
+                properties.filter { it.required }.forEach { required.add(it.name) }
+                schema.add("required", required)
+            }
+        }
     }
 
     return ResultScheme(schema, references)
+}
+
+private fun JsonObject.createCombinatorList(combinator: Combinator, classes: List<TypeMirror>): List<TypeMirror> {
+    val listOfSchemes = JsonArray()
+    add(combinator.propertyName, listOfSchemes)
+
+    classes.forEach {
+        val scheme = JsonObject()
+        scheme.addProperty("\$ref", "#/components/schemas/${it.toString().substringAfterLast(".")}")
+        listOfSchemes.add(scheme)
+    }
+
+    return classes
 }
 
 internal fun createTypeDescription(
