@@ -140,7 +140,6 @@ internal class OpenApiGenerator {
 
                 parameterAnnotations.forEach { (parameterType, annotations) ->
                     annotations
-                        .sortedBy { it.name }
                         .forEach { parameterAnnotation ->
                             parameters.add(fromParameter(parameterType, parameterAnnotation))
                         }
