@@ -121,7 +121,7 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
         val docsNode = jsonMapper.readTree(content) as ObjectNode
 
         //process OpenAPI "info"
-        docsNode.replace("info", jsonMapper.convertValue(SystemColor.info, JsonNode::class.java))
+        docsNode.replace("info", jsonMapper.convertValue(info, JsonNode::class.java))
 
         // process OpenAPI "servers"
         docsNode.replace("servers", jsonMapper.convertValue(servers, JsonNode::class.java))
