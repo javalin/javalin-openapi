@@ -66,8 +66,8 @@ internal object JsonTypes {
         var generics: List<DataModel> = emptyList(),
         val type: DataType = DEFAULT
     ) {
-        val simpleName: String = sourceElement.toSimpleName()
-        val fullName: String = sourceElement.toString()
+        val simpleName: String = typeMirror.getSimpleName()
+        val fullName: String = typeMirror.getFullName()
 
         override fun equals(other: Any?): Boolean =
             when {

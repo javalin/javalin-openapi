@@ -153,7 +153,7 @@ annotation class OpenApiSecurity(
 @Retention(SOURCE)
 annotation class OpenApiIgnore
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(SOURCE)
 annotation class OpenApiName(
     val value: String

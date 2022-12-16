@@ -160,7 +160,8 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
                 @OpenApiContent(from = RecordEntity.class), // record class
                 @OpenApiContent(from = DtoWithFields.class), // map only fields
-                @OpenApiContent(from = EnumEntity.class), // enum
+                @OpenApiContent(from = EnumEntity.class), // enum,
+                @OpenApiContent(from = CustomNameEntity.class) // custom name
             }
         ),
         headers = {
@@ -462,5 +463,8 @@ public final class JavalinTest implements Handler {
     static class HiddenEntity {
 
     }
+
+    @OpenApiName("EntityWithCustomName")
+    class CustomNameEntity {}
 
 }
