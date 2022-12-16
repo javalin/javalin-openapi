@@ -35,8 +35,9 @@ import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
 import io.javalin.openapi.Visibility;
 import io.javalin.openapi.plugin.OpenApiConfiguration;
+import io.javalin.openapi.plugin.OpenApiPluginConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
-import io.javalin.openapi.plugin.SecurityConfiguration;
+import io.javalin.openapi.plugin.SecurityComponentConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
@@ -74,8 +75,10 @@ public final class JavalinTest implements Handler {
             // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/openapi.json"; // by default it's /openapi
 
+            config.plugins.register(new OpenApiPlugin(new OpenApiConfiguration()));
+
             config.plugins.register(new OpenApiPlugin(
-                new OpenApiConfiguration()
+                new OpenApiPluginConfiguration()
                     .withDocumentationPath(deprecatedDocsPath)
                     .withDefinitionConfiguration((version, definition) -> definition
                         .withOpenApiInfo((openApiInfo) -> {
@@ -103,7 +106,7 @@ public final class JavalinTest implements Handler {
                             openApiServer.addVariable("basePath", "", new String[] { "", "v1" }, "Base path of the server");
                         })
                         // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-                        .withSecurity(new SecurityConfiguration()
+                        .withSecurity(new SecurityComponentConfiguration()
                             .withSecurityScheme("BasicAuth", new BasicAuth())
                             .withSecurityScheme("BearerAuth", new BearerAuth())
                             .withSecurityScheme("ApiKeyAuth", new ApiKeyAuth())
@@ -113,7 +116,7 @@ public final class JavalinTest implements Handler {
                                 .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
                                     .withScope("read_pets", "read your pets")
                                     .withScope("write_pets", "modify pets in your account")))
-                            .withSecurity(new Security("oauth2")
+                            .withGlobalSecurity(new Security("oauth2")
                                 .withScope("write_pets")
                                 .withScope("read_pets"))
                         )

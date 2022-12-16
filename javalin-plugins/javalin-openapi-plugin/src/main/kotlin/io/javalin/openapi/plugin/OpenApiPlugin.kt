@@ -6,91 +6,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import io.javalin.json.jsonMapper
-import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiLoader
-import io.javalin.openapi.OpenApiServer
-import io.javalin.openapi.Security
-import io.javalin.openapi.SecurityScheme
 import io.javalin.plugin.Plugin
-import io.javalin.security.RouteRole
-import java.awt.SystemColor
-import java.util.function.BiConsumer
-import java.util.function.Consumer
+import kotlin.DeprecationLevel.WARNING
 
-/** Configure OpenApi plugin */
-data class OpenApiConfiguration @JvmOverloads constructor(
-    @JvmField @JvmSynthetic internal var documentationPath: String = "/openapi",
-    @JvmField @JvmSynthetic internal var roles: List<RouteRole>? = null,
-    @JvmField @JvmSynthetic internal var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
-) {
+open class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiPluginConfiguration = OpenApiPluginConfiguration()) : Plugin {
 
-    /** Path to host documentation as JSON */
-    fun withDocumentationPath(path: String): OpenApiConfiguration = also {
-        this.documentationPath = path
-    }
-
-    /** List of roles eligible to access OpenApi routes */
-    fun withRoles(vararg roles: RouteRole): OpenApiConfiguration = also {
-        this.roles = roles.toList()
-    }
-
-    /* */
-    fun withDefinitionConfiguration(definitionConfigurationConfigurer: BiConsumer<String, DefinitionConfiguration>): OpenApiConfiguration = also {
-        definitionConfiguration = definitionConfigurationConfigurer
-    }
-
-}
-
-/** Modify OpenApi documentation represented by [ObjectNode] in JSON format */
-fun interface DefinitionProcessor {
-    fun process(content: ObjectNode): String
-}
-
-data class DefinitionConfiguration @JvmOverloads constructor(
-    @JvmField @JvmSynthetic internal var info: OpenApiInfo? = null,
-    @JvmField @JvmSynthetic internal var servers: MutableList<OpenApiServer> = mutableListOf(),
-    @JvmField @JvmSynthetic internal var security: SecurityConfiguration? = null,
-    @JvmField @JvmSynthetic internal var definitionProcessor: DefinitionProcessor? = null
-) {
-
-    /** Define custom info object */
-    fun withOpenApiInfo(openApiInfo: Consumer<OpenApiInfo>): DefinitionConfiguration = also {
-        this.info = OpenApiInfo().also { openApiInfo.accept(it) }
-    }
-
-    /** Add custom server **/
-    fun withServer(serverConfigurer: Consumer<OpenApiServer>): DefinitionConfiguration = also {
-        this.servers.add(OpenApiServer().also { serverConfigurer.accept(it) })
-    }
-
-    /** Define custom security object */
-    fun withSecurity(securityConfiguration: SecurityConfiguration): DefinitionConfiguration = also {
-        this.security = securityConfiguration
-    }
-
-    /** Register scheme processor */
-    fun withDefinitionProcessor(definitionProcessor: DefinitionProcessor): DefinitionConfiguration = also {
-        this.definitionProcessor = definitionProcessor
-    }
-
-}
-
-data class SecurityConfiguration @JvmOverloads constructor(
-    @JvmField @JvmSynthetic internal val securitySchemes: MutableMap<String, SecurityScheme> = mutableMapOf(),
-    @JvmField @JvmSynthetic internal val globalSecurity: MutableList<Security> = mutableListOf()
-) {
-
-    fun withSecurityScheme(schemeName: String, securityScheme: SecurityScheme): SecurityConfiguration = also {
-        securitySchemes[schemeName] = securityScheme
-    }
-
-    fun withSecurity(security: Security): SecurityConfiguration = also {
-        globalSecurity.add(security)
-    }
-
-}
-
-open class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiConfiguration = OpenApiConfiguration()) : Plugin {
+    @Deprecated(
+        message = "Use OpenApiPluginConfiguration instead of OpenApiConfiguration",
+        level = WARNING
+    )
+    constructor(oldConfiguration: OpenApiConfiguration) : this(oldConfiguration.toNewOpenApiPluginConfiguration())
 
     override fun apply(app: Javalin) {
         app.get(
