@@ -2,9 +2,9 @@ package io.javalin.openapi
 
 import org.junit.jupiter.api.Assertions
 
-abstract class OpenApiAnnotationProcessorSpecification {
+internal abstract class OpenApiAnnotationProcessorSpecification {
 
-    companion object {
+    private companion object {
         val openApiSchemes = OpenApiLoader().loadOpenApiSchemes()
     }
 

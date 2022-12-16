@@ -5,6 +5,7 @@
 
 package io.javalin.openapi
 
+import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
 import io.javalin.util.FileUtil.readResource
 import java.lang.annotation.Repeatable
@@ -27,7 +28,7 @@ annotation class OpenApi(
     /** The described path */
     val path: String,
     /** List of methods to describe **/
-    val methods: Array<HttpMethod>,
+    val methods: Array<HttpMethod> = [GET],
     /** Schema version **/
     val versions: Array<String> = ["default"],
     /** Ignore the endpoint in the open api documentation */

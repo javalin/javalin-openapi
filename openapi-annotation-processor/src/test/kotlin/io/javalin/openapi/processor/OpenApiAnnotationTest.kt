@@ -5,16 +5,16 @@ import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiAnnotationProcessorSpecification
 import io.javalin.openapi.OpenApiContent
+import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiResponse
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 
-class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
+internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
 
     @OpenApi(
         path = "/",
-        methods = [GET],
         versions = ["should_generate_info"]
     )
     @Test
@@ -26,8 +26,7 @@ class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
     }
 
     @OpenApi(
-        path = "basic",
-        methods = [GET],
+        path = "/basic",
         versions = ["should_contain_all_basic_properties_from_openapi_annotation"],
         summary = "Test summary",
         operationId = "Test operation id",
@@ -52,22 +51,16 @@ class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
 
     @CustomAnnotation
     private annotation class CustomDescription(
-        val customName: String
+        val customProperty: String
     )
 
-    @CustomDescription(customName = "Monke")
+    @CustomDescription(customProperty = "Monke")
     private class CustomEntity
 
     @OpenApi(
-        path = "custom",
-        methods = [GET],
+        path = "/custom",
         versions = ["should_include_custom_annotation_in_type_scheme"],
-        responses = [
-            OpenApiResponse(
-                status = "200",
-                content = [OpenApiContent(from = CustomEntity::class)]
-            )
-        ]
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = CustomEntity::class)])]
     )
     @Test
     fun should_include_custom_annotation_in_type_scheme() = withOpenApi("should_include_custom_annotation_in_type_scheme") {
@@ -79,7 +72,28 @@ class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity")
             .isObject
-            .containsEntry("customName", "Monke")
+            .containsEntry("customProperty", "Monke")
+    }
+
+    @OpenApiName("PandaEntity")
+    private class OpenApiNameEntity
+
+    @OpenApi(
+        path = "name",
+        methods = [GET],
+        versions = ["should_rename_entity"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = OpenApiNameEntity::class)])]
+    )
+    @Test
+    fun should_rename_entity() = withOpenApi("should_rename_entity") {
+        assertThatJson(it)
+            .inPath("$.paths['/name'].get.responses.200.content['application/json'].schema")
+            .isObject
+            .containsEntry("\$ref", "#/components/schemas/PandaEntity")
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.PandaEntity")
+            .isObject
     }
 
 }
