@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Examples :: Gradle - JavalinTest" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="io.javalin.openapi.plugin.test.JavalinTest" />
+    <module name="javalin-openapi.examples.javalin-gradle-kotlin.main" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value=".*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks="clean" externalProjectPath="$PROJECT_DIR$/examples/javalin-gradle-kotlin" vmOptions="" scriptParameters="" />
+    </method>
+  </configuration>
+</component>

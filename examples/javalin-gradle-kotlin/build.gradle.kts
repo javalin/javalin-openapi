@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-openapi-plugin"))
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
+    testImplementation("org.apache.groovy:groovy:4.0.6")
 
     // javalin
     implementation("io.javalin:javalin:5.2.0")

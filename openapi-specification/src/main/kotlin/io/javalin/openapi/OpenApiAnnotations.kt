@@ -217,6 +217,10 @@ enum class HttpMethod {
     TRACE;
 }
 
+interface OpenApiAnnotationProcessorConfigurer {
+    fun configure()
+}
+
 class OpenApiLoader {
 
     fun loadOpenApiSchemes(): Map<String, String> =

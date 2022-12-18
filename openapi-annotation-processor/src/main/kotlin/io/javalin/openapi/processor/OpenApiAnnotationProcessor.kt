@@ -3,8 +3,12 @@ package io.javalin.openapi.processor
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.sun.source.util.Trees
+import groovy.lang.GroovyClassLoader
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
+import io.javalin.openapi.OpenApiAnnotationProcessorConfigurer
+import io.javalin.openapi.OpenApis
+import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -42,6 +46,19 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
             return false
         }
 
+        roundEnv.getElementsAnnotatedWith(OpenApis::class.java)
+            .firstOrNull()
+            ?.let { trees.getPath(it).compilationUnit.sourceFile.name }
+            ?.substringBeforeLast(File.separator + "src" + File.separator)
+            ?.let { File(it).resolve("src").resolve("main").resolve("resources").resolve("openapi.groovy") }
+            ?.takeIf { it.exists() }
+            ?.also { scriptFile ->
+                val groovyClassLoader = GroovyClassLoader(this::class.java.classLoader)
+                val configurerClass = groovyClassLoader.parseClass(scriptFile)
+                val configurer = configurerClass.getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer
+                configurer.configure()
+            }
+
         val openApiGenerator = OpenApiGenerator()
         openApiGenerator.generate(roundEnv)
 
@@ -54,7 +71,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> =
         setOf(
             OpenApi::class.qualifiedName!!,
-            JsonSchema::class.qualifiedName!!
+            JsonSchema::class.qualifiedName!!,
         )
 
     override fun getSupportedSourceVersion(): SourceVersion =
