@@ -12,7 +12,6 @@ interface OpenApiAnnotationProcessorConfigurer {
 
 }
 
-@ExperimentalCompileOpenApiConfiguration
 class OpenApiAnnotationProcessorConfiguration {
     var debug: Boolean = false
 }

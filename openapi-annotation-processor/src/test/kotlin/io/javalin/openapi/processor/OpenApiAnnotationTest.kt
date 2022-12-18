@@ -54,15 +54,15 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
 
     @CustomAnnotation
     @Target(CLASS)
-    private annotation class CustomAnnotationOnClass(val onClass: Boolean)
+    private annotation class CustomAnnotationOnClass(val onClass: BooleanArray)
 
     @CustomAnnotation
     @Target(PROPERTY_GETTER)
-    private annotation class CustomAnnotationOnGetter(val onGetter: Boolean)
+    private annotation class CustomAnnotationOnGetter(val onGetter: BooleanArray)
 
-    @CustomAnnotationOnClass(onClass = true)
+    @CustomAnnotationOnClass(onClass = [true])
     private class CustomEntity(
-        @get:CustomAnnotationOnGetter(onGetter = true)
+        @get:CustomAnnotationOnGetter(onGetter = [true])
         val element: Map<String, Map<String, CustomEntity>>
     )
 
@@ -83,12 +83,12 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity")
             .isObject
-            .containsEntry("onClass", true)
+            .containsEntry("onClass", json("[true]"))
 
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity.properties.element")
             .isObject
-            .containsEntry("onGetter", true)
+            .containsEntry("onGetter", json("[true]"))
     }
 
     @OpenApiName("PandaEntity")

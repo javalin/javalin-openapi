@@ -1,10 +1,19 @@
 package io.javalin.openapi.processor.shared
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.javalin.openapi.NULL_STRING
 
 internal object JsonExtensions {
+
+    private val gson: Gson = GsonBuilder()
+        .setPrettyPrinting()
+        .create()
+
+    fun JsonObject.toPrettyString(): String =
+        gson.toJson(this)
 
     fun <T> List<T>.toJsonArray(mapper: (T) -> String = { it.toString() }): JsonArray {
         val jsonArray = JsonArray(size)

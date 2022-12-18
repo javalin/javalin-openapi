@@ -7,8 +7,9 @@ plugins {
 dependencies {
     api(project(":openapi-specification"))
     kaptTest(project(":openapi-annotation-processor"))
+    testImplementation(project(":openapi-annotation-processor"))
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.22")
     implementation("org.apache.groovy:groovy:4.0.6")
 
     implementation("com.google.code.gson:gson:2.10")

@@ -12,6 +12,7 @@ import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.filer
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.trees
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
@@ -21,12 +22,13 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
 import io.javalin.openapi.processor.shared.JsonExtensions.addString
 import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
-import io.javalin.openapi.processor.shared.ProcessorUtils
+import io.javalin.openapi.processor.shared.JsonExtensions.toPrettyString
 import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.getFullName
+import io.javalin.openapi.processor.shared.saveResource
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
@@ -63,7 +65,7 @@ internal class OpenApiGenerator {
                 val generatedOpenApiSchema = generateSchema(preparedOpenApiAnnotations)
 
                 val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                val resource = ProcessorUtils.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
+                val resource = filer.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
                     ?.toUri()
                     ?.toString()
                     ?: return
@@ -81,7 +83,7 @@ internal class OpenApiGenerator {
                 resourceName
             }
             .joinToString(separator = "\n")
-            .let { ProcessorUtils.saveResource("openapi-plugin/.index", it) }
+            .let { filer.saveResource("openapi-plugin/.index", it) }
     }
 
     /**
@@ -232,6 +234,8 @@ internal class OpenApiGenerator {
             }
         }
 
+        componentReferences.clear()
+
         generatedComponents
             .mapNotNull { it.value }
             .forEach { (type, schema) -> schemas.add(type.simpleName, schema) }
@@ -239,7 +243,7 @@ internal class OpenApiGenerator {
         components.add("schemas", schemas)
         openApi.add("components", components)
 
-        return OpenApiAnnotationProcessor.gson.toJson(openApi)
+        return openApi.toPrettyString()
     }
 
     enum class In(val identifier: String) {

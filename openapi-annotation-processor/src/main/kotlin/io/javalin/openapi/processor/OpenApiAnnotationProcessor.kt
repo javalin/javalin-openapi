@@ -1,19 +1,14 @@
 package io.javalin.openapi.processor
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.sun.source.util.Trees
-import groovy.lang.GroovyClassLoader
 import io.javalin.openapi.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiAnnotationProcessorConfiguration
-import io.javalin.openapi.OpenApiAnnotationProcessorConfigurer
-import io.javalin.openapi.OpenApis
 import io.javalin.openapi.processor.configuration.OpenApiPrecompileScriptingEngine
 import io.javalin.openapi.processor.generators.JsonSchemaGenerator
 import io.javalin.openapi.processor.generators.OpenApiGenerator
-import java.io.File
+import io.javalin.openapi.processor.shared.inDebug
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -28,9 +23,7 @@ import javax.tools.Diagnostic.Kind.NOTE
 open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     companion object {
-        val gson: Gson = GsonBuilder()
-            .setPrettyPrinting()
-            .create()
+        val configuration = OpenApiAnnotationProcessorConfiguration()
 
         lateinit var trees: Trees
         lateinit var messager: Messager
@@ -55,12 +48,10 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
         val openApiPrecompileScriptingEngine = OpenApiPrecompileScriptingEngine()
         val configurer = openApiPrecompileScriptingEngine.load(roundEnv)
+        configurer?.configure(configuration)
 
-        val openApiConfiguration = OpenApiAnnotationProcessorConfiguration()
-        configurer?.configure(openApiConfiguration)
-
-        if (openApiConfiguration.debug) {
-            messager.printMessage(NOTE, "OpenApi | Debug mode enabled")
+        inDebug {
+            it.printMessage(NOTE, "OpenApi | Debug mode enabled")
         }
 
         val openApiGenerator = OpenApiGenerator()

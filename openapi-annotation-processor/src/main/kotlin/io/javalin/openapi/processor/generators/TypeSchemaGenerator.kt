@@ -30,6 +30,8 @@ import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.getFullName
 import io.javalin.openapi.processor.shared.hasAnnotation
+import io.javalin.openapi.processor.shared.inDebug
+import io.javalin.openapi.processor.shared.info
 import io.javalin.openapi.processor.shared.isPrimitive
 import io.javalin.openapi.processor.shared.toSimpleName
 import javax.lang.model.element.AnnotationMirror
@@ -322,7 +324,12 @@ private fun Element.findExtra(): Map<String, Any?> {
 
     annotationMirrors
         .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
-        .flatMap { OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(it).asSequence() }
+        .flatMap { customAnnotation ->
+            inDebug { it.info("TypeSchemaGenerator#findExtra | Custom annotation: $customAnnotation") }
+            val elements = OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(customAnnotation)
+            inDebug { it.info("TypeSchemaGenerator#findExtra | Element values with defaults: $elements") }
+            elements.asSequence()
+        }
         .forEach { (element, value) ->
             extra[element.toSimpleName()] = value.accept(object : AnnotationValueVisitor<Any, Nothing> {
                 override fun visit(av: AnnotationValue, p: Nothing?) = av.value.toString()
@@ -351,6 +358,7 @@ private fun Element.findExtra(): Map<String, Any?> {
                 override fun visitAnnotation(annotationMirror: AnnotationMirror?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unsupported nested annotations")
                 override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw UnsupportedOperationException("[CustomAnnotation] Unknown value $av")
             }, null)
+            inDebug { it.info("TypeSchemaGenerator#findExtra | Visited entry ($element, $value) mapped to ${extra[element.toSimpleName()]}") }
         }
 
     return extra
