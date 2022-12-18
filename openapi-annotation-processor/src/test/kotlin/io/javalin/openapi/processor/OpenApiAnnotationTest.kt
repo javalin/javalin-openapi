@@ -10,6 +10,8 @@ import io.javalin.openapi.OpenApiResponse
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
+import kotlin.annotation.AnnotationTarget.CLASS
+import kotlin.annotation.AnnotationTarget.PROPERTY_GETTER
 
 internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
 
@@ -50,12 +52,18 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
     }
 
     @CustomAnnotation
-    private annotation class CustomDescription(
-        val customProperty: String
-    )
+    @Target(CLASS)
+    private annotation class CustomAnnotationOnClass(val onClass: Boolean)
 
-    @CustomDescription(customProperty = "Monke")
-    private class CustomEntity
+    @CustomAnnotation
+    @Target(PROPERTY_GETTER)
+    private annotation class CustomAnnotationOnGetter(val onGetter: Boolean)
+
+    @CustomAnnotationOnClass(onClass = true)
+    private class CustomEntity(
+        @get:CustomAnnotationOnGetter(onGetter = true)
+        val element: Map<String, Map<String, CustomEntity>>
+    )
 
     @OpenApi(
         path = "/custom",
@@ -64,6 +72,8 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
     )
     @Test
     fun should_include_custom_annotation_in_type_scheme() = withOpenApi("should_include_custom_annotation_in_type_scheme") {
+        println(it)
+
         assertThatJson(it)
             .inPath("$.paths['/custom'].get.responses.200.content['application/json'].schema")
             .isObject
@@ -72,7 +82,12 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity")
             .isObject
-            .containsEntry("customProperty", "Monke")
+            .containsEntry("onClass", true)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.CustomEntity.properties.element")
+            .isObject
+            .containsEntry("onGetter", true)
     }
 
     @OpenApiName("PandaEntity")

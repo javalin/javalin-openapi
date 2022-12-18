@@ -230,7 +230,7 @@ public final class JavalinTest implements Handler {
         private final @NotNull String timestamp;
         private final @NotNull Foo foo;
         private final @NotNull List<Foo> foos;
-        private final @NotNull Map<String, Bar> bars = new HashMap<>();
+        private final @NotNull Map<String, Map<String, Bar>> bars = new HashMap<>();
         private final @NotNull EnumEntity enumEntity = EnumEntity.TWO;
         private Bar bar;
 
@@ -254,7 +254,7 @@ public final class JavalinTest implements Handler {
         }
 
         // should be represented as object
-        public @NotNull Map<String, Bar> getBars() {
+        public @NotNull Map<String, Map<String, Bar>> getBars() {
             return bars;
         }
 

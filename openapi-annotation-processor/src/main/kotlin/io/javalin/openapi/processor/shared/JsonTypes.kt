@@ -105,8 +105,8 @@ internal object JsonTypes {
                         ),
                         type = DICTIONARY
                     )
-                    types.isAssignable(types.erasure(this), collectionType.asType()) ->
-                        typeArguments.getOrElse(0) { objectType }.toModel(generics, ARRAY)
+                types.isAssignable(types.erasure(this), collectionType.asType()) ->
+                    typeArguments.getOrElse(0) { objectType }.toModel(generics, ARRAY)
                 else ->
                     DataModel(
                         typeMirror = this,

@@ -17,7 +17,7 @@ fun TypeMirror.getFullName(): String =
         ?.getAnnotation(OpenApiName::class.java)
         ?.value
         ?.let { toString().substringBeforeLast(".") + "." + it }
-        ?: toString()
+        ?: toString().substringBefore("<")
 
 fun Element.hasAnnotation(simpleName: String): Boolean =
     annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
