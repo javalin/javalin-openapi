@@ -33,6 +33,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
         summary = "Test summary",
         operationId = "Test operation id",
         description = "Test description",
+        tags = ["Test tag"],
         deprecated = true,
     )
     @Test
@@ -41,7 +42,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
             .inPath("$.paths['/basic'].get")
             .isObject
             .containsAllEntriesOf(linkedMapOf(
-                "tags" to json("[]"),
+                "tags" to json("['Test tag']"),
                 "summary" to "Test summary",
                 "description" to "Test description",
                 "operationId" to "Test operation id",
