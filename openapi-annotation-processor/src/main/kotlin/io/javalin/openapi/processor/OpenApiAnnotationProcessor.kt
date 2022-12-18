@@ -4,10 +4,15 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.sun.source.util.Trees
 import groovy.lang.GroovyClassLoader
+import io.javalin.openapi.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
+import io.javalin.openapi.OpenApiAnnotationProcessorConfiguration
 import io.javalin.openapi.OpenApiAnnotationProcessorConfigurer
 import io.javalin.openapi.OpenApis
+import io.javalin.openapi.processor.configuration.OpenApiPrecompileScriptingEngine
+import io.javalin.openapi.processor.generators.JsonSchemaGenerator
+import io.javalin.openapi.processor.generators.OpenApiGenerator
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
@@ -18,6 +23,7 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
+import javax.tools.Diagnostic.Kind.NOTE
 
 open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
@@ -41,23 +47,21 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         filer = processingEnv.filer
     }
 
+    @OptIn(ExperimentalCompileOpenApiConfiguration::class)
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         if (roundEnv.processingOver()) {
             return false
         }
 
-        roundEnv.getElementsAnnotatedWith(OpenApis::class.java)
-            .firstOrNull()
-            ?.let { trees.getPath(it).compilationUnit.sourceFile.name }
-            ?.substringBeforeLast(File.separator + "src" + File.separator)
-            ?.let { File(it).resolve("src").resolve("main").resolve("resources").resolve("openapi.groovy") }
-            ?.takeIf { it.exists() }
-            ?.also { scriptFile ->
-                val groovyClassLoader = GroovyClassLoader(this::class.java.classLoader)
-                val configurerClass = groovyClassLoader.parseClass(scriptFile)
-                val configurer = configurerClass.getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer
-                configurer.configure()
-            }
+        val openApiPrecompileScriptingEngine = OpenApiPrecompileScriptingEngine()
+        val configurer = openApiPrecompileScriptingEngine.load(roundEnv)
+
+        val openApiConfiguration = OpenApiAnnotationProcessorConfiguration()
+        configurer?.configure(openApiConfiguration)
+
+        if (openApiConfiguration.debug) {
+            messager.printMessage(NOTE, "OpenApi | Debug mode enabled")
+        }
 
         val openApiGenerator = OpenApiGenerator()
         openApiGenerator.generate(roundEnv)

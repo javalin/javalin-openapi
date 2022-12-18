@@ -1,4 +1,4 @@
-package io.javalin.openapi.processor
+package io.javalin.openapi.processor.generators
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -11,12 +11,13 @@ import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.getFormattedPath
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.trees
-import io.javalin.openapi.processor.OpenApiGenerator.In.COOKIE
-import io.javalin.openapi.processor.OpenApiGenerator.In.FORM_DATA
-import io.javalin.openapi.processor.OpenApiGenerator.In.HEADER
-import io.javalin.openapi.processor.OpenApiGenerator.In.PATH
-import io.javalin.openapi.processor.OpenApiGenerator.In.QUERY
+import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
+import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
+import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
+import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
+import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
 import io.javalin.openapi.processor.shared.JsonExtensions.addString
 import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray

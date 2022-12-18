@@ -7,7 +7,6 @@ package io.javalin.openapi
 
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
-import io.javalin.util.FileUtil.readResource
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.annotation.AnnotationTarget.CLASS
@@ -215,10 +214,6 @@ enum class HttpMethod {
     HEAD,
     OPTIONS,
     TRACE;
-}
-
-interface OpenApiAnnotationProcessorConfigurer {
-    fun configure()
 }
 
 class OpenApiLoader {

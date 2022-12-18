@@ -1,4 +1,4 @@
-package io.javalin.openapi.processor
+package io.javalin.openapi.processor.generators
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -19,6 +19,7 @@ import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.types
 import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.DataModel

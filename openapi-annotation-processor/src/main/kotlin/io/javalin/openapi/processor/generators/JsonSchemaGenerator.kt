@@ -1,7 +1,8 @@
-package io.javalin.openapi.processor
+package io.javalin.openapi.processor.generators
 
 import com.google.gson.JsonObject
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.ProcessorUtils.saveResource
 import javax.annotation.processing.RoundEnvironment
