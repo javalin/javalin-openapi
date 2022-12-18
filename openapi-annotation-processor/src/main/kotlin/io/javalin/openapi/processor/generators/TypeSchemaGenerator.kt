@@ -19,12 +19,12 @@ import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
+import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.StructureType.DICTIONARY
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.types
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.shared.JsonTypes
-import io.javalin.openapi.processor.shared.JsonTypes.DataModel
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
@@ -51,11 +51,11 @@ data class ResultScheme(
 )
 
 internal fun createTypeSchema(
-    type: DataModel,
+    type: ClassDefinition,
     inlineRefs: Boolean,
     requireNonNullsByDefault: Boolean = true
 ): ResultScheme {
-    val typeElement = type.sourceElement
+    val typeElement = type.source
     val definedBy = typeElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
 
     if (definedBy != null) {
@@ -71,7 +71,7 @@ internal fun createTypeSchema(
             typeElement.enclosedElements
                 .filterIsInstance<VariableElement>()
                 .filter { it.modifiers.contains(Modifier.STATIC) }
-                .filter { types.isAssignable(it.asType(), type.typeMirror) }
+                .filter { context.isAssignable(it.asType(), type.mirror) }
                 .map { it.toSimpleName() }
                 .forEach { values.add(it) }
 
@@ -149,13 +149,13 @@ private fun JsonObject.createCombinatorList(combinator: Combinator, classes: Lis
 }
 
 internal fun createTypeDescription(
-    model: DataModel,
+    model: ClassDefinition,
     inlineRefs: Boolean = false,
     requiresNonNulls: Boolean = true,
     propertyCombinator: PropertyCombinator? = null,
     extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
-    val definedBy = model.sourceElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+    val definedBy = model.source.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
 
     if (definedBy != null) {
         return createTypeDescription(definedBy.toModel(), inlineRefs, requiresNonNulls, propertyCombinator, extra)
@@ -197,7 +197,7 @@ internal fun createTypeDescription(
     return ResultScheme(scheme, references)
 }
 
-internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, references: MutableCollection<TypeMirror>, requiresNonNulls: Boolean) {
+internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, references: MutableCollection<TypeMirror>, requiresNonNulls: Boolean) {
     val nonRefType = JsonTypes.NON_REF_TYPES[model.simpleName]
 
     if (nonRefType == null) {
@@ -206,7 +206,7 @@ internal fun JsonObject.addType(model: DataModel, inlineRefs: Boolean, reference
             subScheme.asMap().forEach { (key, value) -> add(key, value) }
             references.addAll(subReferences)
         } else {
-            references.add(model.typeMirror)
+            references.add(model.mirror)
             addProperty("\$ref", "#/components/schemas/${model.simpleName}")
         }
         return
@@ -229,22 +229,27 @@ data class Property(
     val extra: Map<String, Any?>
 )
 
-private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Object") }
-private val recordType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement("java.lang.Record") }
+private val objectType by lazy { context.forTypeElement("java.lang.Object")!! }
+private val recordType by lazy { context.forTypeElement("java.lang.Record") }
 
-internal fun DataModel.findAllProperties(requireNonNulls: Boolean): Collection<Property> {
-    val acceptFields = sourceElement.getAnnotation(OpenApiByFields::class.java)
+internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collection<Property> {
+    val acceptFields = source.getAnnotation(OpenApiByFields::class.java)
         ?.value
 
     val isRecord = when (recordType) {
         null -> false
-        else -> types.isAssignable(typeMirror, recordType.asType())
+        else -> context.isAssignable(mirror, recordType!!.asType())
     }
 
+    inDebug { it.info("TypeSchemaGenerator#findAllProperties | Enclosed elements of ${this.mirror}: ${source.enclosedElements}") }
     val properties = mutableListOf<Property>()
 
-    for (property in sourceElement.enclosedElements) {
+    for (property in source.enclosedElements) {
         if (property is Element) {
+            if (OpenApiAnnotationProcessor.configuration.propertyInSchemeFilter?.filter(context, this, property) == false) {
+                continue
+            }
+
             if (property.modifiers.contains(Modifier.STATIC)) {
                 continue
             }
@@ -326,7 +331,7 @@ private fun Element.findExtra(): Map<String, Any?> {
         .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
         .flatMap { customAnnotation ->
             inDebug { it.info("TypeSchemaGenerator#findExtra | Custom annotation: $customAnnotation") }
-            val elements = OpenApiAnnotationProcessor.elements.getElementValuesWithDefaults(customAnnotation)
+            val elements = context.env.elementUtils.getElementValuesWithDefaults(customAnnotation)
             inDebug { it.info("TypeSchemaGenerator#findExtra | Element values with defaults: $elements") }
             elements.asSequence()
         }

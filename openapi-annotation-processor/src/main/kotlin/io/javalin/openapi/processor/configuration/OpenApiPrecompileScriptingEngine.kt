@@ -1,13 +1,12 @@
 package io.javalin.openapi.processor.configuration
 
 import groovy.lang.GroovyClassLoader
-import io.javalin.openapi.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiAnnotationProcessorConfigurer
 import io.javalin.openapi.OpenApis
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.messager
+import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
+import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.shared.info
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
@@ -21,8 +20,7 @@ class OpenApiPrecompileScriptingEngine {
     fun load(roundEnvironment: RoundEnvironment): OpenApiAnnotationProcessorConfigurer? =
         roundEnvironment.getElementsAnnotatedWithAny(setOf(OpenApis::class.java, OpenApi::class.java, JsonSchema::class.java))
             .firstOrNull()
-            .also { messager.info("FIRST ELEMENT: $it") }
-            ?.let { OpenApiAnnotationProcessor.trees.getPath(it).compilationUnit.sourceFile.name }
+            ?.let { context.trees.getPath(it).compilationUnit.sourceFile.name }
             ?.let {
                 when {
                     /* Default sources */
@@ -33,7 +31,7 @@ class OpenApiPrecompileScriptingEngine {
                 }
             }
             ?.let { (sourceTargetName, compileSources) -> File(compileSources).resolve("src").resolve(sourceTargetName).resolve("compile").resolve("openapi.groovy") }
-            ?.also { messager.info(it.absolutePath.toString()) }
+            ?.also { context.env.messager.info(it.absolutePath.toString()) }
             ?.takeIf { it.exists() }
             ?.let { scriptFile -> groovyClassLoader.parseClass(scriptFile).getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer }
 

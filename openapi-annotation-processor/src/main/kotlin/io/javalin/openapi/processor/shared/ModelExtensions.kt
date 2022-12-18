@@ -1,7 +1,7 @@
 package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.OpenApiName
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import javax.lang.model.element.Element
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
@@ -13,7 +13,7 @@ fun TypeMirror.getSimpleName(): String =
     getFullName().substringAfterLast(".")
 
 fun TypeMirror.getFullName(): String =
-    OpenApiAnnotationProcessor.types.asElement(this)
+    context.env.typeUtils.asElement(this)
         ?.getAnnotation(OpenApiName::class.java)
         ?.value
         ?.let { toString().substringBeforeLast(".") + "." + it }

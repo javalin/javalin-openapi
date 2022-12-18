@@ -1,7 +1,7 @@
 import groovy.transform.CompileStatic
-import io.javalin.openapi.ExperimentalCompileOpenApiConfiguration
-import io.javalin.openapi.OpenApiAnnotationProcessorConfiguration
-import io.javalin.openapi.OpenApiAnnotationProcessorConfigurer
+import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
+import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
+import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
 
 @CompileStatic
 @ExperimentalCompileOpenApiConfiguration

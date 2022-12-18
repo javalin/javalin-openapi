@@ -10,10 +10,9 @@ import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
+import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.getFormattedPath
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.filer
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.trees
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
@@ -24,7 +23,6 @@ import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
 import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
 import io.javalin.openapi.processor.shared.JsonExtensions.toPrettyString
 import io.javalin.openapi.processor.shared.JsonTypes
-import io.javalin.openapi.processor.shared.JsonTypes.DataModel
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.getFullName
@@ -65,7 +63,7 @@ internal class OpenApiGenerator {
                 val generatedOpenApiSchema = generateSchema(preparedOpenApiAnnotations)
 
                 val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                val resource = filer.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
+                val resource = context.env.filer.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
                     ?.toUri()
                     ?.toString()
                     ?: return
@@ -73,17 +71,17 @@ internal class OpenApiGenerator {
                 val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
 
                 if (parsedSchema.messages.size > 0) {
-                    OpenApiAnnotationProcessor.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+                    context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
                 }
 
                 parsedSchema.messages.forEach {
-                    OpenApiAnnotationProcessor.messager.printMessage(WARNING, it)
+                    context.env.messager.printMessage(WARNING, it)
                 }
 
                 resourceName
             }
             .joinToString(separator = "\n")
-            .let { filer.saveResource("openapi-plugin/.index", it) }
+            .let { context.env.filer.saveResource("openapi-plugin/.index", it) }
     }
 
     /**
@@ -213,7 +211,7 @@ internal class OpenApiGenerator {
 
         val components = JsonObject()
         val schemas = JsonObject()
-        val generatedComponents = TreeMap<String, Pair<DataModel, JsonObject>?> { a, b -> a.compareTo(b) }
+        val generatedComponents = TreeMap<String, Pair<ClassDefinition, JsonObject>?> { a, b -> a.compareTo(b) }
 
         while (generatedComponents.size < componentReferences.size) {
             for ((name, componentReference) in componentReferences.toMutableMap()) {
@@ -298,11 +296,11 @@ internal class OpenApiGenerator {
             }
 
             if (mimeType == null) {
-                val compilationUnit = trees.getPath(element).compilationUnit
-                val tree = trees.getTree(element)
-                val startPosition = trees.sourcePositions.getStartPosition(compilationUnit, tree)
+                val compilationUnit = context.trees.getPath(element).compilationUnit
+                val tree = context.trees.getTree(element)
+                val startPosition = context.trees.sourcePositions.getStartPosition(compilationUnit, tree)
 
-                OpenApiAnnotationProcessor.messager.printMessage(
+                context.env.messager.printMessage(
                     WARNING,
                     """
                     OpenApi generator cannot find matching mime type defined.

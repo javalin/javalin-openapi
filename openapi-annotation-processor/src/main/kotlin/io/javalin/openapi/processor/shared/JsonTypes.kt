@@ -1,9 +1,12 @@
 package io.javalin.openapi.processor.shared
 
+import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.StructureType
+import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.StructureType.DEFAULT
+import io.javalin.openapi.experimental.StructureType.DICTIONARY
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.ARRAY
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.DEFAULT
-import io.javalin.openapi.processor.shared.JsonTypes.DataType.DICTIONARY
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import javax.lang.model.element.Element
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
@@ -54,25 +57,19 @@ internal object JsonTypes {
         "Map" to Data("object"),
     )
 
-    enum class DataType {
-        DEFAULT,
-        ARRAY,
-        DICTIONARY
-    }
-
-    class DataModel(
-        val typeMirror: TypeMirror,
-        val sourceElement: Element,
-        var generics: List<DataModel> = emptyList(),
-        val type: DataType = DEFAULT
-    ) {
-        val simpleName: String = typeMirror.getSimpleName()
-        val fullName: String = typeMirror.getFullName()
+    class ClassDefinitionImpl(
+        override val mirror: TypeMirror,
+        override val source: Element,
+        override var generics: List<ClassDefinition> = emptyList(),
+        override val type: StructureType = StructureType.DEFAULT
+    ) : ClassDefinition {
+        override val simpleName: String = mirror.getSimpleName()
+        override val fullName: String = mirror.getFullName()
 
         override fun equals(other: Any?): Boolean =
             when {
                 this === other -> true
-                other is DataModel -> this.fullName == other.fullName
+                other is ClassDefinition -> this.fullName == other.fullName
                 else -> false
             }
 
@@ -80,15 +77,15 @@ internal object JsonTypes {
 
     }
 
-    private fun Element.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel =
-        DataModel(asType(), this, generics, type)
+    private fun Element.toModel(generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition =
+        ClassDefinitionImpl(asType(), this, generics, type)
 
-    private val objectType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Object::class.java.name).asType() }
-    private val collectionType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Collection::class.java.name) }
-    private val mapType by lazy { OpenApiAnnotationProcessor.elements.getTypeElement(Map::class.java.name) }
+    private val objectType by lazy { context.forTypeElement(Object::class.java.name)!!.asType() }
+    private val collectionType by lazy { context.forTypeElement(Collection::class.java.name)!! }
+    private val mapType by lazy { context.forTypeElement(Map::class.java.name)!! }
 
-    fun TypeMirror.toModel(generics: List<DataModel> = emptyList(), type: DataType = DEFAULT): DataModel {
-        val types = OpenApiAnnotationProcessor.types
+    fun TypeMirror.toModel(generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition {
+        val types = context.env.typeUtils
 
         return when (this) {
             is TypeVariable -> upperBound?.toModel(generics, type) ?: lowerBound?.toModel(generics, type)
@@ -96,9 +93,9 @@ internal object JsonTypes {
             is ArrayType -> componentType.toModel(generics, type = ARRAY)
             is DeclaredType -> when {
                 types.isAssignable(types.erasure(this), mapType.asType()) ->
-                    DataModel(
-                        typeMirror = this,
-                        sourceElement = mapType,
+                    ClassDefinitionImpl(
+                        mirror = this,
+                        source = mapType,
                         generics = listOfNotNull(
                             typeArguments.getOrElse(0) { objectType }.toModel(),
                             typeArguments.getOrElse(1) { objectType }.toModel()
@@ -108,9 +105,9 @@ internal object JsonTypes {
                 types.isAssignable(types.erasure(this), collectionType.asType()) ->
                     typeArguments.getOrElse(0) { objectType }.toModel(generics, ARRAY)
                 else ->
-                    DataModel(
-                        typeMirror = this,
-                        sourceElement = asElement(),
+                    ClassDefinitionImpl(
+                        mirror = this,
+                        source = asElement(),
                         generics = typeArguments.mapNotNull { it.toModel() },
                         type = type
                     )

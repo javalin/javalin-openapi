@@ -2,7 +2,7 @@ package io.javalin.openapi.processor.generators
 
 import com.google.gson.JsonObject
 import io.javalin.openapi.JsonSchema
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.filer
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.shared.JsonExtensions.toPrettyString
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
 import io.javalin.openapi.processor.shared.saveResource
@@ -14,8 +14,8 @@ class JsonSchemaGenerator {
     fun generate(roundEnvironment: RoundEnvironment) =
         roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
             .filter { it.getAnnotation(JsonSchema::class.java).generateResource }
-            .onEach { filer.saveResource("json-schemes/${it}", generate(it)) }
-            .run { filer.saveResource("json-schemes/index", joinToString(separator = "\n")) }
+            .onEach { context.env.filer.saveResource("json-schemes/${it}", generate(it)) }
+            .run { context.env.filer.saveResource("json-schemes/index", joinToString(separator = "\n")) }
 
     private fun generate(element: Element): String {
         val scheme = JsonObject()

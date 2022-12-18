@@ -3,8 +3,12 @@ package io.javalin.openapi.processor
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiAnnotationProcessorSpecification
+import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiResponse
+import net.javacrumbs.jsonunit.assertj.JsonAssertions
+import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
+import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 
 internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
@@ -40,8 +44,41 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
         responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = KeypairCreateResponse::class)])]
     )
     @Test
-    fun gh_125() = withOpenApi("gh-125") {
+    fun gh125() = withOpenApi("gh-125") {
         println(it)
+    }
+
+    /*
+     * GH-108 Ignore inherited properties
+     * ~ https://github.com/javalin/javalin-openapi/issues/108
+     */
+
+    interface SpecificRecord {
+        fun getRecord(): String  // it has to be implemented
+    }
+
+    open class SpecificRecordBase {
+        fun getRecordBase(): String = "RecordBase" // it'll be excluded, because annotation processor only takes declared properties from the main class
+    }
+
+    @OpenApiByFields
+    class EmailRequest(val email: String) : SpecificRecordBase(), SpecificRecord {
+        override fun getRecord(): String = "Record" // it will be excluded by `openapi.groovy` script
+    }
+
+    @OpenApi(
+        path = "gh-108",
+        versions = ["gh-108"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = EmailRequest::class)])]
+    )
+    @Test
+    fun gh108() = withOpenApi("gh-108") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.EmailRequest")
+            .isObject
+            .containsEntry("required", json("['getEmail']"))
     }
 
 }

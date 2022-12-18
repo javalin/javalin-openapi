@@ -1,6 +1,7 @@
 package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
+import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import javax.annotation.processing.Filer
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
@@ -11,7 +12,7 @@ import javax.tools.StandardLocation
 
 fun inDebug(body: (Messager) -> Unit) {
     if (OpenApiAnnotationProcessor.configuration.debug) {
-        body(OpenApiAnnotationProcessor.messager)
+        body(context.env.messager)
     }
 }
 
@@ -26,7 +27,7 @@ fun Filer.saveResource(name: String, content: String): FileObject? =
         // file has been created during previous compilation phase
         null
     } catch (throwable: Throwable) {
-        OpenApiAnnotationProcessor.messager.printException(throwable)
+        context.env.messager.printException(throwable)
         null
     }
 
