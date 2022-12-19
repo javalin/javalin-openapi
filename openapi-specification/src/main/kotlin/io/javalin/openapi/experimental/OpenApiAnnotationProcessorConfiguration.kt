@@ -1,10 +1,13 @@
 package io.javalin.openapi.experimental
 
 import javax.lang.model.element.Element
+import kotlin.annotation.AnnotationRetention.BINARY
+import kotlin.annotation.AnnotationTarget.CLASS
+import kotlin.annotation.AnnotationTarget.FUNCTION
 
 @RequiresOptIn
-@Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Retention(BINARY)
+@Target(CLASS, FUNCTION)
 annotation class ExperimentalCompileOpenApiConfiguration
 
 @ExperimentalCompileOpenApiConfiguration
