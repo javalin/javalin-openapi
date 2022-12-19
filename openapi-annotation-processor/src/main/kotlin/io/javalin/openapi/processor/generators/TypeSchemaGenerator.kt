@@ -337,13 +337,10 @@ private fun Element.findExtra(): Map<String, Any?> {
             if (!isCustom) {
                 inDebug {
                     it.info("TypeSchemaGenerator#findExtra | Usage: $annotation")
-                    it.info(
-                        "TypeSchemaGenerator#findExtra | Implementation: ${
-                            context.env.elementUtils.printElements(
-                                MessagerWriter(),
-                                annotation.annotationType.asElement()
-                            )
-                        }}"
+                    it.info("TypeSchemaGenerator#findExtra | Implementation:")
+                    context.env.elementUtils.printElements(
+                        MessagerWriter(),
+                        annotation.annotationType.asElement()
                     )
                 }
             }
