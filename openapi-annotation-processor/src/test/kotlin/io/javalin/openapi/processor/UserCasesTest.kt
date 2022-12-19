@@ -6,7 +6,6 @@ import io.javalin.openapi.OpenApiAnnotationProcessorSpecification
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiResponse
-import net.javacrumbs.jsonunit.assertj.JsonAssertions
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test

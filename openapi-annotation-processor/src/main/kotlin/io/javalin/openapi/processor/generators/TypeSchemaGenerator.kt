@@ -28,6 +28,7 @@ import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
 import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.MessagerWriter
 import io.javalin.openapi.processor.shared.getFullName
 import io.javalin.openapi.processor.shared.hasAnnotation
 import io.javalin.openapi.processor.shared.inDebug
@@ -293,9 +294,9 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 else -> continue
             }
 
-            val combinator = property.getAnnotation(OneOf::class.java)?.let { Combinator.ONE_OF to it.getTypeMirrors { value } }
-                ?: property.getAnnotation(AnyOf::class.java)?.let { Combinator.ANY_OF to it.getTypeMirrors { value } }
-                ?: property.getAnnotation(AllOf::class.java)?.let { Combinator.ALL_OF to it.getTypeMirrors { value } }
+            val combinator = property.getAnnotation(OneOf::class.java)?.let { ONE_OF to it.getTypeMirrors { value } }
+                ?: property.getAnnotation(AnyOf::class.java)?.let { ANY_OF to it.getTypeMirrors { value } }
+                ?: property.getAnnotation(AllOf::class.java)?.let { ALL_OF to it.getTypeMirrors { value } }
 
             val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
                 ?.getTypeMirror { definedBy }
@@ -327,8 +328,28 @@ private fun Element.findExtra(): Map<String, Any?> {
         extra[custom.name] = custom.value
     }
 
-    annotationMirrors
-        .filter { it.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null  }
+    context.env.elementUtils.getAllAnnotationMirrors(this)
+        .filterNot { it.annotationType.getFullName() == Metadata::class.qualifiedName }
+        .onEach { annotation -> inDebug { it.info("TypeSchemaGenerator#findExtra | Annotation: ${annotation.annotationType}") } }
+        .filter { annotation ->
+            val isCustom = annotation.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null
+
+            if (!isCustom) {
+                inDebug {
+                    it.info("TypeSchemaGenerator#findExtra | Usage: $annotation")
+                    it.info(
+                        "TypeSchemaGenerator#findExtra | Implementation: ${
+                            context.env.elementUtils.printElements(
+                                MessagerWriter(),
+                                annotation.annotationType.asElement()
+                            )
+                        }}"
+                    )
+                }
+            }
+
+            isCustom
+        }
         .flatMap { customAnnotation ->
             inDebug { it.info("TypeSchemaGenerator#findExtra | Custom annotation: $customAnnotation") }
             val elements = context.env.elementUtils.getElementValuesWithDefaults(customAnnotation)

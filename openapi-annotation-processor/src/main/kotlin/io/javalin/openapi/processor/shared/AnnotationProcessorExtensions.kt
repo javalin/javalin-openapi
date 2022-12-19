@@ -2,6 +2,7 @@ package io.javalin.openapi.processor.shared
 
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
+import java.io.Writer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
@@ -47,4 +48,23 @@ fun Messager.printException(throwable: Throwable) {
         printMessage(ERROR, "---")
         printException(throwable.cause!!)
     }
+}
+
+class MessagerWriter : Writer() {
+
+    private val builder = StringBuilder()
+
+    override fun flush() {
+        context.env.messager.info(builder.toString())
+        builder.clear()
+    }
+
+    override fun write(cbuf: CharArray, off: Int, len: Int) {
+        builder.append(cbuf, off, len)
+    }
+
+    override fun close() {
+        flush()
+    }
+
 }
