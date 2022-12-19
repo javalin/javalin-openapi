@@ -112,7 +112,7 @@ internal class OpenApiGenerator {
             val path = paths.computeIfAbsent(routeAnnotation.getFormattedPath()) { JsonObject() }
 
             // https://swagger.io/specification/#paths-object
-            for (method in routeAnnotation.methods.sortedBy { it.ordinal }) {
+            for (method in routeAnnotation.methods.sortedBy { it.name }) {
                 val operation = JsonObject()
 
                 // General
