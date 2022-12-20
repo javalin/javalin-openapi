@@ -2,6 +2,7 @@ package io.javalin.openapi.experimental
 
 import com.sun.source.util.Trees
 import javax.annotation.processing.ProcessingEnvironment
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
@@ -24,6 +25,7 @@ interface ClassDefinition {
 
 interface AnnotationProcessorContext {
     val env: ProcessingEnvironment
+    val roundEnv: RoundEnvironment
     val trees: Trees
 
     fun forTypeElement(name: String): TypeElement? = env.elementUtils.getTypeElement(name)

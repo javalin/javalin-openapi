@@ -18,15 +18,15 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
-import io.javalin.openapi.processor.shared.JsonExtensions.addString
-import io.javalin.openapi.processor.shared.JsonExtensions.computeIfAbsent
-import io.javalin.openapi.processor.shared.JsonExtensions.toJsonArray
-import io.javalin.openapi.processor.shared.JsonExtensions.toPrettyString
 import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
-import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
+import io.javalin.openapi.processor.shared.addString
+import io.javalin.openapi.processor.shared.computeIfAbsent
 import io.javalin.openapi.processor.shared.getFullName
 import io.javalin.openapi.processor.shared.saveResource
+import io.javalin.openapi.processor.shared.toJsonArray
+import io.javalin.openapi.processor.shared.toPrettyString
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
@@ -219,7 +219,7 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val type = componentReference.toModel()
+                val type = componentReference.toClassDefinition()
 
                 if (type.fullName == "java.lang.Object") {
                     generatedComponents[name] = null
@@ -371,7 +371,7 @@ internal class OpenApiGenerator {
     }
 
     private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
-        val model = type.toModel()
+        val model = type.toClassDefinition()
         val (json, references) = createTypeDescription(model)
         componentReferences.putAll(references.associateBy { it.getFullName() })
         return json

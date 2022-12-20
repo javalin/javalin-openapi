@@ -21,13 +21,15 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     companion object {
         val configuration = OpenApiAnnotationProcessorConfiguration()
-        lateinit var context: AnnotationProcessorContext
+        internal lateinit var context: AnnotationProcessorContextImpl
     }
 
-    private data class AnnotationProcessorContextImpl(
+    internal class AnnotationProcessorContextImpl(
         override val env: ProcessingEnvironment,
         override val trees: Trees
-    ) : AnnotationProcessorContext
+    ) : AnnotationProcessorContext {
+        override lateinit var roundEnv: RoundEnvironment
+    }
 
     override fun init(processingEnv: ProcessingEnvironment) {
         context = AnnotationProcessorContextImpl(
@@ -41,6 +43,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         if (roundEnv.processingOver()) {
             return false
         }
+        context.roundEnv = roundEnv
 
         val openApiPrecompileScriptingEngine = OpenApiPrecompileScriptingEngine()
         val configurer = openApiPrecompileScriptingEngine.load(roundEnv)

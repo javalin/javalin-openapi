@@ -3,9 +3,9 @@ package io.javalin.openapi.processor.generators
 import com.google.gson.JsonObject
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.JsonExtensions.toPrettyString
-import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
 import io.javalin.openapi.processor.shared.saveResource
+import io.javalin.openapi.processor.shared.toPrettyString
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 
@@ -21,8 +21,14 @@ class JsonSchemaGenerator {
         val scheme = JsonObject()
         scheme.addProperty("\$schema", "http://json-schema.org/draft-07/schema#")
 
-        val (entityScheme) = createTypeSchema(element.asType().toModel(), true)
-        entityScheme.entrySet().forEach { (key, value) -> scheme.add(key, value) }
+        val (entityScheme) = createTypeSchema(
+            type = element.asType().toClassDefinition(),
+            inlineRefs = true
+        )
+
+        entityScheme.entrySet().forEach { (key, value) ->
+            scheme.add(key, value)
+        }
 
         return scheme.toPrettyString()
     }

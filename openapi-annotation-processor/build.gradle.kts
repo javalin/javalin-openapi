@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.tasks.Kapt
+import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
+
 description = "Javalin OpenAPI Annotation Processor | Generates OpenApi specification from @OpenApi annotations"
 
 plugins {
@@ -23,4 +26,10 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.11")
 
     testImplementation("org.mongodb:bson:4.8.1")
+}
+
+tasks.withType<KaptGenerateStubs> {
+    dependsOn(
+        ":openapi-annotation-processor:clean",
+    )
 }

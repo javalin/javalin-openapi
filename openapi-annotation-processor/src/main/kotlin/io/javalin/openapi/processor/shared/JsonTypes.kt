@@ -45,40 +45,40 @@ internal object JsonTypes {
     private val collectionType by lazy { context.forTypeElement(Collection::class.java.name)!! }
     private val mapType by lazy { context.forTypeElement(Map::class.java.name)!! }
 
-    fun TypeMirror.toModel(generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition {
+    fun TypeMirror.toClassDefinition(generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition {
         val types = context.env.typeUtils
 
         return when (this) {
-            is TypeVariable -> upperBound?.toModel(generics, type) ?: lowerBound?.toModel(generics, type)
+            is TypeVariable -> upperBound?.toClassDefinition(generics, type) ?: lowerBound?.toClassDefinition(generics, type)
             is PrimitiveType -> types.boxedClass(this).toModel(generics, type)
-            is ArrayType -> componentType.toModel(generics, type = ARRAY)
+            is ArrayType -> componentType.toClassDefinition(generics, type = ARRAY)
             is DeclaredType -> when {
                 types.isAssignable(types.erasure(this), mapType.asType()) ->
                     ClassDefinitionImpl(
                         mirror = this,
                         source = mapType,
                         generics = listOfNotNull(
-                            typeArguments.getOrElse(0) { objectType }.toModel(),
-                            typeArguments.getOrElse(1) { objectType }.toModel()
+                            typeArguments.getOrElse(0) { objectType }.toClassDefinition(),
+                            typeArguments.getOrElse(1) { objectType }.toClassDefinition()
                         ),
                         type = DICTIONARY
                     )
                 types.isAssignable(types.erasure(this), collectionType.asType()) ->
-                    typeArguments.getOrElse(0) { objectType }.toModel(generics, ARRAY)
+                    typeArguments.getOrElse(0) { objectType }.toClassDefinition(generics, ARRAY)
                 else ->
                     ClassDefinitionImpl(
                         mirror = this,
                         source = asElement(),
-                        generics = typeArguments.mapNotNull { it.toModel() },
+                        generics = typeArguments.mapNotNull { it.toClassDefinition() },
                         type = type
                     )
             }
             else -> types.asElement(this)?.toModel(generics, type)
-        } ?: objectType.toModel()
+        } ?: objectType.toClassDefinition()
     }
 
     fun detectContentType(typeMirror: TypeMirror): String {
-        val model = typeMirror.toModel()
+        val model = typeMirror.toClassDefinition()
 
         return when {
             (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
