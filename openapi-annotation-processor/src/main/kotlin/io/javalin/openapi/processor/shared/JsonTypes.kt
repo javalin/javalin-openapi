@@ -5,7 +5,6 @@ import io.javalin.openapi.experimental.StructureType
 import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.StructureType.DEFAULT
 import io.javalin.openapi.experimental.StructureType.DICTIONARY
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import javax.lang.model.element.Element
 import javax.lang.model.type.ArrayType
@@ -19,49 +18,11 @@ import kotlin.reflect.KClass
 
 internal object JsonTypes {
 
-    data class Data(
-        val type: String,
-        val format: String = ""
-    )
-
-    val NON_REF_TYPES: Map<String, Data> = mapOf(
-        "Boolean" to Data("boolean"),
-
-        "Byte" to Data("integer", "int32"),
-        "Short" to Data("integer", "int32"),
-        "Int" to Data("integer", "int32"),
-        "Integer" to Data("integer", "int32"),
-        "Long" to Data("integer", "int64"),
-
-        "Float" to Data("number", "float"),
-        "Double" to Data("number", "double"),
-
-        "Char" to Data("string"),
-        "Character" to Data("string"),
-        "String" to Data("string"),
-        "BigDecimal" to Data("string"),
-        "UUID" to Data("string"),
-        "ObjectId" to Data("string"),
-
-        "ByteArray" to Data("string", "binary"),
-        "InputStream" to Data("string", "binary"),
-        "File" to Data("string", "binary"),
-
-        "Date" to Data("string", "date"),
-        "LocalDate" to Data("string", "date"),
-
-        "LocalDateTime" to Data("string", "date-time"),
-        "Instant" to Data("string", "date-time"),
-
-        "Object" to Data("object"),
-        "Map" to Data("object"),
-    )
-
     class ClassDefinitionImpl(
         override val mirror: TypeMirror,
         override val source: Element,
         override var generics: List<ClassDefinition> = emptyList(),
-        override val type: StructureType = StructureType.DEFAULT
+        override val type: StructureType = DEFAULT
     ) : ClassDefinition {
         override val simpleName: String = mirror.getSimpleName()
         override val fullName: String = mirror.getFullName()

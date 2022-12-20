@@ -1,5 +1,6 @@
-package io.javalin.openapi
+package io.javalin.openapi.processor.specification
 
+import io.javalin.openapi.OpenApiLoader
 import org.junit.jupiter.api.Assertions
 
 internal abstract class OpenApiAnnotationProcessorSpecification {

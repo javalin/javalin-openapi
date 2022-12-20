@@ -2,10 +2,10 @@ package io.javalin.openapi.processor
 
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiAnnotationProcessorSpecification
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiResponse
+import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test

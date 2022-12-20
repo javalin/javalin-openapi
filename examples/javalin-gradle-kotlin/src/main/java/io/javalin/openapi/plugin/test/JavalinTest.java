@@ -34,7 +34,6 @@ import io.javalin.openapi.OpenApiSecurity;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
 import io.javalin.openapi.Visibility;
-import io.javalin.openapi.plugin.OpenApiConfiguration;
 import io.javalin.openapi.plugin.OpenApiPluginConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.SecurityComponentConfiguration;

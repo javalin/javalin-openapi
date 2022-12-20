@@ -4,6 +4,7 @@ import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
+import io.javalin.openapi.experimental.SimpleType
 import org.jetbrains.annotations.Nullable
 
 import javax.lang.model.element.Element
@@ -15,8 +16,12 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
 
     @Override
     void configure(OpenApiAnnotationProcessorConfiguration configuration) {
-        configuration.debug = true
+        // configuration.debug = false
 
+        // Used by TypeMappersTest
+        configuration.simpleTypeMappings['io.javalin.openapi.processor.TypeMappersTest.CustomType'] = new SimpleType("string")
+
+        // Used by UserCasesTest
         configuration.propertyInSchemeFilter = { AnnotationProcessorContext ctx, ClassDefinition type, Element property ->
             @Nullable TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
 

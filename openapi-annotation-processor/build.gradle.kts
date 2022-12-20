@@ -21,4 +21,6 @@ dependencies {
 
     @Suppress("GradlePackageUpdate")
     implementation("ch.qos.logback:logback-classic:1.2.11")
+
+    testImplementation("org.mongodb:bson:4.8.1")
 }

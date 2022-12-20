@@ -199,7 +199,7 @@ internal fun createTypeDescription(
 }
 
 internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, references: MutableCollection<TypeMirror>, requiresNonNulls: Boolean) {
-    val nonRefType = JsonTypes.NON_REF_TYPES[model.simpleName]
+    val nonRefType = OpenApiAnnotationProcessor.configuration.simpleTypeMappings[model.fullName]
 
     if (nonRefType == null) {
         if (inlineRefs) {
