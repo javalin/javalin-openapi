@@ -2,7 +2,7 @@ package io.javalin.openapi
 
 import java.io.InputStream
 import java.util.function.Supplier
-import kotlin.annotation.AnnotationRetention.BINARY
+import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
@@ -12,7 +12,7 @@ import kotlin.annotation.AnnotationTarget.PROPERTY_SETTER
 import kotlin.reflect.KClass
 
 @Target(CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class JsonSchema(
     /**
      * By default, each usage of @JsonSchema annotation results in generated `/json-schemas/{type qualifier}` resource file.
@@ -27,21 +27,21 @@ annotation class JsonSchema(
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OneOf(
     /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class AnyOf(
     /** List of associated classes to list */
     vararg val value: KClass<*>
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class AllOf(
     /** List of associated classes to list */
     vararg val value: KClass<*>
@@ -49,7 +49,7 @@ annotation class AllOf(
 
 /** Allows you to add custom properties to your schemes */
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
-@Retention(BINARY)
+@Retention(RUNTIME)
 @Repeatable
 annotation class Custom(
     /* Define name of key for custom property */
@@ -60,7 +60,7 @@ annotation class Custom(
 
 /** Allows you to create custom annotations for a group of custom properties */
 @Target(ANNOTATION_CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class CustomAnnotation
 
 enum class Combinator(val propertyName: String, val type: KClass<*>) {

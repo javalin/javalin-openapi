@@ -9,6 +9,7 @@ import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.BINARY
+import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
 import kotlin.annotation.AnnotationTarget.FUNCTION
@@ -22,7 +23,7 @@ import kotlin.reflect.KClass
  */
 @Repeatable(value = OpenApis::class)
 @Target(CLASS, FIELD, FUNCTION)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApi(
     /** The described path */
     val path: String,
@@ -80,13 +81,13 @@ fun OpenApi.getFormattedPath(): String =
 
 /** Utility annotation to aggregate multiple [OpenApi] instances */
 @Target(CLASS, FIELD, FUNCTION)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApis(
     val value: Array<OpenApi> = []
 )
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiResponse(
     val status: String,
     val content: Array<OpenApiContent> = [],
@@ -94,7 +95,7 @@ annotation class OpenApiResponse(
 )
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiParam(
     val name: String,
     val type: KClass<*> = String::class,
@@ -107,7 +108,7 @@ annotation class OpenApiParam(
 )
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiRequestBody(
     val content: Array<OpenApiContent>,
     val required: Boolean = false,
@@ -124,7 +125,7 @@ annotation class OpenApiRequestBody(
 //)
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiContent(
     val from: KClass<*> = NULL_CLASS::class,
     val mimeType: String = ContentType.AUTODETECT,
@@ -134,7 +135,7 @@ annotation class OpenApiContent(
 )
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiContentProperty(
     val name: String,
     val isArray: Boolean = false,
@@ -143,30 +144,30 @@ annotation class OpenApiContentProperty(
 )
 
 @Target()
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiSecurity(
     val name: String,
     val scopes: Array<String> = []
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiIgnore
 
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiName(
     val value: String
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiExample(
     val value: String
 )
 
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiPropertyType(
     val definedBy: KClass<*>
 )
@@ -179,7 +180,7 @@ enum class Visibility(val priority: Int) {
 }
 
 @Target(CLASS)
-@Retention(BINARY)
+@Retention(RUNTIME)
 annotation class OpenApiByFields(
     val value: Visibility = PUBLIC
 )
