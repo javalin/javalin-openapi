@@ -9,6 +9,7 @@ import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
+import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
@@ -85,7 +86,8 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
     data class A(val a: Int) : Union
 
     @DiscriminatorMappingName("class-b")
-    data class B(val b: String) : Union
+    @OpenApiName("B")
+    data class C(val b: String) : Union
 
     @OpenApi(
         path = "discriminator",

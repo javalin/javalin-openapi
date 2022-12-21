@@ -63,7 +63,7 @@ fun JsonObject.createComposition(
                 .let { add(propertyComposition.type.propertyName, it) }
         false ->
             refs
-                .map { createJsonObjectOf("\$ref", "#/components/schemas/${it.toString().substringAfterLast(".")}") }
+                .map { createJsonObjectOf("\$ref", "#/components/schemas/${it.getSimpleName()}") }
                 .toJsonArray { add(it) }
                 .let { add(propertyComposition.type.propertyName, it) }
     }
