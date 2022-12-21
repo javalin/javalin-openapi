@@ -4,11 +4,20 @@ import io.javalin.http.Context
 import io.javalin.http.Handler
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.http.MimeTypes
+import java.io.InputStream
 
-internal class SwaggerWebJarHandler(private val swaggerWebJarPath: String) : Handler {
+internal class SwaggerWebJarHandler(
+    private val swaggerWebJarPath: String,
+) : Handler {
 
     override fun handle(context: Context) {
-        val resource = SwaggerPlugin::class.java.getResourceAsStream("/META-INF/resources" + swaggerWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(swaggerWebJarPath, ""))
+        val resourceRootPath = "/META-INF/resources$swaggerWebJarPath"
+
+        val requestedResource = context.path()
+            .replaceFirst(context.contextPath(), "")
+            .replaceFirst(swaggerWebJarPath, "")
+
+        val resource: InputStream? = SwaggerPlugin::class.java.getResourceAsStream(resourceRootPath + requestedResource)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)

@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.Kapt
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
 
 description = "Javalin OpenAPI Annotation Processor | Generates OpenApi specification from @OpenApi annotations"

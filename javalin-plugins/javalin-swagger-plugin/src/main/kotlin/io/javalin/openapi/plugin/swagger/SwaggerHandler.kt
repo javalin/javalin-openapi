@@ -13,7 +13,8 @@ class SwaggerHandler(
     private val documentationPath: String,
     private val swaggerVersion: String,
     private val validatorUrl: String?,
-    private val basePath: String
+    private val routingPath: String,
+    private val basePath: String?
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -24,8 +25,9 @@ class SwaggerHandler(
     }
 
     private fun createSwaggerUiHtml(): String {
-        val publicSwaggerAssetsPath = "$basePath/webjars/swagger-ui/$swaggerVersion".replace("//", "/")
-        val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
+        val rootPath = (basePath ?: "") + routingPath
+        val publicSwaggerAssetsPath = "$rootPath/webjars/swagger-ui/$swaggerVersion".removedDoubledPathOperators()
+        val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
 
         val allDocumentations = OpenApiLoader()
             .loadVersions()
@@ -86,5 +88,10 @@ class SwaggerHandler(
 
         return html
     }
+
+    private val multiplePathOperatorsRegex = Regex("/+")
+
+    private fun String.removedDoubledPathOperators(): String =
+        replace(multiplePathOperatorsRegex, "/")
 
 }

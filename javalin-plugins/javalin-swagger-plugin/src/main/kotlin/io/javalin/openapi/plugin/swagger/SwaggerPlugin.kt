@@ -1,6 +1,7 @@
 package io.javalin.openapi.plugin.swagger
 
 import io.javalin.Javalin
+import io.javalin.http.servlet.getBasicAuthCredentials
 import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
 
@@ -13,6 +14,8 @@ class SwaggerConfiguration {
     var roles: Array<RouteRole> = emptyArray()
     /** Location of OpenApi documentation */
     var documentationPath = "/openapi"
+    /** Specify custom base path if Javalin is running behind reverse proxy */
+    var basePath: String? = null
     /** Swagger UI Bundle version */
     var version = "3.52.5"
     /** Swagger UI Bundler webjar location */
@@ -29,12 +32,17 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
             documentationPath = configuration.documentationPath,
             swaggerVersion = configuration.version,
             validatorUrl = configuration.validatorUrl,
-            basePath = app.cfg.routing.contextPath
+            routingPath = app.cfg.routing.contextPath,
+            basePath = configuration.basePath
+        )
+
+        val swaggerWebJarHandler = SwaggerWebJarHandler(
+            swaggerWebJarPath = configuration.webJarPath
         )
 
         app
             .get(configuration.uiPath, swaggerHandler, *configuration.roles)
-            .get("${configuration.webJarPath}/*", SwaggerWebJarHandler(configuration.webJarPath), *configuration.roles)
+            .get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
     }
 
 }

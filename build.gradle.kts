@@ -109,6 +109,7 @@ subprojects {
     dependencies {
         val javalin = "5.2.0"
         compileOnly("io.javalin:javalin:$javalin")
+        testImplementation("io.javalin:javalin:$javalin")
 
         val junit = "5.8.2"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
@@ -117,6 +118,9 @@ subprojects {
 
         testImplementation("org.assertj:assertj-core:3.23.1")
         testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
+        testImplementation("com.konghq:unirest-java:3.11.09")
+
+        testImplementation("ch.qos.logback:logback-classic:1.2.11")
     }
 
     tasks.withType<Test> {
