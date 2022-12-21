@@ -26,25 +26,55 @@ annotation class JsonSchema(
     val requireNonNulls: Boolean = true
 )
 
+enum class Composition(val propertyName: String, val type: KClass<*>) {
+    ONE_OF("oneOf", OneOf::class),
+    ANY_OF("anyOf", AnyOf::class),
+    ALL_OF("allOf", AllOf::class)
+}
+
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(RUNTIME)
 annotation class OneOf(
     /** List of associated classes to list */
-    vararg val value: KClass<*>
+    vararg val value: KClass<*>,
+    /** Define discriminator object */
+    val discriminator: Discriminator = Discriminator()
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(RUNTIME)
 annotation class AnyOf(
     /** List of associated classes to list */
-    vararg val value: KClass<*>
+    vararg val value: KClass<*>,
+    /** Define discriminator object */
+    val discriminator: Discriminator = Discriminator()
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(RUNTIME)
 annotation class AllOf(
     /** List of associated classes to list */
-    vararg val value: KClass<*>
+    vararg val value: KClass<*>,
+    /** Define discriminator object */
+    val discriminator: Discriminator = Discriminator()
+)
+
+@Retention(RUNTIME)
+annotation class Discriminator(
+    val propertyName: String = NULL_STRING,
+    val mappings: Array<MappedClass> = []
+)
+
+@Retention(RUNTIME)
+annotation class MappedClass(
+    val value: KClass<*>,
+    val name: String
+)
+
+@Target(CLASS)
+@Retention(RUNTIME)
+annotation class DiscriminatorMappingName(
+    val value: String
 )
 
 /** Allows you to add custom properties to your schemes */
@@ -62,12 +92,6 @@ annotation class Custom(
 @Target(ANNOTATION_CLASS)
 @Retention(RUNTIME)
 annotation class CustomAnnotation
-
-enum class Combinator(val propertyName: String, val type: KClass<*>) {
-    ONE_OF("oneOf", OneOf::class),
-    ANY_OF("anyOf", AnyOf::class),
-    ALL_OF("allOf", AllOf::class)
-}
 
 /** Represents resource file in `/json-schemes` directory. */
 data class JsonSchemaResource(

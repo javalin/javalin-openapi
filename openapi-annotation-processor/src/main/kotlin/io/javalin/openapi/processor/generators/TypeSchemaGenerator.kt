@@ -3,16 +3,9 @@ package io.javalin.openapi.processor.generators
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import io.javalin.openapi.AllOf
-import io.javalin.openapi.AnyOf
-import io.javalin.openapi.Combinator
-import io.javalin.openapi.Combinator.ALL_OF
-import io.javalin.openapi.Combinator.ANY_OF
-import io.javalin.openapi.Combinator.ONE_OF
 import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
-import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
@@ -24,10 +17,8 @@ import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.StructureType.DICTIONARY
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.JsonTypes
 import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
-import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirrors
-import io.javalin.openapi.processor.shared.JsonTypes.toModel
+import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
 import io.javalin.openapi.processor.shared.MessagerWriter
 import io.javalin.openapi.processor.shared.getFullName
 import io.javalin.openapi.processor.shared.hasAnnotation
@@ -53,20 +44,24 @@ data class ResultScheme(
 
 internal fun createTypeSchema(
     type: ClassDefinition,
-    inlineRefs: Boolean,
+    inlineRefs: Boolean = false,
     requireNonNullsByDefault: Boolean = true
 ): ResultScheme {
     val typeElement = type.source
     val definedBy = typeElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
 
     if (definedBy != null) {
-        return createTypeSchema(definedBy.toModel(), inlineRefs, requireNonNullsByDefault)
+        return createTypeSchema(definedBy.toClassDefinition(), inlineRefs, requireNonNullsByDefault)
     }
 
     val schema = JsonObject()
     val references = mutableListOf<TypeMirror>()
+    val composition = typeElement.getComposition()
 
     when {
+        composition != null -> {
+            schema.createComposition(type, composition, references, inlineRefs, requireNonNullsByDefault)
+        }
         typeElement.kind == ENUM -> {
             val values = JsonArray()
             typeElement.enclosedElements
@@ -78,30 +73,6 @@ internal fun createTypeSchema(
 
             schema.addProperty("type", "string")
             schema.add("enum", values)
-        }
-        typeElement.getAnnotation(OneOf::class.java) != null -> {
-            references.addAll(
-                schema.createCombinatorList(
-                    combinator = ONE_OF,
-                    classes = typeElement.getAnnotation(OneOf::class.java).getTypeMirrors { value }
-                )
-            )
-        }
-        typeElement.getAnnotation(AnyOf::class.java) != null -> {
-            references.addAll(
-                schema.createCombinatorList(
-                    combinator = ANY_OF,
-                    classes = typeElement.getAnnotation(AnyOf::class.java).getTypeMirrors { value }
-                )
-            )
-        }
-        typeElement.getAnnotation(AllOf::class.java) != null -> {
-            references.addAll(
-                schema.createCombinatorList(
-                    combinator = ALL_OF,
-                    classes = typeElement.getAnnotation(AllOf::class.java).getTypeMirrors { value }
-                )
-            )
         }
         else -> {
             schema.addProperty("type", "object")
@@ -120,7 +91,7 @@ internal fun createTypeSchema(
             val properties = type.findAllProperties(requireNonNulls)
 
             properties.forEach { property ->
-                val (propertySchema, refs) = createTypeDescription(property.type.toModel(), inlineRefs, requireNonNulls, property.combinator, property.extra)
+                val (propertySchema, refs) = createTypeDescription(property.type.toClassDefinition(), inlineRefs, requireNonNulls, property.composition, property.extra)
                 propertiesObject.add(property.name, propertySchema)
                 references.addAll(refs)
             }
@@ -136,62 +107,44 @@ internal fun createTypeSchema(
     return ResultScheme(schema, references)
 }
 
-private fun JsonObject.createCombinatorList(combinator: Combinator, classes: List<TypeMirror>): List<TypeMirror> {
-    val listOfSchemes = JsonArray()
-    add(combinator.propertyName, listOfSchemes)
-
-    classes.forEach {
-        val scheme = JsonObject()
-        scheme.addProperty("\$ref", "#/components/schemas/${it.toString().substringAfterLast(".")}")
-        listOfSchemes.add(scheme)
-    }
-
-    return classes
-}
 
 internal fun createTypeDescription(
-    model: ClassDefinition,
+    type: ClassDefinition,
     inlineRefs: Boolean = false,
     requiresNonNulls: Boolean = true,
-    propertyCombinator: PropertyCombinator? = null,
+    propertyComposition: PropertyComposition? = null,
     extra: Map<String, Any?> = emptyMap()
 ): ResultScheme {
-    val definedBy = model.source.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+    val definedBy = type.source.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
 
     if (definedBy != null) {
-        return createTypeDescription(definedBy.toModel(), inlineRefs, requiresNonNulls, propertyCombinator, extra)
+        return createTypeDescription(definedBy.toClassDefinition(), inlineRefs, requiresNonNulls, propertyComposition, extra)
     }
 
     val scheme = JsonObject()
     val references = mutableListOf<TypeMirror>()
 
     when {
-        propertyCombinator != null -> {
-            val combinatorObject = JsonArray()
-            propertyCombinator.second.forEach { variantType ->
-                val (variantScheme, refs) = createTypeSchema(variantType.toModel(), inlineRefs, requiresNonNulls)
-                combinatorObject.add(variantScheme)
-                references.addAll(refs)
-            }
-            scheme.add(propertyCombinator.first.propertyName, combinatorObject)
+        propertyComposition != null -> {
+            scheme.createComposition(type, propertyComposition, references, inlineRefs, requiresNonNulls)
         }
-        model.type == ARRAY && model.simpleName == "Byte" -> {
+        type.type == ARRAY && type.simpleName == "Byte" -> {
             scheme.addProperty("type", "string")
             scheme.addProperty("format", "binary")
         }
-        model.type == ARRAY -> {
+        type.type == ARRAY -> {
             scheme.addProperty("type", "array")
             val items = JsonObject()
-            items.addType(model, inlineRefs, references, requiresNonNulls)
+            items.addType(type, inlineRefs, references, requiresNonNulls)
             scheme.add("items", items)
         }
-        model.type == DICTIONARY -> {
+        type.type == DICTIONARY -> {
             scheme.addProperty("type", "object")
             val additionalProperties = JsonObject()
-            additionalProperties.addType(model.generics[1], inlineRefs, references, requiresNonNulls)
+            additionalProperties.addType(type.generics[1], inlineRefs, references, requiresNonNulls)
             scheme.add("additionalProperties", additionalProperties)
         }
-        else -> scheme.addType(model, inlineRefs, references, requiresNonNulls)
+        else -> scheme.addType(type, inlineRefs, references, requiresNonNulls)
     }
 
     scheme.addExtra(extra)
@@ -220,12 +173,10 @@ internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, ref
         ?.also { addProperty("format", it) }
 }
 
-typealias PropertyCombinator = Pair<Combinator, Collection<TypeMirror>>
-
 data class Property(
     val name: String,
     val type: TypeMirror,
-    val combinator: PropertyCombinator?,
+    val composition: PropertyComposition?,
     val required: Boolean,
     val extra: Map<String, Any?>
 )
@@ -294,10 +245,6 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 else -> continue
             }
 
-            val combinator = property.getAnnotation(OneOf::class.java)?.let { ONE_OF to it.getTypeMirrors { value } }
-                ?: property.getAnnotation(AnyOf::class.java)?.let { ANY_OF to it.getTypeMirrors { value } }
-                ?: property.getAnnotation(AllOf::class.java)?.let { ALL_OF to it.getTypeMirrors { value } }
-
             val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
                 ?.getTypeMirror { definedBy }
                 ?: (property as? ExecutableElement)?.returnType
@@ -308,7 +255,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 Property(
                     name = name,
                     type = propertyType,
-                    combinator = combinator,
+                    composition = property.getComposition(),
                     required = requireNonNulls && (propertyType.isPrimitive() || property.hasAnnotation("NotNull")),
                     extra = property.findExtra()
                 )
