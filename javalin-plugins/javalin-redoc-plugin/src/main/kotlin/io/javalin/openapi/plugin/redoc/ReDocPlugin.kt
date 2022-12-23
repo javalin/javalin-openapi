@@ -14,6 +14,8 @@ class ReDocConfiguration {
     var roles: Array<RouteRole> = emptyArray()
     /** Location of OpenApi documentation */
     var documentationPath = "/openapi"
+    /* Custom base path */
+    var basePath: String? = null
     /** ReDoc Bundle version **/
     var version = "2.0.0-rc.70"
     /** ReDoc WebJar route */
@@ -29,12 +31,17 @@ open class ReDocPlugin @JvmOverloads constructor(private val configuration: ReDo
             title = configuration.title,
             documentationPath = configuration.documentationPath,
             version = configuration.version,
-            basePath = app.cfg.routing.contextPath
+            routingPath = app.cfg.routing.contextPath,
+            basePath = configuration.basePath
+        )
+
+        val webJarHandler = ReDocWebJarHandler(
+            redocWebJarPath = configuration.webJarPath
         )
 
         app
             .get(configuration.uiPath, reDocHandler, *configuration.roles)
-            .get("${configuration.webJarPath}/*", ReDocWebJarHandler(configuration.webJarPath), *configuration.roles)
+            .get("${configuration.webJarPath}/*", webJarHandler, *configuration.roles)
     }
 
 }

@@ -10,7 +10,8 @@ class ReDocHandler(
     private val title: String,
     private val documentationPath: String,
     private val version: String,
-    private val basePath: String
+    private val routingPath: String,
+    private val basePath: String?
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -20,8 +21,9 @@ class ReDocHandler(
     }
 
     private fun createReDocUI(): String {
-        val publicBasePath = "$basePath/webjars/redoc/$version".replace("//", "/")
-        val publicDocumentationPath = (basePath + documentationPath).replace("//", "/")
+        val rootPath = (basePath ?: "") + routingPath
+        val publicBasePath = "$rootPath/webjars/redoc/$version".removedDoubledPathOperators()
+        val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
 
         return """
         |<!DOCTYPE html>
@@ -47,5 +49,10 @@ class ReDocHandler(
         |</html>
         |""".trimMargin()
     }
+
+    private val multiplePathOperatorsRegex = Regex("/+")
+
+    private fun String.removedDoubledPathOperators(): String =
+        replace(multiplePathOperatorsRegex, "/")
 
 }
