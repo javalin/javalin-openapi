@@ -16,7 +16,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "5.3.0-alpha.6-SNAPSHOT"
+    version = "5.3.0-alpha.7-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -120,7 +120,7 @@ subprojects {
         testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
         testImplementation("com.konghq:unirest-java:3.11.09")
 
-        testImplementation("ch.qos.logback:logback-classic:1.2.11")
+        testImplementation("ch.qos.logback:logback-classic:1.4.4")
     }
 
     tasks.withType<Test> {
