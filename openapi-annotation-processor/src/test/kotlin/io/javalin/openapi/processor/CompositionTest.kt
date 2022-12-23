@@ -5,6 +5,7 @@ package io.javalin.openapi.processor
 import io.javalin.openapi.Custom
 import io.javalin.openapi.Discriminator
 import io.javalin.openapi.DiscriminatorMappingName
+import io.javalin.openapi.DiscriminatorProperty
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApi
@@ -77,7 +78,11 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
 
     @OneOf(
         discriminator = Discriminator(
-            propertyName = "type"
+            property = DiscriminatorProperty(
+                name = "type",
+                type = String::class,
+                injectInMappings = true
+            )
         )
     )
     sealed interface Union
@@ -96,6 +101,8 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_resolve_subtypes_as_mappings() = withOpenApi("should_resolve_subtypes_as_mappings") {
+        println(it)
+
         assertThatJson(it)
             .inPath("$.components.schemas.Union")
             .isObject
@@ -122,10 +129,47 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
         assertThatJson(it)
             .inPath("$.components.schemas.A")
             .isObject
+            .isEqualTo(json("""
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "a": {
+                        "type": "integer",
+                        "format": "int32"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "a",
+                      "type"
+                    ]
+                  }
+            """))
 
         assertThatJson(it)
             .inPath("$.components.schemas.B")
             .isObject
+            .isEqualTo(json("""
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "b": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "b",
+                      "type"
+                    ]
+                  }
+            """))
     }
 
 }

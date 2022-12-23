@@ -61,8 +61,15 @@ annotation class AllOf(
 
 @Retention(RUNTIME)
 annotation class Discriminator(
-    val propertyName: String = NULL_STRING,
+    val property: DiscriminatorProperty = DiscriminatorProperty(),
     val mappings: Array<MappedClass> = []
+)
+
+@Retention(RUNTIME)
+annotation class DiscriminatorProperty(
+    val name: String = NULL_STRING,
+    val type: KClass<*> = NULL_CLASS::class,
+    val injectInMappings: Boolean = false
 )
 
 @Retention(RUNTIME)

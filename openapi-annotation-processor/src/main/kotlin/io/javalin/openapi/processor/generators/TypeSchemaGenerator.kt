@@ -13,18 +13,19 @@ import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
 import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.StructureType.DICTIONARY
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
-import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
 import io.javalin.openapi.processor.shared.MessagerWriter
 import io.javalin.openapi.processor.shared.getFullName
+import io.javalin.openapi.processor.shared.getTypeMirror
 import io.javalin.openapi.processor.shared.hasAnnotation
 import io.javalin.openapi.processor.shared.inDebug
 import io.javalin.openapi.processor.shared.info
 import io.javalin.openapi.processor.shared.isPrimitive
+import io.javalin.openapi.processor.shared.toClassDefinition
 import io.javalin.openapi.processor.shared.toSimpleName
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -39,7 +40,7 @@ import javax.lang.model.type.TypeMirror
 
 data class ResultScheme(
     val json: JsonObject,
-    val references: Collection<TypeMirror>
+    val references: Set<ClassDefinition>
 )
 
 internal fun createTypeSchema(
@@ -55,7 +56,7 @@ internal fun createTypeSchema(
     }
 
     val schema = JsonObject()
-    val references = mutableListOf<TypeMirror>()
+    val references = mutableSetOf<ClassDefinition>()
     val composition = typeElement.getComposition()
 
     when {
@@ -91,7 +92,7 @@ internal fun createTypeSchema(
             val properties = type.findAllProperties(requireNonNulls)
 
             properties.forEach { property ->
-                val (propertySchema, refs) = createTypeDescription(property.type.toClassDefinition(), inlineRefs, requireNonNulls, property.composition, property.extra)
+                val (propertySchema, refs) = createTypeDescription(property.type, inlineRefs, requireNonNulls, property.composition, property.extra)
                 propertiesObject.add(property.name, propertySchema)
                 references.addAll(refs)
             }
@@ -122,7 +123,7 @@ internal fun createTypeDescription(
     }
 
     val scheme = JsonObject()
-    val references = mutableListOf<TypeMirror>()
+    val references = mutableSetOf<ClassDefinition>()
 
     when {
         propertyComposition != null -> {
@@ -151,7 +152,7 @@ internal fun createTypeDescription(
     return ResultScheme(scheme, references)
 }
 
-internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, references: MutableCollection<TypeMirror>, requiresNonNulls: Boolean) {
+internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, references: MutableSet<ClassDefinition>, requiresNonNulls: Boolean) {
     val nonRefType = OpenApiAnnotationProcessor.configuration.simpleTypeMappings[model.fullName]
 
     if (nonRefType == null) {
@@ -160,7 +161,7 @@ internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, ref
             subScheme.asMap().forEach { (key, value) -> add(key, value) }
             references.addAll(subReferences)
         } else {
-            references.add(model.mirror)
+            references.add(model)
             addProperty("\$ref", "#/components/schemas/${model.simpleName}")
         }
         return
@@ -175,10 +176,10 @@ internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, ref
 
 data class Property(
     val name: String,
-    val type: TypeMirror,
-    val composition: PropertyComposition?,
-    val required: Boolean,
-    val extra: Map<String, Any?>
+    val type: ClassDefinition,
+    val composition: PropertyComposition? = null,
+    val required: Boolean = true,
+    val extra: Map<String, Any?> = mutableMapOf()
 )
 
 private val objectType by lazy { context.forTypeElement("java.lang.Object")!! }
@@ -254,7 +255,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
             properties.add(
                 Property(
                     name = name,
-                    type = propertyType,
+                    type = propertyType.toClassDefinition(),
                     composition = property.getComposition(),
                     required = requireNonNulls && (propertyType.isPrimitive() || property.hasAnnotation("NotNull")),
                     extra = property.findExtra()
@@ -262,6 +263,18 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
             )
         }
     }
+
+    extra
+        .filterIsInstance<CustomProperty>()
+        .forEach { extraProperty ->
+            properties.add(
+                Property(
+                    name = extraProperty.name,
+                    type = extraProperty.type,
+                    required = requireNonNulls
+                )
+            )
+        }
 
     return properties
 }

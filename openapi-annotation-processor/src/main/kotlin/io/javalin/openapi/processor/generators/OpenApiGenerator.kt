@@ -11,6 +11,7 @@ import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
@@ -18,13 +19,12 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
-import io.javalin.openapi.processor.shared.JsonTypes
-import io.javalin.openapi.processor.shared.JsonTypes.getTypeMirror
-import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
 import io.javalin.openapi.processor.shared.addString
 import io.javalin.openapi.processor.shared.computeIfAbsent
 import io.javalin.openapi.processor.shared.getFullName
+import io.javalin.openapi.processor.shared.getTypeMirror
 import io.javalin.openapi.processor.shared.saveResource
+import io.javalin.openapi.processor.shared.toClassDefinition
 import io.javalin.openapi.processor.shared.toJsonArray
 import io.javalin.openapi.processor.shared.toPrettyString
 import io.swagger.v3.parser.OpenAPIV3Parser
@@ -38,7 +38,7 @@ import javax.tools.Diagnostic.Kind.WARNING
 
 internal class OpenApiGenerator {
 
-    private val componentReferences = mutableMapOf<String, TypeMirror>()
+    private val componentReferences = mutableMapOf<String, ClassDefinition>()
 
     fun generate(roundEnvironment: RoundEnvironment) {
         val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
@@ -219,16 +219,14 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val type = componentReference.toClassDefinition()
-
-                if (type.fullName == "java.lang.Object") {
+                if (componentReference.fullName == "java.lang.Object") {
                     generatedComponents[name] = null
                     continue
                 }
 
-                val (schema, references) = createTypeSchema(type, false)
-                componentReferences.putAll(references.associateBy { it.getFullName() })
-                generatedComponents[name] = type to schema
+                val (schema, references) = createTypeSchema(componentReference, false)
+                componentReferences.putAll(references.associateBy { it.fullName })
+                generatedComponents[name] = componentReference to schema
             }
         }
 
@@ -291,7 +289,7 @@ internal class OpenApiGenerator {
                         mimeType = type
                         type = null
                     }
-                    else -> mimeType = JsonTypes.detectContentType(from)
+                    else -> mimeType = detectContentType(from)
                 }
             }
 
@@ -370,10 +368,21 @@ internal class OpenApiGenerator {
         }
     }
 
+    fun detectContentType(typeMirror: TypeMirror): String {
+        val model = typeMirror.toClassDefinition()
+
+        return when {
+            (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
+            model.type == ARRAY -> "application/json"
+            model.simpleName == "String" -> "text/plain"
+            else -> "application/json"
+        }
+    }
+
     private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
         val model = type.toClassDefinition()
         val (json, references) = createTypeDescription(model)
-        componentReferences.putAll(references.associateBy { it.getFullName() })
+        componentReferences.putAll(references.associateBy { it.fullName })
         return json
     }
 

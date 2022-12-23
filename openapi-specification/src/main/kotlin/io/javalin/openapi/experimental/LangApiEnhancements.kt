@@ -8,21 +8,6 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 
-enum class StructureType {
-    DEFAULT,
-    ARRAY,
-    DICTIONARY
-}
-
-interface ClassDefinition {
-    val simpleName: String
-    val fullName: String
-    val mirror: TypeMirror
-    val source: Element
-    var generics: List<ClassDefinition>
-    val type: StructureType
-}
-
 interface AnnotationProcessorContext {
     val env: ProcessingEnvironment
     val roundEnv: RoundEnvironment
@@ -39,4 +24,27 @@ interface AnnotationProcessorContext {
         }
 
 }
+
+enum class StructureType {
+    DEFAULT,
+    ARRAY,
+    DICTIONARY
+}
+
+interface ClassDefinition {
+    val simpleName: String
+    val fullName: String
+    val mirror: TypeMirror
+    val source: Element
+    val generics: List<ClassDefinition>
+    val type: StructureType
+    val extra: MutableList<Extra>
+}
+
+interface Extra
+
+class CustomProperty(
+    val name: String,
+    val type: ClassDefinition
+) : Extra
 

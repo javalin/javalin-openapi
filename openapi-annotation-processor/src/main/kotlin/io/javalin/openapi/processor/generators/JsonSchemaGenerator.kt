@@ -3,8 +3,8 @@ package io.javalin.openapi.processor.generators
 import com.google.gson.JsonObject
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.JsonTypes.toClassDefinition
 import io.javalin.openapi.processor.shared.saveResource
+import io.javalin.openapi.processor.shared.toClassDefinition
 import io.javalin.openapi.processor.shared.toPrettyString
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
