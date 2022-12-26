@@ -97,7 +97,10 @@ allprojects {
         kotlinOptions {
             jvmTarget = "11"
             languageVersion = "1.7"
-            freeCompilerArgs = listOf("-Xjvm-default=all") // For generating default methods in interfaces
+            freeCompilerArgs = listOf(
+                "-Xjvm-default=all", // For generating default methods in interfaces
+                // "-Xcontext-receivers"
+            )
         }
     }
 }

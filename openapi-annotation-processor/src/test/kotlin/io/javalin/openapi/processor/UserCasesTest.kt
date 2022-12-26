@@ -62,7 +62,7 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
 
     @OpenApiByFields
     class EmailRequest(val email: String) : SpecificRecordBase(), SpecificRecord {
-        override fun getRecord(): String = "Record" // it will be excluded by `openapi.groovy` script
+        override fun getRecord(): String = "Record" // it will be excluded by `compile/openapi.groovy` script
     }
 
     @OpenApi(

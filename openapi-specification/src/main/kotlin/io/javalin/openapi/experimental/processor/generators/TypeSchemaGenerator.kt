@@ -1,4 +1,4 @@
-package io.javalin.openapi.processor.generators
+package io.javalin.openapi.experimental.processor.generators
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -12,21 +12,18 @@ import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.Visibility
+import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.CustomProperty
-import io.javalin.openapi.experimental.StructureType.ARRAY
-import io.javalin.openapi.experimental.StructureType.DICTIONARY
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.MessagerWriter
-import io.javalin.openapi.processor.shared.getFullName
-import io.javalin.openapi.processor.shared.getTypeMirror
-import io.javalin.openapi.processor.shared.hasAnnotation
-import io.javalin.openapi.processor.shared.inDebug
-import io.javalin.openapi.processor.shared.info
-import io.javalin.openapi.processor.shared.isPrimitive
-import io.javalin.openapi.processor.shared.toClassDefinition
-import io.javalin.openapi.processor.shared.toSimpleName
+import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
+import io.javalin.openapi.experimental.processor.shared.MessagerWriter
+import io.javalin.openapi.experimental.processor.shared.getTypeMirror
+import io.javalin.openapi.experimental.processor.shared.hasAnnotation
+import io.javalin.openapi.experimental.processor.shared.info
+import io.javalin.openapi.experimental.processor.shared.isPrimitive
+import io.javalin.openapi.experimental.processor.shared.objectType
+import io.javalin.openapi.experimental.processor.shared.recordType
+import io.javalin.openapi.experimental.processor.shared.toSimpleName
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
@@ -43,135 +40,143 @@ data class ResultScheme(
     val references: Set<ClassDefinition>
 )
 
-internal fun createTypeSchema(
-    type: ClassDefinition,
-    inlineRefs: Boolean = false,
-    requireNonNullsByDefault: Boolean = true
-): ResultScheme {
-    val typeElement = type.source
-    val definedBy = typeElement.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
+class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
 
-    if (definedBy != null) {
-        return createTypeSchema(definedBy.toClassDefinition(), inlineRefs, requireNonNullsByDefault)
-    }
+    fun createTypeSchema(
+        type: ClassDefinition,
+        inlineRefs: Boolean = false,
+        requireNonNullsByDefault: Boolean = true
+    ): ResultScheme = with (context) {
+        val source = type.source
+        val definedBy = source.getAnnotation(OpenApiPropertyType::class.java)?.getClassDefinition { definedBy }
 
-    val schema = JsonObject()
-    val references = mutableSetOf<ClassDefinition>()
-    val composition = typeElement.getComposition()
-
-    when {
-        composition != null -> {
-            schema.createComposition(type, composition, references, inlineRefs, requireNonNullsByDefault)
+        if (definedBy != null) {
+            return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
         }
-        typeElement.kind == ENUM -> {
-            val values = JsonArray()
-            typeElement.enclosedElements
-                .filterIsInstance<VariableElement>()
-                .filter { it.modifiers.contains(Modifier.STATIC) }
-                .filter { context.isAssignable(it.asType(), type.mirror) }
-                .map { it.toSimpleName() }
-                .forEach { values.add(it) }
 
-            schema.addProperty("type", "string")
-            schema.add("enum", values)
-        }
-        else -> {
-            schema.addProperty("type", "object")
-            schema.addProperty("additionalProperties", false)
+        val schema = JsonObject()
+        val references = mutableSetOf<ClassDefinition>()
+        val composition = findCompositionInElement(context, source)
 
-            val extra = typeElement.findExtra()
-            schema.addExtra(extra)
-
-            val propertiesObject = JsonObject()
-            schema.add("properties", propertiesObject)
-
-            val requireNonNulls = typeElement.getAnnotation(JsonSchema::class.java)
-                ?.requireNonNulls
-                ?: requireNonNullsByDefault
-
-            val properties = type.findAllProperties(requireNonNulls)
-
-            properties.forEach { property ->
-                val (propertySchema, refs) = createTypeDescription(property.type, inlineRefs, requireNonNulls, property.composition, property.extra)
-                propertiesObject.add(property.name, propertySchema)
-                references.addAll(refs)
+        when {
+            composition != null -> {
+                schema.createComposition(context, type, composition, references, inlineRefs, requireNonNullsByDefault)
             }
 
-            if (properties.any { it.required }) {
-                val required = JsonArray()
-                properties.filter { it.required }.forEach { required.add(it.name) }
-                schema.add("required", required)
+            source.kind == ENUM -> {
+                val values = JsonArray()
+                source.enclosedElements
+                    .filterIsInstance<VariableElement>()
+                    .filter { it.modifiers.contains(Modifier.STATIC) }
+                    .filter { context.isAssignable(it.asType(), type.mirror) }
+                    .map { it.toSimpleName() }
+                    .forEach { values.add(it) }
+
+                schema.addProperty("type", "string")
+                schema.add("enum", values)
+            }
+
+            else -> {
+                schema.addProperty("type", "object")
+                schema.addProperty("additionalProperties", false)
+
+                val extra = source.findExtra(context)
+                schema.addExtra(extra)
+
+                val propertiesObject = JsonObject()
+                schema.add("properties", propertiesObject)
+
+                val requireNonNulls = source.getAnnotation(JsonSchema::class.java)
+                    ?.requireNonNulls
+                    ?: requireNonNullsByDefault
+
+                val properties = type.findAllProperties(requireNonNulls)
+
+                properties.forEach { property ->
+                    val (propertySchema, refs) = createEmbeddedTypeDescription(
+                        type = property.type,
+                        inlineRefs = inlineRefs,
+                        requiresNonNulls = requireNonNulls,
+                        composition = property.composition,
+                        extra = property.extra
+                    )
+                    propertiesObject.add(property.name, propertySchema)
+                    references.addAll(refs)
+                }
+
+                if (properties.any { it.required }) {
+                    val required = JsonArray()
+                    properties.filter { it.required }.forEach { required.add(it.name) }
+                    schema.add("required", required)
+                }
+            }
+        }
+
+        return ResultScheme(schema, references)
+    }
+
+    fun createEmbeddedTypeDescription(
+        type: ClassDefinition,
+        inlineRefs: Boolean = false,
+        requiresNonNulls: Boolean = true,
+        composition: PropertyComposition? = null,
+        extra: Map<String, Any?> = emptyMap()
+    ): ResultScheme = context.inContext {
+        val definedBy = type.source.getAnnotation(OpenApiPropertyType::class.java)?.getClassDefinition { definedBy }
+
+        if (definedBy != null) {
+            return@inContext createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra)
+        }
+
+        val scheme = JsonObject()
+        val references = mutableSetOf<ClassDefinition>()
+
+        context.configuration.embeddedTypeProcessors
+            .firstOrNull {
+                it.process(
+                    EmbeddedTypeProcessorContext(
+                        parentContext = context,
+                        scheme = scheme,
+                        references = references,
+                        type = type,
+                        inlineRefs = inlineRefs,
+                        requiresNonNulls = requiresNonNulls,
+                        composition = composition,
+                        extra = extra
+                    )
+                )
+            }
+            ?: addType(scheme, type, inlineRefs, references, requiresNonNulls)
+
+        scheme.addExtra(extra)
+        ResultScheme(scheme, references)
+    }
+
+    fun addType(
+        scheme: JsonObject,
+        type: ClassDefinition,
+        inlineRefs: Boolean,
+        references: MutableSet<ClassDefinition>,
+        requiresNonNulls: Boolean
+    ) {
+        when (val nonRefType = context.configuration.simpleTypeMappings[type.fullName]) {
+            null -> {
+                if (inlineRefs) {
+                    val (subScheme, subReferences) = createTypeSchema(type, true, requiresNonNulls)
+                    subScheme.asMap().forEach { (key, value) -> scheme.add(key, value) }
+                    references.addAll(subReferences)
+                } else {
+                    references.add(type)
+                    scheme.addProperty("\$ref", "#/components/schemas/${type.simpleName}")
+                }
+            }
+            else -> {
+                scheme.addProperty("type", nonRefType.type)
+                nonRefType.format?.also { scheme.addProperty("format", it) }
             }
         }
     }
 
-    return ResultScheme(schema, references)
-}
-
-
-internal fun createTypeDescription(
-    type: ClassDefinition,
-    inlineRefs: Boolean = false,
-    requiresNonNulls: Boolean = true,
-    propertyComposition: PropertyComposition? = null,
-    extra: Map<String, Any?> = emptyMap()
-): ResultScheme {
-    val definedBy = type.source.getAnnotation(OpenApiPropertyType::class.java)?.getTypeMirror { definedBy }
-
-    if (definedBy != null) {
-        return createTypeDescription(definedBy.toClassDefinition(), inlineRefs, requiresNonNulls, propertyComposition, extra)
-    }
-
-    val scheme = JsonObject()
-    val references = mutableSetOf<ClassDefinition>()
-
-    when {
-        propertyComposition != null -> {
-            scheme.createComposition(type, propertyComposition, references, inlineRefs, requiresNonNulls)
-        }
-        type.type == ARRAY && type.simpleName == "Byte" -> {
-            scheme.addProperty("type", "string")
-            scheme.addProperty("format", "binary")
-        }
-        type.type == ARRAY -> {
-            scheme.addProperty("type", "array")
-            val items = JsonObject()
-            items.addType(type, inlineRefs, references, requiresNonNulls)
-            scheme.add("items", items)
-        }
-        type.type == DICTIONARY -> {
-            scheme.addProperty("type", "object")
-            val additionalProperties = JsonObject()
-            additionalProperties.addType(type.generics[1], inlineRefs, references, requiresNonNulls)
-            scheme.add("additionalProperties", additionalProperties)
-        }
-        else -> scheme.addType(type, inlineRefs, references, requiresNonNulls)
-    }
-
-    scheme.addExtra(extra)
-    return ResultScheme(scheme, references)
-}
-
-internal fun JsonObject.addType(model: ClassDefinition, inlineRefs: Boolean, references: MutableSet<ClassDefinition>, requiresNonNulls: Boolean) {
-    val nonRefType = OpenApiAnnotationProcessor.configuration.simpleTypeMappings[model.fullName]
-
-    if (nonRefType == null) {
-        if (inlineRefs) {
-            val (subScheme, subReferences) = createTypeSchema(model, true, requiresNonNulls)
-            subScheme.asMap().forEach { (key, value) -> add(key, value) }
-            references.addAll(subReferences)
-        } else {
-            references.add(model)
-            addProperty("\$ref", "#/components/schemas/${model.simpleName}")
-        }
-        return
-    }
-
-    addProperty("type", nonRefType.type)
-
-    nonRefType.format
-        .takeIf { it.isNotEmpty() }
-        ?.also { addProperty("format", it) }
 }
 
 data class Property(
@@ -182,24 +187,21 @@ data class Property(
     val extra: Map<String, Any?> = mutableMapOf()
 )
 
-private val objectType by lazy { context.forTypeElement("java.lang.Object")!! }
-private val recordType by lazy { context.forTypeElement("java.lang.Record") }
-
-internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collection<Property> {
+internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collection<Property> = context.inContext {
     val acceptFields = source.getAnnotation(OpenApiByFields::class.java)
         ?.value
 
-    val isRecord = when (recordType) {
+    val isRecord = when (recordType()) {
         null -> false
-        else -> context.isAssignable(mirror, recordType!!.asType())
+        else -> context.isAssignable(mirror, recordType()!!.asType())
     }
 
-    inDebug { it.info("TypeSchemaGenerator#findAllProperties | Enclosed elements of ${this.mirror}: ${source.enclosedElements}") }
+    inDebug { it.info("TypeSchemaGenerator#findAllProperties | Enclosed elements of ${mirror}: ${source.enclosedElements}") }
     val properties = mutableListOf<Property>()
 
     for (property in source.enclosedElements) {
         if (property is Element) {
-            if (OpenApiAnnotationProcessor.configuration.propertyInSchemeFilter?.filter(context, this, property) == false) {
+            if (context.configuration.propertyInSchemeFilter?.filter(context, this@findAllProperties, property) == false) {
                 continue
             }
 
@@ -231,7 +233,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 continue
             }
 
-            if (objectType.enclosedElements.any { it.toSimpleName() == property.toSimpleName() }) {
+            if (objectType().enclosedElements.any { it.toSimpleName() == property.toSimpleName() }) {
                 continue
             }
 
@@ -256,9 +258,9 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 Property(
                     name = name,
                     type = propertyType.toClassDefinition(),
-                    composition = property.getComposition(),
+                    composition = findCompositionInElement(context, property),
                     required = requireNonNulls && (propertyType.isPrimitive() || property.hasAnnotation("NotNull")),
-                    extra = property.findExtra()
+                    extra = property.findExtra(context)
                 )
             )
         }
@@ -276,10 +278,10 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
             )
         }
 
-    return properties
+    properties
 }
 
-private fun Element.findExtra(): Map<String, Any?> {
+private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, Any?> = context.inContext {
     val extra = mutableMapOf<String, Any?>(
         "example" to getAnnotation(OpenApiExample::class.java)?.value
     )
@@ -288,7 +290,7 @@ private fun Element.findExtra(): Map<String, Any?> {
         extra[custom.name] = custom.value
     }
 
-    context.env.elementUtils.getAllAnnotationMirrors(this)
+    context.env.elementUtils.getAllAnnotationMirrors(this@findExtra)
         .filterNot { it.annotationType.getFullName() == Metadata::class.qualifiedName }
         .onEach { annotation -> inDebug { it.info("TypeSchemaGenerator#findExtra | Annotation: ${annotation.annotationType}") } }
         .filter { annotation ->
@@ -299,7 +301,7 @@ private fun Element.findExtra(): Map<String, Any?> {
                     it.info("TypeSchemaGenerator#findExtra | Usage: $annotation")
                     it.info("TypeSchemaGenerator#findExtra | Implementation:")
                     context.env.elementUtils.printElements(
-                        MessagerWriter(),
+                        MessagerWriter(context),
                         annotation.annotationType.asElement()
                     )
                 }
@@ -344,7 +346,7 @@ private fun Element.findExtra(): Map<String, Any?> {
             inDebug { it.info("TypeSchemaGenerator#findExtra | Visited entry ($element, $value) mapped to ${extra[element.toSimpleName()]}") }
         }
 
-    return extra
+    extra
 }
 
 private fun JsonObject.addExtra(extra: Map<String, Any?>): JsonObject = also {

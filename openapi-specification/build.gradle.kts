@@ -2,4 +2,5 @@ description = "Javalin OpenAPI Specification | Compile-time OpenAPI integration 
 
 dependencies {
     api("com.fasterxml.jackson.core:jackson-databind:2.14.0")
+    api("com.google.code.gson:gson:2.10")
 }
