@@ -27,6 +27,7 @@ data class SimpleType @JvmOverloads constructor(
 )
 
 class OpenApiAnnotationProcessorConfiguration {
+
     var debug: Boolean = false
     var propertyInSchemeFilter: PropertyInSchemeFilter? = null
     val simpleTypeMappings: MutableMap<String, SimpleType> = createDefaultSimpleTypeMappings()
@@ -35,6 +36,11 @@ class OpenApiAnnotationProcessorConfiguration {
         ArrayEmbeddedTypeProcessor(),
         DictionaryEmbeddedTypeProcessor()
     )
+
+    fun insertEmbeddedTypeProcessor(embeddedTypeProcessor: EmbeddedTypeProcessor) {
+        embeddedTypeProcessors.add(0, embeddedTypeProcessor)
+    }
+
 }
 
 fun interface PropertyInSchemeFilter {

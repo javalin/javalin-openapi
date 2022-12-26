@@ -154,20 +154,20 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
 
     fun addType(
         scheme: JsonObject,
-        model: ClassDefinition,
+        type: ClassDefinition,
         inlineRefs: Boolean,
         references: MutableSet<ClassDefinition>,
         requiresNonNulls: Boolean
     ) {
-        when (val nonRefType = context.configuration.simpleTypeMappings[model.fullName]) {
+        when (val nonRefType = context.configuration.simpleTypeMappings[type.fullName]) {
             null -> {
                 if (inlineRefs) {
-                    val (subScheme, subReferences) = createTypeSchema(model, true, requiresNonNulls)
+                    val (subScheme, subReferences) = createTypeSchema(type, true, requiresNonNulls)
                     subScheme.asMap().forEach { (key, value) -> scheme.add(key, value) }
                     references.addAll(subReferences)
                 } else {
-                    references.add(model)
-                    scheme.addProperty("\$ref", "#/components/schemas/${model.simpleName}")
+                    references.add(type)
+                    scheme.addProperty("\$ref", "#/components/schemas/${type.simpleName}")
                 }
             }
             else -> {
