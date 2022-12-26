@@ -1,4 +1,4 @@
-package io.javalin.openapi.processor.shared
+package io.javalin.openapi.experimental.processor.shared
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

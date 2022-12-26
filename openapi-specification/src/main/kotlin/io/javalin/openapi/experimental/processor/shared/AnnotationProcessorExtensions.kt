@@ -1,7 +1,6 @@
-package io.javalin.openapi.processor.shared
+package io.javalin.openapi.experimental.processor.shared
 
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor
-import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
+import io.javalin.openapi.experimental.AnnotationProcessorContext
 import java.io.Writer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.FilerException
@@ -11,13 +10,7 @@ import javax.tools.Diagnostic.Kind.NOTE
 import javax.tools.FileObject
 import javax.tools.StandardLocation
 
-fun inDebug(body: (Messager) -> Unit) {
-    if (OpenApiAnnotationProcessor.configuration.debug) {
-        body(context.env.messager)
-    }
-}
-
-fun Filer.saveResource(name: String, content: String): FileObject? =
+fun Filer.saveResource(context: AnnotationProcessorContext, name: String, content: String): FileObject? =
     try {
         val resource = createResource(StandardLocation.CLASS_OUTPUT, "", name)
         resource.openWriter().use {
@@ -50,7 +43,7 @@ fun Messager.printException(throwable: Throwable) {
     }
 }
 
-class MessagerWriter : Writer() {
+class MessagerWriter(val context: AnnotationProcessorContext) : Writer() {
 
     private val builder = StringBuilder()
 

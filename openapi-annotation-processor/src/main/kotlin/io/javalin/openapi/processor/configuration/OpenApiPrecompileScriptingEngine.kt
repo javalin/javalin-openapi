@@ -6,8 +6,8 @@ import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
+import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import io.javalin.openapi.processor.shared.info
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
 

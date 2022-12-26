@@ -12,6 +12,12 @@ import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.processor.shared.addString
+import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
+import io.javalin.openapi.experimental.processor.shared.getTypeMirror
+import io.javalin.openapi.experimental.processor.shared.saveResource
+import io.javalin.openapi.experimental.processor.shared.toJsonArray
+import io.javalin.openapi.experimental.processor.shared.toPrettyString
 import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
@@ -19,14 +25,6 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
-import io.javalin.openapi.processor.shared.addString
-import io.javalin.openapi.processor.shared.computeIfAbsent
-import io.javalin.openapi.processor.shared.getFullName
-import io.javalin.openapi.processor.shared.getTypeMirror
-import io.javalin.openapi.processor.shared.saveResource
-import io.javalin.openapi.processor.shared.toClassDefinition
-import io.javalin.openapi.processor.shared.toJsonArray
-import io.javalin.openapi.processor.shared.toPrettyString
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.TreeMap
@@ -63,7 +61,7 @@ internal class OpenApiGenerator {
                 val generatedOpenApiSchema = generateSchema(preparedOpenApiAnnotations)
 
                 val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                val resource = context.env.filer.saveResource("openapi-plugin/$resourceName", generatedOpenApiSchema)
+                val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
                     ?.toUri()
                     ?.toString()
                     ?: return
@@ -81,7 +79,7 @@ internal class OpenApiGenerator {
                 resourceName
             }
             .joinToString(separator = "\n")
-            .let { context.env.filer.saveResource("openapi-plugin/.index", it) }
+            .let { context.env.filer.saveResource(context, "openapi-plugin/.index", it) }
     }
 
     /**
@@ -224,7 +222,7 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val (schema, references) = createTypeSchema(componentReference, false)
+                val (schema, references) = context.typeSchemaGenerator.createTypeSchema(componentReference, false)
                 componentReferences.putAll(references.associateBy { it.fullName })
                 generatedComponents[name] = componentReference to schema
             }
@@ -270,7 +268,7 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) {
+    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {
         val requestBodyContent = JsonObject()
         val requestBodySchemes = TreeMap<String, JsonObject>()
 
@@ -368,22 +366,22 @@ internal class OpenApiGenerator {
         }
     }
 
-    fun detectContentType(typeMirror: TypeMirror): String {
+    fun detectContentType(typeMirror: TypeMirror): String = context.inContext {
         val model = typeMirror.toClassDefinition()
 
-        return when {
-            (model.type == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
-            model.type == ARRAY -> "application/json"
+        when {
+            (model.structureType == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
+            model.structureType == ARRAY -> "application/json"
             model.simpleName == "String" -> "text/plain"
             else -> "application/json"
         }
     }
 
-    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject {
+    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject = context.inContext {
         val model = type.toClassDefinition()
-        val (json, references) = createTypeDescription(model)
+        val (json, references) = context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
         componentReferences.putAll(references.associateBy { it.fullName })
-        return json
+        json
     }
 
 }

@@ -9,7 +9,6 @@ import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
 import io.javalin.openapi.processor.configuration.OpenApiPrecompileScriptingEngine
 import io.javalin.openapi.processor.generators.JsonSchemaGenerator
 import io.javalin.openapi.processor.generators.OpenApiGenerator
-import io.javalin.openapi.processor.shared.inDebug
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -20,19 +19,12 @@ import javax.tools.Diagnostic.Kind.NOTE
 open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     companion object {
-        val configuration = OpenApiAnnotationProcessorConfiguration()
-        internal lateinit var context: AnnotationProcessorContextImpl
-    }
-
-    internal class AnnotationProcessorContextImpl(
-        override val env: ProcessingEnvironment,
-        override val trees: Trees
-    ) : AnnotationProcessorContext {
-        override lateinit var roundEnv: RoundEnvironment
+        internal lateinit var context: AnnotationProcessorContext
     }
 
     override fun init(processingEnv: ProcessingEnvironment) {
-        context = AnnotationProcessorContextImpl(
+        context = AnnotationProcessorContext(
+            configuration = OpenApiAnnotationProcessorConfiguration(),
             env = processingEnv,
             trees = Trees.instance(processingEnv)
         )
@@ -47,9 +39,9 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
         val openApiPrecompileScriptingEngine = OpenApiPrecompileScriptingEngine()
         val configurer = openApiPrecompileScriptingEngine.load(roundEnv)
-        configurer?.configure(configuration)
+        configurer?.configure(context.configuration)
 
-        inDebug {
+        context.inDebug {
             it.printMessage(NOTE, "OpenApi | Debug mode enabled")
         }
 
