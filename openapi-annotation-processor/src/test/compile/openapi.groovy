@@ -36,7 +36,7 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
         // Used by CustomTypeMappingsTest
         configuration.insertEmbeddedTypeProcessor({ EmbeddedTypeProcessorContext context ->
             if (context.type.simpleName == 'Optional' && context.type.generics.size() == 1) {
-                context.parentContext.typeSchemaGenerator.addType(context.scheme, context.type.generics[0], context.inlineRefs, context.references, context.requiresNonNulls)
+                context.parentContext.typeSchemaGenerator.addType(context.scheme, context.type.generics[0], context.inlineRefs, context.references, false)
                 return true
             }
 
