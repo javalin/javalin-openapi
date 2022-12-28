@@ -35,6 +35,7 @@ internal fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> =
     "java.time.LocalDate" to SimpleType("string", "date"),
 
     "java.time.LocalDateTime" to SimpleType("string", "date-time"),
+    "java.time.ZonedDateTime" to SimpleType("string", "date-time"),
     "java.time.Instant" to SimpleType("string", "date-time"),
 
     "java.lang.Object" to SimpleType("object"),
