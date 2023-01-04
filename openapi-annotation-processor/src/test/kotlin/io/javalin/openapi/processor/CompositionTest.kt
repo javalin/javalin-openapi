@@ -96,11 +96,11 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
 
     @OpenApi(
         path = "discriminator",
-        versions = ["should_resolve_subtypes_as_mappings"],
+        versions = ["should_resolve_subtypes_as_mapping"],
         responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = Union::class)])]
     )
     @Test
-    fun should_resolve_subtypes_as_mappings() = withOpenApi("should_resolve_subtypes_as_mappings") {
+    fun should_resolve_subtypes_as_mapping() = withOpenApi("should_resolve_subtypes_as_mapping") {
         println(it)
 
         assertThatJson(it)
@@ -118,7 +118,7 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                     ],
                     "discriminator": {
                       "propertyName": "type",
-                      "mappings": {
+                      "mapping": {
                         "class-a": "#/components/schemas/A",
                         "class-b": "#/components/schemas/B"
                       }

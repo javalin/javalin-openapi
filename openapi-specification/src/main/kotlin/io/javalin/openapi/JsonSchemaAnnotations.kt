@@ -62,7 +62,7 @@ annotation class AllOf(
 @Retention(RUNTIME)
 annotation class Discriminator(
     val property: DiscriminatorProperty = DiscriminatorProperty(),
-    val mappings: Array<MappedClass> = []
+    val mapping: Array<MappedClass> = []
 )
 
 @Retention(RUNTIME)
