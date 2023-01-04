@@ -78,7 +78,7 @@ fun JsonObject.createComposition(
                 val discriminatorProperty = discriminator.property
                 discriminatorObject.addProperty("propertyName", discriminatorProperty.name)
 
-                val mappings = discriminator.mappings
+                val mapping = discriminator.mapping
                     .map { it.name to it.getClassDefinition { value } }
                     .ifEmpty { subtypes }
 
@@ -88,16 +88,16 @@ fun JsonObject.createComposition(
                         type = discriminatorProperty.getClassDefinition { type }
                     )
 
-                    mappings.forEach { (_, mappedClass) ->
+                    mapping.forEach { (_, mappedClass) ->
                         mappedClass.extra.add(customProperty)
                     }
                 }
 
-                mappings
+                mapping
                     .onEach { (_, mappedClass) -> references.add(mappedClass) }
                     .associate { (name, mappedClass) -> name to "#/components/schemas/${mappedClass.simpleName}" }
                     .takeIf { it.isNotEmpty() }
-                    ?.also { discriminatorObject.add("mappings", it.toJsonObject()) }
+                    ?.also { discriminatorObject.add("mapping", it.toJsonObject()) }
             }
     }
 }
