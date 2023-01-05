@@ -26,7 +26,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         context = AnnotationProcessorContext(
             configuration = OpenApiAnnotationProcessorConfiguration(),
             env = processingEnv,
-            trees = Trees.instance(processingEnv)
+            trees = AnnotationProcessorTools.createTrees(processingEnv)
         )
     }
 

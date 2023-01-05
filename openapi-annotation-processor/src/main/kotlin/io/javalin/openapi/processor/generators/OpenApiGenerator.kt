@@ -292,20 +292,24 @@ internal class OpenApiGenerator {
             }
 
             if (mimeType == null) {
-                val compilationUnit = context.trees.getPath(element).compilationUnit
-                val tree = context.trees.getTree(element)
-                val startPosition = context.trees.sourcePositions.getStartPosition(compilationUnit, tree)
+                val trees = context.trees
 
-                context.env.messager.printMessage(
-                    WARNING,
-                    """
-                    OpenApi generator cannot find matching mime type defined.
-                    Source: 
-                        Annotation in ${compilationUnit.lineMap.getLineNumber(startPosition)} at ${compilationUnit.sourceFile.name} line
-                    Annotation: 
-                        $contentAnnotation
-                    """.trimIndent()
-                )
+                if (trees != null) {
+                    val compilationUnit = trees.getPath(element).compilationUnit
+                    val tree = trees.getTree(element)
+                    val startPosition = trees.sourcePositions.getStartPosition(compilationUnit, tree)
+
+                    context.env.messager.printMessage(
+                        WARNING,
+                        """
+                        OpenApi generator cannot find matching mime type defined.
+                        Source: 
+                            Annotation in ${compilationUnit.lineMap.getLineNumber(startPosition)} at ${compilationUnit.sourceFile.name} line
+                        Annotation: 
+                            $contentAnnotation
+                        """.trimIndent()
+                    )
+                }
 
                 continue
             }

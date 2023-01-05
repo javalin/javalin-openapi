@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
 class AnnotationProcessorContext(
     val configuration: OpenApiAnnotationProcessorConfiguration,
     val env: ProcessingEnvironment,
-    val trees: Trees,
+    val trees: Trees?,
 ) {
 
     val types: Types = env.typeUtils

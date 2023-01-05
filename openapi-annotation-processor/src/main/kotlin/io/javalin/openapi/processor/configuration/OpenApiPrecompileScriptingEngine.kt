@@ -20,7 +20,7 @@ class OpenApiPrecompileScriptingEngine {
     fun load(roundEnvironment: RoundEnvironment): OpenApiAnnotationProcessorConfigurer? =
         roundEnvironment.getElementsAnnotatedWithAny(setOf(OpenApis::class.java, OpenApi::class.java, JsonSchema::class.java))
             .firstOrNull()
-            ?.let { context.trees.getPath(it).compilationUnit.sourceFile.name }
+            ?.let { context.trees?.getPath(it)?.compilationUnit?.sourceFile?.name }
             ?.let {
                 when {
                     /* Default sources */
