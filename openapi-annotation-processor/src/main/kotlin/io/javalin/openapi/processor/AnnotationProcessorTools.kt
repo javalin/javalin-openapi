@@ -13,10 +13,12 @@ object AnnotationProcessorTools {
     fun createTrees(processingEnvironment: ProcessingEnvironment): Trees? =
         try {
             val apiWrappers = ProcessingEnvironment::class.java.classLoader.loadClass("org.jetbrains.jps.javac.APIWrappers")
-            val unwrapMethod = apiWrappers.getDeclaredMethod("unwrap", Class::class.java, Any::class.java)
+            val unwrapMethod = apiWrappers.getDeclaredMethod("unwrap", Class::class.java, Object::class.java)
             val unwrapped = unwrapMethod.invoke(null, ProcessingEnvironment::class.java, processingEnvironment) as ProcessingEnvironment
             Trees.instance(unwrapped)
         } catch (ignored: Throwable) {
+            processingEnvironment.messager.printException(ignored)
+
             try {
                 Trees.instance(processingEnvironment)
             } catch (failure: Throwable) {
