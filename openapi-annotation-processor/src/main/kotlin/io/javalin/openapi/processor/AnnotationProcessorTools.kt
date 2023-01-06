@@ -3,6 +3,7 @@ package io.javalin.openapi.processor
 import com.sun.source.util.Trees
 import io.javalin.openapi.experimental.processor.shared.printException
 import javax.annotation.processing.ProcessingEnvironment
+import javax.tools.Diagnostic.Kind.NOTE
 
 object AnnotationProcessorTools {
 
@@ -17,12 +18,12 @@ object AnnotationProcessorTools {
             val unwrapped = unwrapMethod.invoke(null, ProcessingEnvironment::class.java, processingEnvironment) as ProcessingEnvironment
             Trees.instance(unwrapped)
         } catch (ignored: Throwable) {
-            processingEnvironment.messager.printException(ignored)
+            processingEnvironment.messager.printException(NOTE, ignored)
 
             try {
                 Trees.instance(processingEnvironment)
             } catch (failure: Throwable) {
-                processingEnvironment.messager.printException(failure)
+                processingEnvironment.messager.printException(NOTE, failure)
                 null
             }
         }
