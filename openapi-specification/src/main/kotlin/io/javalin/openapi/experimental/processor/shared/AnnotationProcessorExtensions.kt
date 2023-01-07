@@ -5,6 +5,7 @@ import java.io.Writer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
+import javax.tools.Diagnostic.Kind
 import javax.tools.Diagnostic.Kind.ERROR
 import javax.tools.Diagnostic.Kind.NOTE
 import javax.tools.FileObject
@@ -29,16 +30,20 @@ fun Messager.info(message: String) =
     printMessage(NOTE, message)
 
 fun Messager.printException(throwable: Throwable) {
+    printException(ERROR, throwable)
+}
+
+fun Messager.printException(kind: Kind, throwable: Throwable) {
     val error = StringBuilder(throwable.javaClass.toString() + ": " + throwable.message)
 
     for (element in throwable.stackTrace) {
         error.append("  ").append(element.toString()).append(System.lineSeparator())
     }
 
-    printMessage(ERROR, error.toString())
+    printMessage(kind, error.toString())
 
     if (throwable.cause != null) {
-        printMessage(ERROR, "---")
+        printMessage(kind, "---")
         printException(throwable.cause!!)
     }
 }

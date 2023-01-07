@@ -61,7 +61,7 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
         componentsNode.replace("securitySchemes", jsonMapper.convertValue(securitySchemes, JsonNode::class.java))
 
         //process OpenAPI "security"
-        val securityMap = security?.globalSecurity?.associate { it.name to it.scopes.toTypedArray() }
+        val securityMap = security?.globalSecurity?.map { mapOf(it.name to it.scopes.toTypedArray()) }
         docsNode.replace("security", jsonMapper.convertValue(securityMap, JsonNode::class.java))
 
         return definitionProcessor

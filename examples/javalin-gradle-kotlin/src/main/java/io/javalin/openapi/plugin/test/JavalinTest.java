@@ -113,7 +113,7 @@ public final class JavalinTest implements Handler {
                                 .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
                                     .withScope("read_pets", "read your pets")
                                     .withScope("write_pets", "modify pets in your account")))
-                            .withGlobalSecurity(new Security("oauth2")
+                            .withGlobalSecurity(new Security("OAuth2")
                                 .withScope("write_pets")
                                 .withScope("read_pets"))
                         )
