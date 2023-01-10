@@ -72,7 +72,7 @@ public final class JavalinTest implements Handler {
     public static void main(String[] args) {
         Javalin.create(config -> {
             // config.routing.contextPath = "/custom";
-            String deprecatedDocsPath = "/openapi.json"; // by default it's /openapi
+            String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
 
             config.plugins.register(new OpenApiPlugin(
                 new OpenApiPluginConfiguration()

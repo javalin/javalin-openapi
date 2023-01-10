@@ -14,7 +14,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.22")
     implementation("org.apache.groovy:groovy:4.0.7")
 
-    implementation("io.javalin:javalin:5.3.0") {
+    implementation("io.javalin:javalin:5.3.1") {
         exclude(group = "org.slf4j")
     }
     implementation("io.swagger.parser.v3:swagger-parser:2.1.8")

@@ -11,12 +11,12 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <javalin.openapi>5.3.0</javalin.openapi>
+        <javalin.openapi>5.3.1</javalin.openapi>
     </properties>
 
     <repositories>
         <repository>
-            <id>panda-repository</id>
+            <id>reposilite-repository</id>
             <url>https://maven.reposilite.com/snapshots</url>
         </repository>
     </repositories>
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.3.0</version>
+            <version>5.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.tinylog</groupId>
