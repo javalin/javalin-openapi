@@ -13,8 +13,17 @@ import javax.annotation.processing.RoundEnvironment
 
 class OpenApiPrecompileScriptingEngine {
 
-    private val classLoader = OpenApiPrecompileScriptingEngine::class.java.classLoader
-    private val groovyClassLoader by lazy { GroovyClassLoader(classLoader) }
+    private val groovyClassLoader by lazy {
+        GroovyClassLoader(
+            JoinClassLoader(
+                parent = javaClass.classLoader.parent,
+                delegateClassLoaders = arrayOf(
+                    Thread.currentThread().contextClassLoader,
+                    OpenApiPrecompileScriptingEngine::class.java.classLoader
+                )
+            )
+        )
+    }
 
     @OptIn(ExperimentalCompileOpenApiConfiguration::class)
     fun load(roundEnvironment: RoundEnvironment): OpenApiAnnotationProcessorConfigurer? =
