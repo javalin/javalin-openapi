@@ -16,10 +16,10 @@ class OpenApiPrecompileScriptingEngine {
     private val groovyClassLoader by lazy {
         GroovyClassLoader(
             JoinClassLoader(
-                parent = javaClass.classLoader.parent,
+                parent = OpenApiPrecompileScriptingEngine::class.java.classLoader,
                 delegateClassLoaders = arrayOf(
+                    OpenApiPrecompileScriptingEngine::class.java.classLoader,
                     Thread.currentThread().contextClassLoader,
-                    OpenApiPrecompileScriptingEngine::class.java.classLoader
                 )
             )
         )
