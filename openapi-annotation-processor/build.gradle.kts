@@ -11,8 +11,8 @@ dependencies {
     kaptTest(project(":openapi-annotation-processor"))
     testImplementation(project(":openapi-annotation-processor"))
 
-    api("org.apache.groovy:groovy:4.0.7")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.22")
+    implementation("org.apache.groovy:groovy:4.0.7")
 
     implementation("io.javalin:javalin:5.3.1") {
         exclude(group = "org.slf4j")
