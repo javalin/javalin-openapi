@@ -1,4 +1,3 @@
-import groovy.transform.CompileStatic
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.Nullable
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 
-@CompileStatic
 @ExperimentalCompileOpenApiConfiguration
 class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
 
