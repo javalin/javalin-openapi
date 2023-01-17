@@ -1,7 +1,6 @@
 package io.javalin.openapi.processor.configuration
 
 import groovy.lang.GroovyClassLoader
-import groovy.transform.CompileStatic
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApis
@@ -9,23 +8,13 @@ import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
 import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
 
 class OpenApiPrecompileScriptingEngine {
 
-    private val groovyClassLoader by lazy {
-        GroovyClassLoader(
-            OpenApiPrecompileScriptingEngine::class.java.classLoader,
-            CompilerConfiguration().also {
-                it.addCompilationCustomizers(
-                    ASTTransformationCustomizer(CompileStatic::class.java)
-                )
-            }
-        )
-    }
+    private val classLoader = OpenApiPrecompileScriptingEngine::class.java.classLoader
+    private val groovyClassLoader by lazy { GroovyClassLoader(classLoader) }
 
     @OptIn(ExperimentalCompileOpenApiConfiguration::class)
     fun load(roundEnvironment: RoundEnvironment): OpenApiAnnotationProcessorConfigurer? =
