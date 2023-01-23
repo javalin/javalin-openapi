@@ -52,7 +52,9 @@ class AnnotationProcessorContext(
 
     fun hasElement(type: TypeElement, element: Element): Boolean =
         when (element) {
-            is ExecutableElement -> type.enclosedElements.filterIsInstance<ExecutableElement>().any { env.elementUtils.overrides(element, it, type) }
+            is ExecutableElement -> env.elementUtils.getAllMembers(type).let { members ->
+                members.contains(element) || members.filterIsInstance<ExecutableElement>().any { env.elementUtils.overrides(element, it, type) }
+            }
             else -> false
         }
 

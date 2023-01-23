@@ -5,7 +5,6 @@ import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
 import io.javalin.openapi.experimental.SimpleType
-import org.jetbrains.annotations.Nullable
 
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -22,13 +21,18 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
 
         // Used by UserCasesTest
         configuration.propertyInSchemeFilter = { AnnotationProcessorContext ctx, ClassDefinition type, Element property ->
-            @Nullable TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
+            TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
+            TypeElement specificRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecordBase')
 
-            if (specificRecord != null && ctx.isAssignable(type.mirror, specificRecord.asType())) {
-                return !ctx.hasElement(specificRecord, property)
+            if (ctx.isAssignable(type.mirror, specificRecord.asType()) && ctx.hasElement(specificRecord, property)) {
+                return false // exclude
             }
 
-            return true
+            if (ctx.isAssignable(type.mirror, specificRecordBase.asType()) && ctx.hasElement(specificRecordBase, property)) {
+                return false // exclude
+            }
+
+            return true // include
         }
 
         // Used by CustomTypeMappingsTest

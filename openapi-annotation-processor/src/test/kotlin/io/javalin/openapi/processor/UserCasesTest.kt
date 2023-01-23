@@ -57,10 +57,9 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
     }
 
     open class SpecificRecordBase {
-        fun getRecordBase(): String = "RecordBase" // it'll be excluded, because annotation processor only takes declared properties from the main class
+        fun getRecordBase(): String = "RecordBase" // it'll be excluded
     }
 
-    @OpenApiByFields
     class EmailRequest(val email: String) : SpecificRecordBase(), SpecificRecord {
         override fun getRecord(): String = "Record" // it will be excluded by `compile/openapi.groovy` script
     }
@@ -72,12 +71,10 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun gh108() = withOpenApi("gh-108") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.EmailRequest")
             .isObject
-            .containsEntry("required", json("['getEmail']"))
+            .containsEntry("required", json("['email']"))
     }
 
 }
