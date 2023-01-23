@@ -199,7 +199,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
     inDebug { it.info("TypeSchemaGenerator#findAllProperties | Enclosed elements of ${mirror}: ${source.enclosedElements}") }
     val properties = mutableListOf<Property>()
 
-    for (property in source.enclosedElements) {
+    for (property in context.env.elementUtils.getAllMembers(context.forTypeElement(mirror))) {
         if (property is Element) {
             if (context.configuration.propertyInSchemeFilter?.filter(context, this@findAllProperties, property) == false) {
                 continue

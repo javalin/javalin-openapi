@@ -370,7 +370,7 @@ internal class OpenApiGenerator {
         }
     }
 
-    fun detectContentType(typeMirror: TypeMirror): String = context.inContext {
+    private fun detectContentType(typeMirror: TypeMirror): String = context.inContext {
         val model = typeMirror.toClassDefinition()
 
         when {

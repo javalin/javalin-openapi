@@ -41,9 +41,14 @@ class AnnotationProcessorContext(
     fun getClassDefinitions(mirrors: Set<TypeMirror>): Set<ClassDefinition> =
         mirrors.map { getClassDefinition(it) }.toSet()
 
-    fun forTypeElement(name: String): TypeElement? = env.elementUtils.getTypeElement(name)
+    fun forTypeElement(name: String): TypeElement? =
+        env.elementUtils.getTypeElement(name)
 
-    fun isAssignable(implementation: TypeMirror, superclass: TypeMirror): Boolean = env.typeUtils.isAssignable(implementation, superclass)
+    fun forTypeElement(mirror: TypeMirror): TypeElement =
+        env.typeUtils.asElement(mirror) as TypeElement
+
+    fun isAssignable(implementation: TypeMirror, superclass: TypeMirror): Boolean =
+        env.typeUtils.isAssignable(implementation, superclass)
 
     fun hasElement(type: TypeElement, element: Element): Boolean =
         when (element) {
