@@ -16,7 +16,7 @@
 
     <repositories>
         <repository>
-            <id>reposilite-repository-what</id>
+            <id>reposilite-repository</id>
             <url>https://maven.reposilite.com/snapshots</url>
         </repository>
     </repositories>
