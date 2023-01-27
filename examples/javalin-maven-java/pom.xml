@@ -43,17 +43,17 @@
             <version>2.4.1</version>
         </dependency>
         <dependency>
-            <groupId>io.javalin-rfc</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
             <version>${javalin.openapi}</version>
         </dependency>
         <dependency>
-            <groupId>io.javalin-rfc</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-swagger-plugin</artifactId>
             <version>${javalin.openapi}</version>
         </dependency>
         <dependency>
-            <groupId>io.javalin-rfc</groupId>
+            <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-redoc-plugin</artifactId>
             <version>${javalin.openapi}</version>
         </dependency>
@@ -80,7 +80,7 @@
                     <configuration>
                         <annotationProcessorPaths>
                             <annotationProcessorPath>
-                                <groupId>io.javalin-rfc</groupId>
+                                <groupId>io.javalin.community.openapi</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
                                 <version>${javalin.openapi}</version>
                             </annotationProcessorPath>
