@@ -15,6 +15,7 @@ import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.processor.shared.addString
 import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
+import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.saveResource
 import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toPrettyString
@@ -232,7 +233,20 @@ internal class OpenApiGenerator {
 
         generatedComponents
             .mapNotNull { it.value }
-            .forEach { (type, schema) -> schemas.add(type.simpleName, schema) }
+            .filter { (type, _) ->
+                val alreadyExists = schemas.has(type.simpleName)
+
+                context.inDebug {
+                    if (alreadyExists) {
+                        context.env.messager.info("Scheme component '${type.simpleName}' already exists. Generated scheme for ${type.fullName} won't be added to the OpenAPI document.")
+                    }
+                }
+
+                !alreadyExists
+            }
+            .forEach { (type, schema) ->
+                schemas.add(type.simpleName, schema)
+            }
 
         components.add("schemas", schemas)
         openApi.add("components", components)
