@@ -3,13 +3,8 @@ package io.javalin.openapi.processor.generators
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.javalin.http.HttpStatus
+import io.javalin.openapi.*
 import io.javalin.openapi.ContentType.AUTODETECT
-import io.javalin.openapi.NULL_CLASS
-import io.javalin.openapi.NULL_STRING
-import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiContent
-import io.javalin.openapi.OpenApiParam
-import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.processor.shared.addString
@@ -19,7 +14,6 @@ import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.saveResource
 import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toPrettyString
-import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
@@ -28,7 +22,7 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
-import java.util.TreeMap
+import java.util.*
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.type.TypeMirror
@@ -124,7 +118,7 @@ internal class OpenApiGenerator {
                 // operation.addProperty("externalDocs", ); UNSUPPORTED
 
                 // OperationId
-                operation.addString("operationId", routeAnnotation.operationId)
+                operation.addString("operationId", autogenerateOperationId(method, routeAnnotation))
 
                 // Parameters
                 // ~ https://swagger.io/specification/#parameter-object
@@ -280,6 +274,19 @@ internal class OpenApiGenerator {
         parameter.add("schema", schema)
 
         return parameter
+    }
+
+    private fun autogenerateOperationId(httpMethod: HttpMethod, openApi: OpenApi): String {
+        return if(openApi.operationId == AUTO_STRING){
+            httpMethod.name.lowercase() + openApi.path.split('/').map { pathPart ->
+                pathPart.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(
+                    Locale.getDefault()
+                ) else it.toString()
+            }.toList().joinToString() }
+        }else{
+            openApi.operationId
+        }
     }
 
     private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {

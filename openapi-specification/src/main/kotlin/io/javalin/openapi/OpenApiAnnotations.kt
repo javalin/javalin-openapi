@@ -191,6 +191,8 @@ class NULL_CLASS
 
 /** Null string because annotations do not support null values */
 const val NULL_STRING = "-- This string represents a null value and shouldn't be used --"
+/** Value to use for auto-generate operationId */
+const val AUTO_STRING = "-- Auto-generate operationId on the fly. If you see this message you are either inspecting via debugger or something went wrong --"
 
 object ContentType {
     const val JSON = "application/json"
