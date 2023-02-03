@@ -8,7 +8,6 @@ package io.javalin.openapi
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
 import java.lang.annotation.Repeatable
-import kotlin.annotation.AnnotationRetention.BINARY
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
@@ -41,6 +40,9 @@ annotation class OpenApi(
      * Unique string used to identify the operation.
      * The id MUST be unique among all operations described in the API.
      * The operationId value is case-sensitive.
+     *
+     * You can also use [OpenApiOperation.AUTO_GENERATE]
+     * if you want to generate the operationId automatically using the method name.
      **/
     val operationId: String = NULL_STRING,
     /** Declares this operation to be deprecated. Consumers SHOULD refrain from usage of the declared operation. **/
@@ -191,6 +193,11 @@ class NULL_CLASS
 
 /** Null string because annotations do not support null values */
 const val NULL_STRING = "-- This string represents a null value and shouldn't be used --"
+
+object OpenApiOperation {
+    /** Value to use for auto-generate operationId */
+    const val AUTO_GENERATE = "-- Auto-generate operationId on the fly. If you see this message you are either inspecting via debugger or something went wrong --"
+}
 
 object ContentType {
     const val JSON = "application/json"

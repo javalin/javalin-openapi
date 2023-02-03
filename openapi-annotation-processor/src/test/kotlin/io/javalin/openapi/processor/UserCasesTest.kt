@@ -2,8 +2,8 @@ package io.javalin.openapi.processor
 
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiContent
+import io.javalin.openapi.OpenApiOperation
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
@@ -76,5 +76,26 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
             .isObject
             .containsEntry("required", json("['email']"))
     }
+
+    /*
+     * GH-151 Support auto-generated operationId like in old OpenApi plugin
+     * ~ https://github.com/javalin/javalin-openapi/issues/151
+     */
+
+    @OpenApi(
+        path = "/api/panda/list",
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_path"]
+    )
+    @Test
+    fun should_generate_operation_id_from_path() = withOpenApi("should_generate_operation_id_from_path") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/api/panda/list'].get.operationId")
+            .isString
+            .isEqualTo("getApiPandaList")
+    }
+
 
 }

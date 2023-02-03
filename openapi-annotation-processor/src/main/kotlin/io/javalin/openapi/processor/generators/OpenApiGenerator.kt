@@ -4,10 +4,12 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.javalin.http.HttpStatus
 import io.javalin.openapi.ContentType.AUTODETECT
+import io.javalin.openapi.HttpMethod
 import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
+import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.OpenApiParam
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
@@ -28,6 +30,7 @@ import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
+import java.util.Locale
 import java.util.TreeMap
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
@@ -124,7 +127,7 @@ internal class OpenApiGenerator {
                 // operation.addProperty("externalDocs", ); UNSUPPORTED
 
                 // OperationId
-                operation.addString("operationId", routeAnnotation.operationId)
+                operation.addString("operationId", generateOperationId(method, routeAnnotation))
 
                 // Parameters
                 // ~ https://swagger.io/specification/#parameter-object
@@ -281,6 +284,17 @@ internal class OpenApiGenerator {
 
         return parameter
     }
+
+    private fun generateOperationId(httpMethod: HttpMethod, openApi: OpenApi): String =
+        when (openApi.operationId) {
+            AUTO_GENERATE -> {
+                httpMethod.name.lowercase() + openApi.path.split('/')
+                    .map { pathPart -> pathPart.replaceFirstChar { it.titlecase(Locale.getDefault()) } }
+                    .toList()
+                    .joinToString(separator = "")
+            }
+            else -> openApi.operationId
+        }
 
     private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {
         val requestBodyContent = JsonObject()
