@@ -304,14 +304,14 @@ internal class OpenApiGenerator {
                     .map { pathPart ->
                         if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
                             /* Case this is a path parameter */
-                            val pathParam = pathPart.drop(1).dropLast(1)
-                                .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                            var pathParam = pathPart.drop(1).dropLast(1)
+                            /* Handling of hyphens in parameter name */
+                            pathParam = pathParam.split('-')
+                                .joinToString(separator = "") { it.capitalise() }
                             pathParamPrefix + pathParam
                         } else {
                             /* Case this is a regular part of the path */
-                            pathPart.replaceFirstChar {
-                                it.titlecase(Locale.getDefault())
-                            }
+                            pathPart.capitalise()
                         }
                     }
                     .toList()
@@ -319,6 +319,13 @@ internal class OpenApiGenerator {
             }
             else -> openApi.operationId
         }
+
+    /**
+     * String extension for capitalisation, since it's often used during operationId generation.
+     */
+    private fun String.capitalise(): String = this.replaceFirstChar {
+        it.titlecase(Locale.getDefault())
+    }
 
     private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {
         val requestBodyContent = JsonObject()
