@@ -112,4 +112,20 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
             .isEqualTo("getApiPandaByPandaIdNameByStartsWith")
     }
 
+    /*
+    @OpenApi(
+        path = "/api/panda/{panda-id}/name/<starts-with>",
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_path_with_parameters_hyphened"]
+    )
+    @Test
+    fun should_generate_operation_id_from_path_with_parameters_hyphened() = withOpenApi("should_generate_operation_id_from_path_with_parameters_hyphened"){
+        println(it)
+        // TODO not sure what to expect here
+        assertThatJson(it)
+            .inPath("$.paths['/api/panda/{pandaId}/name/\u003cstartsWith\u003e'].get.operationId")
+            .isString
+            .isEqualTo("getApiPandaByPandaIdNameByStartsWith")
+    }
+    */
 }

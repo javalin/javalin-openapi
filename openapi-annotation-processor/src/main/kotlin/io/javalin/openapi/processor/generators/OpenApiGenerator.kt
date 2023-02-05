@@ -304,12 +304,12 @@ internal class OpenApiGenerator {
                     .map { pathPart ->
                         if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
                             /* Case this is a path parameter */
-                            val pathParam = pathPart.substring(1, pathPart.length - 1)
+                            val pathParam = pathPart.drop(1).dropLast(1)
                                 .replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                            return@map pathParamPrefix + pathParam
+                            pathParamPrefix + pathParam
                         } else {
                             /* Case this is a regular part of the path */
-                            return@map pathPart.replaceFirstChar {
+                            pathPart.replaceFirstChar {
                                 it.titlecase(Locale.getDefault())
                             }
                         }
@@ -317,7 +317,6 @@ internal class OpenApiGenerator {
                     .toList()
                     .joinToString(separator = "")
             }
-
             else -> openApi.operationId
         }
 
