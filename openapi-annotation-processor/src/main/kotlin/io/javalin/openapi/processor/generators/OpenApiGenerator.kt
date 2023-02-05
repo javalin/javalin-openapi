@@ -285,14 +285,39 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun generateOperationId(httpMethod: HttpMethod, openApi: OpenApi): String =
+    /**
+     * Generates a operationId for the given [HttpMethod] and [OpenApi]-route.
+     * The pattern used is `methodPathPartsCamelCaseByPathParam`.
+     *
+     * @param httpMethod The HTTP method to use. Prefixes the operationId
+     * @param openApi The route to generate the operation id for
+     * @param pathParamPrefix The prefix for path parameters to use. Defaults to `By`
+     */
+    private fun generateOperationId(
+        httpMethod: HttpMethod,
+        openApi: OpenApi,
+        pathParamPrefix: String = "By"
+    ): String =
         when (openApi.operationId) {
             AUTO_GENERATE -> {
                 httpMethod.name.lowercase() + openApi.path.split('/')
-                    .map { pathPart -> pathPart.replaceFirstChar { it.titlecase(Locale.getDefault()) } }
+                    .map { pathPart ->
+                        if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
+                            /* Case this is a path parameter */
+                            val pathParam = pathPart.substring(1, pathPart.length - 1)
+                                .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                            return@map pathParamPrefix + pathParam
+                        } else {
+                            /* Case this is a regular part of the path */
+                            return@map pathPart.replaceFirstChar {
+                                it.titlecase(Locale.getDefault())
+                            }
+                        }
+                    }
                     .toList()
                     .joinToString(separator = "")
             }
+
             else -> openApi.operationId
         }
 
