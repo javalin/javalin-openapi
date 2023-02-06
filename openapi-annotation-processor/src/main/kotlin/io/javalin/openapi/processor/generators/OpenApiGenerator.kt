@@ -285,16 +285,47 @@ internal class OpenApiGenerator {
         return parameter
     }
 
-    private fun generateOperationId(httpMethod: HttpMethod, openApi: OpenApi): String =
+    /**
+     * Generates a operationId for the given [HttpMethod] and [OpenApi]-route.
+     * The pattern used is `methodPathPartsCamelCaseByPathParam`.
+     *
+     * @param httpMethod The HTTP method to use. Prefixes the operationId
+     * @param openApi The route to generate the operation id for
+     * @param pathParamPrefix The prefix for path parameters to use. Defaults to `By`
+     */
+    private fun generateOperationId(
+        httpMethod: HttpMethod,
+        openApi: OpenApi,
+        pathParamPrefix: String = "By"
+    ): String =
         when (openApi.operationId) {
             AUTO_GENERATE -> {
                 httpMethod.name.lowercase() + openApi.path.split('/')
-                    .map { pathPart -> pathPart.replaceFirstChar { it.titlecase(Locale.getDefault()) } }
+                    .map { pathPart ->
+                        if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
+                            /* Case this is a path parameter */
+                            var pathParam = pathPart.drop(1).dropLast(1)
+                            /* Handling of hyphens in parameter name */
+                            pathParam = pathParam.split('-')
+                                .joinToString(separator = "") { it.capitalise() }
+                            pathParamPrefix + pathParam
+                        } else {
+                            /* Case this is a regular part of the path */
+                            pathPart.capitalise()
+                        }
+                    }
                     .toList()
                     .joinToString(separator = "")
             }
             else -> openApi.operationId
         }
+
+    /**
+     * String extension for capitalisation, since it's often used during operationId generation.
+     */
+    private fun String.capitalise(): String = this.replaceFirstChar {
+        it.titlecase(Locale.getDefault())
+    }
 
     private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {
         val requestBodyContent = JsonObject()

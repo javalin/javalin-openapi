@@ -1,10 +1,6 @@
 package io.javalin.openapi.processor
 
-import io.javalin.openapi.CustomAnnotation
-import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiContent
-import io.javalin.openapi.OpenApiOperation
-import io.javalin.openapi.OpenApiResponse
+import io.javalin.openapi.*
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
@@ -97,5 +93,50 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
             .isEqualTo("getApiPandaList")
     }
 
+    @OpenApi(
+        path = "/api/panda/{pandaId}/name/<startsWith>",
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_path_with_parameters"]
+    )
+    @Test
+    fun should_generate_operation_id_from_path_with_parameters() = withOpenApi("should_generate_operation_id_from_path_with_parameters"){
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/api/panda/{pandaId}/name/<startsWith>'].get.operationId")
+            .isString
+            .isEqualTo("getApiPandaByPandaIdNameByStartsWith")
+    }
+
+    @OpenApi(
+        path = "/api/cat/{cat-id}",
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_path_with_parameters_hyphened"]
+    )
+    @Test
+    fun should_generate_operation_id_from_path_with_parameters_hyphened() = withOpenApi("should_generate_operation_id_from_path_with_parameters_hyphened"){
+        println(it)
+        // TODO not sure what to expect here
+        assertThatJson(it)
+            .inPath("$.paths['/api/cat/{cat-id}'].get.operationId")
+            .isString
+            .isEqualTo("getApiCatByCatId")
+    }
+
+    @OpenApi(
+        path = "/api/panda",
+        methods= [HttpMethod.PUT],
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_path_method_put"]
+    )
+    @Test
+    fun should_generate_operation_id_from_path_method_put() = withOpenApi("should_generate_operation_id_from_path_method_put") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/api/panda'].put.operationId")
+            .isString
+            .isEqualTo("putApiPanda")
+    }
 
 }
