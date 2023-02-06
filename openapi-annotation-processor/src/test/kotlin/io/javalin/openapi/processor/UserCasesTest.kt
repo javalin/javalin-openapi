@@ -111,10 +111,10 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
     @OpenApi(
         path = "/api/cat/{cat-id}",
         operationId = OpenApiOperation.AUTO_GENERATE,
-        versions = ["should_generate_operation_id_from_path_with_parameters_hyphened"]
+        versions = ["should_generate_operation_id_from_path_with_parameters_hyphenated"]
     )
     @Test
-    fun should_generate_operation_id_from_path_with_parameters_hyphened() = withOpenApi("should_generate_operation_id_from_path_with_parameters_hyphened"){
+    fun should_generate_operation_id_from_path_with_parameters_hyphenated() = withOpenApi("should_generate_operation_id_from_path_with_parameters_hyphenated"){
         println(it)
         // TODO not sure what to expect here
         assertThatJson(it)
@@ -137,6 +137,21 @@ internal class UserCasesTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.paths['/api/panda'].put.operationId")
             .isString
             .isEqualTo("putApiPanda")
+    }
+
+    @OpenApi(
+        path = "/vip-accounts/{vip-account-id}",
+        operationId = OpenApiOperation.AUTO_GENERATE,
+        versions = ["should_generate_operation_id_from_hyphenated_path_with_parameters_hyphenated"]
+    )
+    @Test
+    fun should_generate_operation_id_from_hyphenated_path_with_parameters_hyphenated() = withOpenApi("should_generate_operation_id_from_hyphenated_path_with_parameters_hyphenated"){
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/vip-accounts/{vip-account-id}'].get.operationId")
+            .isString
+            .isEqualTo("getVipAccountsByVipAccountId")
     }
 
 }
