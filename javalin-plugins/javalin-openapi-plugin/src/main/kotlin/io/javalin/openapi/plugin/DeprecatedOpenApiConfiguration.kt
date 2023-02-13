@@ -45,7 +45,15 @@ internal fun OpenApiConfiguration.toNewOpenApiPluginConfiguration(): OpenApiPlug
         .withDocumentationPath(documentationPath)
         .withRoles(*roles)
         .withDefinitionConfiguration { _, definition ->
-            definition.withOpenApiInfo { info }
+            definition.withOpenApiInfo {
+                it.title = info.title
+                it.summary = info.summary
+                it.description = info.description
+                it.termsOfService = info.termsOfService
+                it.contact = info.contact
+                it.license = info.license
+                it.version = info.version
+            }
 
             security?.also { oldSecurity ->
                 definition.withSecurity { security ->
