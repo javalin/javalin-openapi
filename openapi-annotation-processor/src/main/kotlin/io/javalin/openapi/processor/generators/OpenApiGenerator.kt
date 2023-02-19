@@ -11,6 +11,8 @@ import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.OpenApiParam
+import io.javalin.openapi.OpenApiRequestBody
+import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
@@ -152,38 +154,33 @@ internal class OpenApiGenerator {
 
                 // RequestBody
                 // ~ https://swagger.io/specification/#request-body-object
-                val requestBodyAnnotation = routeAnnotation.requestBody
-                val requestBody = JsonObject()
-                requestBody.addString("description", requestBodyAnnotation.description)
-                requestBody.addContent(openApiElement, requestBodyAnnotation.content)
-                if (requestBody.size() > 0) {
-                    operation.add("requestBody", requestBody)
-                }
-                requestBody.addProperty("required", requestBodyAnnotation.required)
+                operation.addRequestBody(openApiElement, routeAnnotation.requestBody)
 
                 // Responses
                 // ~ https://swagger.io/specification/#responses-object
-                val responses = JsonObject()
-
-                for (responseAnnotation in routeAnnotation.responses.sortedBy { it.status }) {
-                    val response = JsonObject()
-
-                    val description = responseAnnotation.description
-                        .takeIf { it != NULL_STRING }
-                        ?: responseAnnotation.status
-                            .toIntOrNull()
-                            ?.let { HttpStatus.forStatus(it) }?.message
-
-                    response.addString("description", description)
-                    response.addContent(openApiElement, responseAnnotation.content)
-                    responses.add(responseAnnotation.status, response)
-                }
-
-                operation.add("responses", responses)
+                operation.addResponses(openApiElement, routeAnnotation.responses)
 
                 // Callbacks
                 // ~ https://swagger.io/specification/#callback-object
-                // operation.addProperty("callbacks, ); UNSUPPORTED
+                if (routeAnnotation.callbacks.isNotEmpty()) {
+                    val callbacks = JsonObject()
+
+                    routeAnnotation.callbacks.forEach { callback ->
+                        val eventObject = JsonObject()
+                        callbacks.add(callback.name, eventObject)
+
+                        val urlObject = JsonObject()
+                        eventObject.add(callback.url, urlObject)
+
+                        val methodObject = JsonObject()
+                        urlObject.add(method.name.lowercase(), methodObject)
+
+                        methodObject.addRequestBody(openApiElement, callback.requestBody)
+                        methodObject.addResponses(openApiElement, callback.responses)
+                    }
+
+                    operation.add("callbacks", callbacks)
+                }
 
                 // Deprecated
                 operation.addProperty("deprecated", routeAnnotation.deprecated)
@@ -255,6 +252,37 @@ internal class OpenApiGenerator {
         openApi.add("components", components)
 
         return openApi.toPrettyString()
+    }
+
+    private fun JsonObject.addRequestBody(openApiElement: Element, requestBodyAnnotation: OpenApiRequestBody) {
+        val requestBody = JsonObject()
+        requestBody.addString("description", requestBodyAnnotation.description)
+        requestBody.addContent(openApiElement, requestBodyAnnotation.content)
+        requestBody.addProperty("required", requestBodyAnnotation.required)
+
+        if (requestBody.size() > 0) {
+            add("requestBody", requestBody)
+        }
+    }
+
+    private fun JsonObject.addResponses(openApiElement: Element, responseAnnotations: Array<OpenApiResponse>) {
+        val responses = JsonObject()
+
+        for (responseAnnotation in responseAnnotations.sortedBy { it.status }) {
+            val response = JsonObject()
+
+            val description = responseAnnotation.description
+                .takeIf { it != NULL_STRING }
+                ?: responseAnnotation.status
+                    .toIntOrNull()
+                    ?.let { HttpStatus.forStatus(it) }?.message
+
+            response.addString("description", description)
+            response.addContent(openApiElement, responseAnnotation.content)
+            responses.add(responseAnnotation.status, response)
+        }
+
+        add("responses", responses)
     }
 
     enum class In(val identifier: String) {

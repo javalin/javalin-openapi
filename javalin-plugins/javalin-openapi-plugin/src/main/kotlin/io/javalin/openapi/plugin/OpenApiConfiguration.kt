@@ -10,7 +10,7 @@ import java.util.function.BiConsumer
 import java.util.function.Consumer
 
 /** Configure OpenApi plugin */
-data class OpenApiPluginConfiguration @JvmOverloads constructor(
+class OpenApiPluginConfiguration @JvmOverloads constructor(
     @JvmField @JvmSynthetic internal var documentationPath: String = "/openapi",
     @JvmField @JvmSynthetic internal var roles: List<RouteRole>? = null,
     @JvmField @JvmSynthetic internal var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
@@ -38,7 +38,7 @@ fun interface DefinitionProcessor {
     fun process(content: ObjectNode): String
 }
 
-data class DefinitionConfiguration @JvmOverloads constructor(
+class DefinitionConfiguration @JvmOverloads constructor(
     @JvmField @JvmSynthetic internal var info: OpenApiInfo? = null,
     @JvmField @JvmSynthetic internal var servers: MutableList<OpenApiServer> = mutableListOf(),
     @JvmField @JvmSynthetic internal var security: SecurityComponentConfiguration? = null,
@@ -79,7 +79,7 @@ data class DefinitionConfiguration @JvmOverloads constructor(
 
 }
 
-data class SecurityComponentConfiguration @JvmOverloads constructor(
+class SecurityComponentConfiguration @JvmOverloads constructor(
     @JvmField @JvmSynthetic internal val securitySchemes: MutableMap<String, SecurityScheme> = mutableMapOf(),
     @JvmField @JvmSynthetic internal val globalSecurity: MutableList<Security> = mutableListOf()
 ) {

@@ -19,6 +19,7 @@ import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OneOf;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiByFields;
+import io.javalin.openapi.OpenApiCallback;
 import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
@@ -186,6 +187,23 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = EntityDto[].class)
             }),
             @OpenApiResponse(status = "500") // fill description with HttpStatus message
+        },
+        callbacks = {
+            @OpenApiCallback(
+                name = "onData",
+                url = "{$request.query.callbackUrl}/data",
+                requestBody = @OpenApiRequestBody(
+                    description = "Callback request body",
+                    content = @OpenApiContent(from = String.class)
+                ),
+                responses = {
+                    @OpenApiResponse(
+                        status = "200",
+                        description = "Callback response",
+                        content = { @OpenApiContent(from = String.class) }
+                    )
+                }
+            ),
         }
     )
     @OpenApi(
