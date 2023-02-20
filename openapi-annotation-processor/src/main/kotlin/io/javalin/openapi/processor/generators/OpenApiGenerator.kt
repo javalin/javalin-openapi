@@ -258,11 +258,12 @@ internal class OpenApiGenerator {
         val requestBody = JsonObject()
         requestBody.addString("description", requestBodyAnnotation.description)
         requestBody.addContent(openApiElement, requestBodyAnnotation.content)
-        requestBody.addProperty("required", requestBodyAnnotation.required)
 
         if (requestBody.size() > 0) {
             add("requestBody", requestBody)
         }
+
+        requestBody.addProperty("required", requestBodyAnnotation.required)
     }
 
     private fun JsonObject.addResponses(openApiElement: Element, responseAnnotations: Array<OpenApiResponse>) {
