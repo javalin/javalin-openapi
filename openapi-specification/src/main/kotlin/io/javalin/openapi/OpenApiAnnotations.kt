@@ -124,6 +124,7 @@ annotation class OpenApiRequestBody(
 annotation class OpenApiCallback(
     val name: String,
     val url: String,
+    val method: HttpMethod,
     val requestBody: OpenApiRequestBody,
     val responses: Array<OpenApiResponse>
 )

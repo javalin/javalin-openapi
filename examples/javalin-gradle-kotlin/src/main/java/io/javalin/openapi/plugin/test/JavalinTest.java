@@ -192,6 +192,7 @@ public final class JavalinTest implements Handler {
             @OpenApiCallback(
                 name = "onData",
                 url = "{$request.query.callbackUrl}/data",
+                method = HttpMethod.GET,
                 requestBody = @OpenApiRequestBody(
                     description = "Callback request body",
                     content = @OpenApiContent(from = String.class)

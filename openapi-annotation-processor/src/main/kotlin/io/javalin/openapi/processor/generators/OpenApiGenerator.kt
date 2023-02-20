@@ -173,7 +173,7 @@ internal class OpenApiGenerator {
                         eventObject.add(callback.url, urlObject)
 
                         val methodObject = JsonObject()
-                        urlObject.add(method.name.lowercase(), methodObject)
+                        urlObject.add(callback.method.name.lowercase(), methodObject)
 
                         methodObject.addRequestBody(openApiElement, callback.requestBody)
                         methodObject.addResponses(openApiElement, callback.responses)
