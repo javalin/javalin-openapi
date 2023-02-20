@@ -68,6 +68,8 @@ annotation class OpenApi(
      * In other cases where the HTTP spec is vague, requestBody SHALL be ignored by consumers.
      */
     val requestBody: OpenApiRequestBody = OpenApiRequestBody([]),
+    /** Describes applicable callbacks */
+    val callbacks: Array<OpenApiCallback> = [],
     // val composedRequestBody: OpenApiComposedRequestBody = OpenApiComposedRequestBody([]), ?
     /** The list of possible responses as they are returned from executing this operation. */
     val responses: Array<OpenApiResponse> = [],
@@ -117,14 +119,15 @@ annotation class OpenApiRequestBody(
     val description: String = NULL_STRING
 )
 
-//@Target()
-//annotation class OpenApiComposedRequestBody(
-//    val anyOf: Array<OpenApiContent> = [],
-//    val oneOf: Array<OpenApiContent> = [],
-//    val required: Boolean = false,
-//    val description: String = NULL_STRING,
-//    val contentType: String = ContentType.AUTODETECT
-//)
+@Target()
+@Retention(RUNTIME)
+annotation class OpenApiCallback(
+    val name: String,
+    val url: String,
+    val method: HttpMethod,
+    val requestBody: OpenApiRequestBody,
+    val responses: Array<OpenApiResponse>
+)
 
 @Target()
 @Retention(RUNTIME)
