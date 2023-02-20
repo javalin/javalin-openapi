@@ -36,13 +36,24 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
             basePath = configuration.basePath
         )
 
+        /* Better even would be to check here if the path is already registered in javalin */
+
         val swaggerWebJarHandler = SwaggerWebJarHandler(
             swaggerWebJarPath = configuration.webJarPath
         )
 
         app
             .get(configuration.uiPath, swaggerHandler, *configuration.roles)
-            .get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
+        try {
+            app.get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
+        }catch(ex: java.lang.IllegalArgumentException){
+            /* If there is any other exception than the one that this GET handler for this webJarPath already exists, we care.
+            * Otherwise we can ignore it, as the main goal -- to serve the webjar -- is already achieved by some other configuration.
+            */
+            if(ex.message?.contains("type='GET'") != true || ex.message?.contains("path='${configuration.webJarPath}") != true){
+                throw ex
+            }
+        }
     }
 
 }
