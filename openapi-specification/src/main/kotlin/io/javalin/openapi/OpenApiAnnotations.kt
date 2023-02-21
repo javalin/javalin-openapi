@@ -171,6 +171,12 @@ annotation class OpenApiExample(
     val value: String
 )
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, CLASS)
+@Retention(RUNTIME)
+annotation class OpenApiDescription(
+    val value: String
+)
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(

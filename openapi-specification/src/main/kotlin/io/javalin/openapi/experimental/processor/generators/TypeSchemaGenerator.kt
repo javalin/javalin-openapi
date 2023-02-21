@@ -7,6 +7,7 @@ import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApiByFields
+import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
@@ -283,7 +284,8 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
 
 private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, Any?> = context.inContext {
     val extra = mutableMapOf<String, Any?>(
-        "example" to getAnnotation(OpenApiExample::class.java)?.value
+        "example" to getAnnotation(OpenApiExample::class.java)?.value,
+        "description" to getAnnotation(OpenApiDescription::class.java)?.value
     )
 
     getAnnotationsByType(Custom::class.java).forEach { custom ->

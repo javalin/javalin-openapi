@@ -23,6 +23,7 @@ import io.javalin.openapi.OpenApiCallback;
 import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
+import io.javalin.openapi.OpenApiDescription;
 import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiIgnore;
 import io.javalin.openapi.OpenApiLicense;
@@ -330,6 +331,11 @@ public final class JavalinTest implements Handler {
         @OpenApiExample("5050")
         public int getVeryImportantNumber() {
             return status + 1;
+        }
+
+        @OpenApiDescription("Some description")
+        public String getDescription() {
+            return "Description";
         }
 
         // should support @Custom from JsonSchema
