@@ -2,6 +2,7 @@
 
 package io.javalin.openapi.processor
 
+import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.OpenApi
@@ -10,6 +11,7 @@ import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
+import net.javacrumbs.jsonunit.assertj.JsonAssertions.value
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 import kotlin.annotation.AnnotationTarget.CLASS
@@ -25,6 +27,7 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
     @Target(PROPERTY_GETTER)
     private annotation class CustomAnnotationOnGetter(val onGetter: BooleanArray)
 
+    @Custom(name = "description", value = "Custom description")
     @CustomAnnotationOnClass(onClass = [true])
     private class CustomEntity(
         @get:CustomAnnotationOnGetter(onGetter = [true])
@@ -49,6 +52,7 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
             .inPath("$.components.schemas.CustomEntity")
             .isObject
             .containsEntry("onClass", json("[true]"))
+            .containsEntry("description", "Custom description")
 
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity.properties.element")

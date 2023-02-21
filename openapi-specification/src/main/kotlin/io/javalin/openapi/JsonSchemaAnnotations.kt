@@ -85,7 +85,7 @@ annotation class DiscriminatorMappingName(
 )
 
 /** Allows you to add custom properties to your schemes */
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(RUNTIME)
 @Repeatable
 annotation class Custom(
