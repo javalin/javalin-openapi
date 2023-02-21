@@ -141,10 +141,8 @@ public final class JavalinTest implements Handler {
         .start(8080);
     }
 
-    private static final String ROUTE = "/main/{name}";
-
     @OpenApi(
-        path = ROUTE,
+        path = "/main/{name}",
         methods = HttpMethod.POST,
         operationId = "cli",
         summary = "Remote command execution",
@@ -153,21 +151,8 @@ public final class JavalinTest implements Handler {
         security = {
             @OpenApiSecurity(name = "BasicAuth")
         },
-        requestBody = @OpenApiRequestBody(
-            description = "Supports multiple request bodies",
-            content = {
-                @OpenApiContent(from = String.class), // simple type
-                @OpenApiContent(from = LombokEntity.class), // lombok
-                @OpenApiContent(from = KotlinEntity.class), // kotlin
-                @OpenApiContent(from = EntityWithGenericType.class), // generics
-                @OpenApiContent(from = RecordEntity.class), // record class
-                @OpenApiContent(from = DtoWithFields.class), // map only fields
-                @OpenApiContent(from = EnumEntity.class), // enum,
-                @OpenApiContent(from = CustomNameEntity.class) // custom name
-            }
-        ),
         headers = {
-            //@OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
+            @OpenApiParam(name = "Authorization", description = "Alias and token provided as basic auth credentials", required = true, type = UUID.class),
             @OpenApiParam(name = "Optional"),
             @OpenApiParam(name = "X-Rick", example = "Rolled"),
             @OpenApiParam(name = "X-SomeNumber", required = true, type = Integer.class, example = "500")
@@ -175,6 +160,22 @@ public final class JavalinTest implements Handler {
         pathParams = {
             @OpenApiParam(name = "name", description = "Name", required = true, type = UUID.class)
         },
+        queryParams = {
+            @OpenApiParam(name = "query", description = "Some query", required = true, type = Integer.class)
+        },
+        requestBody = @OpenApiRequestBody(
+                description = "Supports multiple request bodies",
+                content = {
+                        @OpenApiContent(from = String.class), // simple type
+                        @OpenApiContent(from = LombokEntity.class), // lombok
+                        @OpenApiContent(from = KotlinEntity.class), // kotlin
+                        @OpenApiContent(from = EntityWithGenericType.class), // generics
+                        @OpenApiContent(from = RecordEntity.class), // record class
+                        @OpenApiContent(from = DtoWithFields.class), // map only fields
+                        @OpenApiContent(from = EnumEntity.class), // enum,
+                        @OpenApiContent(from = CustomNameEntity.class) // custom name
+                }
+        ),
         responses = {
             @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
                 @OpenApiContent(from = EntityDto[].class)
