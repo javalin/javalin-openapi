@@ -125,6 +125,8 @@ annotation class OpenApiCallback(
     val name: String,
     val url: String,
     val method: HttpMethod,
+    val summary: String = NULL_STRING,
+    val description: String = NULL_STRING,
     val requestBody: OpenApiRequestBody,
     val responses: Array<OpenApiResponse>
 )
