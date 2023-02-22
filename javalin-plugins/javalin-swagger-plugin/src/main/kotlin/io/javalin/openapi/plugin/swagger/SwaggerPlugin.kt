@@ -1,6 +1,7 @@
 package io.javalin.openapi.plugin.swagger
 
 import io.javalin.Javalin
+import io.javalin.http.HandlerType
 import io.javalin.http.servlet.getBasicAuthCredentials
 import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
@@ -35,14 +36,17 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
             routingPath = app.cfg.routing.contextPath,
             basePath = configuration.basePath
         )
+        /** Register handler for swagger ui */
+        app.get(configuration.uiPath, swaggerHandler, *configuration.roles)
 
-        val swaggerWebJarHandler = SwaggerWebJarHandler(
-            swaggerWebJarPath = configuration.webJarPath
-        )
-
-        app
-            .get(configuration.uiPath, swaggerHandler, *configuration.roles)
-            .get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
+        /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
+        val routes = app.javalinServlet().matcher.findEntries(HandlerType.GET, "${configuration.webJarPath}/*")
+        if(routes.isNotEmpty() && routes.first().handler !is SwaggerWebJarHandler){
+            val swaggerWebJarHandler = SwaggerWebJarHandler(
+                swaggerWebJarPath = configuration.webJarPath
+            )
+            app.get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
+        }
     }
 
 }

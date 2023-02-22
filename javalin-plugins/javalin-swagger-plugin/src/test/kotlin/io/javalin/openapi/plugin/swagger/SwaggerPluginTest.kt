@@ -48,4 +48,64 @@ internal class SwaggerPluginTest {
         }
     }
 
+    @Test
+    fun `should not fail if second swagger plugin is registered`(){
+        val swaggerConfiguration = SwaggerConfiguration();
+        val otherConfiguration = ExampleSwaggerPlugin();
+        Javalin.create{
+            it.plugins.register(SwaggerPlugin(swaggerConfiguration))
+            it.plugins.register(otherConfiguration)
+        }
+            .start(8080)
+            .use{
+                val javalinHost = "http://localhost:8080"
+
+                val webjarCssRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui.css"
+                val webjarJsRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui-bundle.js"
+                val webjarJsStandaloneRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui-standalone-preset.js"
+
+                val response = Unirest.get("$javalinHost/swagger")
+                    .asString()
+                    .body
+
+                assertThat(response).contains("""href="$webjarCssRoute"""")
+                assertThat(response).contains("""src="$webjarJsRoute"""")
+                assertThat(response).contains("""src="$webjarJsStandaloneRoute"""")
+                assertThat(response).contains("""url: '/openapi?v=test'""")
+                assertThat(response).doesNotContain("""url: '/example-docs?v=test'""")
+
+                var resourceResponse = Unirest.get("$javalinHost$webjarCssRoute")
+                    .asString()
+                    .body
+
+                assertThat(resourceResponse).isNotBlank
+
+                resourceResponse = Unirest.get("$javalinHost$webjarJsRoute")
+                    .asString()
+                    .body
+
+                assertThat(resourceResponse).isNotBlank
+
+                resourceResponse = Unirest.get("$javalinHost$webjarJsStandaloneRoute")
+                    .asString()
+                    .body
+
+                assertThat(resourceResponse).isNotBlank
+
+                val otherResponse = Unirest.get("$javalinHost/example-ui")
+                    .asString()
+                    .body
+
+                assertThat(otherResponse).contains("""url: '/example-docs?v=test'""")
+                assertThat(otherResponse).doesNotContain("""url: '/openapi?v=test'""")
+            }
+    }
+
+    class ExampleSwaggerPlugin : SwaggerPlugin(
+        SwaggerConfiguration().apply {
+            this.documentationPath = "/example-docs"
+            this.uiPath = "/example-ui"
+        }
+    )
+
 }
