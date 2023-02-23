@@ -72,14 +72,16 @@ internal class OpenApiGenerator {
                     ?.toString()
                     ?: return
 
-                val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
+                if (context.configuration.validateWithParser) {
+                    val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
 
-                if (parsedSchema.messages.size > 0) {
-                    context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
-                }
+                    if (parsedSchema.messages.size > 0) {
+                        context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+                    }
 
-                parsedSchema.messages.forEach {
-                    context.env.messager.printMessage(WARNING, it)
+                    parsedSchema.messages.forEach {
+                        context.env.messager.printMessage(WARNING, it)
+                    }
                 }
 
                 resourceName

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.Nullability
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
@@ -249,18 +250,28 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 else -> continue
             }
 
-            val propertyType = property.getAnnotation(OpenApiPropertyType::class.java)
-                ?.getTypeMirror { definedBy }
+            val customType = property.getAnnotation(OpenApiPropertyType::class.java)
+
+            val propertyType = customType?.getTypeMirror { definedBy }
                 ?: (property as? ExecutableElement)?.returnType
                 ?: (property as? VariableElement)?.asType()
                 ?: continue
+
+            val isNotNull = when {
+                customType?.nullable == Nullability.NOT_NULL -> true
+                customType?.nullable == Nullability.NULLABLE -> false
+                property.hasAnnotation("NotNull") -> true
+                propertyType.isPrimitive() -> true
+                property.hasAnnotation("Nullable") -> false
+                else -> false
+            }
 
             properties.add(
                 Property(
                     name = name,
                     type = propertyType.toClassDefinition(),
                     composition = findCompositionInElement(context, property),
-                    required = requireNonNulls && (propertyType.isPrimitive() || property.hasAnnotation("NotNull")),
+                    required = requireNonNulls && isNotNull,
                     extra = property.findExtra(context)
                 )
             )

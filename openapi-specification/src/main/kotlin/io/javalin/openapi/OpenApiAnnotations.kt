@@ -179,10 +179,17 @@ annotation class OpenApiDescription(
     val value: String
 )
 
+enum class Nullability {
+    NULLABLE,
+    NOT_NULL,
+    AUTO
+}
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(
-    val definedBy: KClass<*>
+    val definedBy: KClass<*>,
+    val nullable: Nullability = Nullability.AUTO
 )
 
 enum class Visibility(val priority: Int) {
