@@ -189,7 +189,7 @@ enum class Nullability {
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(
     val definedBy: KClass<*>,
-    val nullable: Nullability = Nullability.AUTO
+    val nullability: Nullability = Nullability.AUTO
 )
 
 enum class Visibility(val priority: Int) {

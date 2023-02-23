@@ -258,8 +258,8 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 ?: continue
 
             val isNotNull = when {
-                customType?.nullable == Nullability.NOT_NULL -> true
-                customType?.nullable == Nullability.NULLABLE -> false
+                customType?.nullability == Nullability.NOT_NULL -> true
+                customType?.nullability == Nullability.NULLABLE -> false
                 property.hasAnnotation("NotNull") -> true
                 propertyType.isPrimitive() -> true
                 property.hasAnnotation("Nullable") -> false

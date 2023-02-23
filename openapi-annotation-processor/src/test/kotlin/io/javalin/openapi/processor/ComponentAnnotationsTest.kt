@@ -44,7 +44,7 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
     }
 
     private class ClassWithOpenApiType(
-        @get:OpenApiPropertyType(definedBy = Double::class, nullable = NULLABLE)
+        @get:OpenApiPropertyType(definedBy = Double::class, nullability = NULLABLE)
         val testProperty: BigDecimal?
     )
 
