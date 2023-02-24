@@ -41,7 +41,7 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
 
         /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
         val routes = app.javalinServlet().matcher.findEntries(HandlerType.GET, "${configuration.webJarPath}/*")
-        if(routes.isNotEmpty() && routes.first().handler !is SwaggerWebJarHandler){
+        if(routes.isEmpty() || (routes.isNotEmpty() && routes.first().handler !is SwaggerWebJarHandler)){
             val swaggerWebJarHandler = SwaggerWebJarHandler(
                 swaggerWebJarPath = configuration.webJarPath
             )
