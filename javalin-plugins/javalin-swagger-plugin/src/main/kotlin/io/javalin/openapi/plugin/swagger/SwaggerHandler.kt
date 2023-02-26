@@ -14,7 +14,9 @@ class SwaggerHandler(
     private val swaggerVersion: String,
     private val validatorUrl: String?,
     private val routingPath: String,
-    private val basePath: String?
+    private val basePath: String?,
+    private val tagsSorter: String,
+    private val operationsSorter: String
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -78,6 +80,8 @@ class SwaggerHandler(
                           SwaggerUIBundle.plugins.DownloadUrl
                         ],
                         layout: "StandaloneLayout",
+                        tagsSorter: $tagsSorter,
+                        operationsSorter: $operationsSorter,
                         validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
                       })
                 }

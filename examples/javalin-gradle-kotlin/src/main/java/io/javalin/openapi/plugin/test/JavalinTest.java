@@ -147,7 +147,7 @@ public final class JavalinTest implements Handler {
         operationId = "cli",
         summary = "Remote command execution",
         description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
-        tags = { "Cli" },
+        tags = { "Default", "Cli" },
         security = {
             @OpenApiSecurity(name = "BasicAuth")
         },
