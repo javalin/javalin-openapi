@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.10"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -96,7 +96,7 @@ allprojects {
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
             jvmTarget = "11"
-            languageVersion = "1.7"
+            languageVersion = "1.8"
             freeCompilerArgs = listOf(
                 "-Xjvm-default=all", // For generating default methods in interfaces
                 // "-Xcontext-receivers"
@@ -114,16 +114,16 @@ subprojects {
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 
-        val junit = "5.8.2"
+        val junit = "5.9.2"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
 
-        testImplementation("org.assertj:assertj-core:3.23.1")
-        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
-        testImplementation("com.konghq:unirest-java:3.11.09")
+        testImplementation("org.assertj:assertj-core:3.24.2")
+        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.1")
+        testImplementation("com.konghq:unirest-java:3.14.1")
 
-        testImplementation("ch.qos.logback:logback-classic:1.4.4")
+        testImplementation("ch.qos.logback:logback-classic:1.4.5")
     }
 
     tasks.withType<Test> {
