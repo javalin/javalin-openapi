@@ -16,7 +16,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "5.3.3-SNAPSHOT"
+    version = "5.4.0"
 
     repositories {
         mavenCentral()
@@ -110,7 +110,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     dependencies {
-        val javalin = "5.3.2"
+        val javalin = "5.4.0"
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 

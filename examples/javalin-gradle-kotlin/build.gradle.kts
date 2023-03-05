@@ -37,7 +37,7 @@ dependencies {
     testImplementation("org.apache.groovy:groovy:4.0.7")
 
     // javalin
-    implementation("io.javalin:javalin:5.3.2")
+    implementation("io.javalin:javalin:5.4.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
 
     // logging
