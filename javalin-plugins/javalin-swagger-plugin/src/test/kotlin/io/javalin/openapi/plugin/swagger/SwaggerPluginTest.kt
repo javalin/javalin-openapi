@@ -48,4 +48,22 @@ internal class SwaggerPluginTest {
         }
     }
 
+    @Test
+    fun `should have custom css and js injected`() {
+        val swaggerConfiguration = SwaggerConfiguration()
+        swaggerConfiguration.injectStylesheet("/swagger.css")
+        swaggerConfiguration.injectJavaScript("/script.js")
+
+        Javalin.create { it.plugins.register(SwaggerPlugin(swaggerConfiguration)) }
+            .start(8080)
+            .use {
+                val response = Unirest.get("http://localhost:8080/swagger")
+                    .asString()
+                    .body
+
+                assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
+                assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
+            }
+    }
+
 }

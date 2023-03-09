@@ -16,7 +16,9 @@ class SwaggerHandler(
     private val routingPath: String,
     private val basePath: String?,
     private val tagsSorter: String,
-    private val operationsSorter: String
+    private val operationsSorter: String,
+    private val customStylesheetFiles: ArrayList<String>,
+    private val customJavaScriptFiles: ArrayList<String>
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -35,6 +37,9 @@ class SwaggerHandler(
             .loadVersions()
             .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
 
+        val allCustomStylesheets = customStylesheetFiles.joinToString(separator = "\n")
+        val allCustomJavaScripts = customJavaScriptFiles.joinToString(separator = "\n")
+
         @Language("html")
         val html = """
         <!-- HTML for static distribution bundle build -->
@@ -45,6 +50,7 @@ class SwaggerHandler(
                 <title>$title</title>
                 <link rel="stylesheet" type="text/css" href="$publicSwaggerAssetsPath/swagger-ui.css" >
                 <link rel="icon" type="image/png" href="$publicSwaggerAssetsPath/favicon-32x32.png" sizes="32x32" />
+                $allCustomStylesheets
                 <style>
                     html {
                         box-sizing: border-box;
@@ -86,6 +92,7 @@ class SwaggerHandler(
                       })
                 }
                 </script>
+                $allCustomJavaScripts
             </body>
         </html>
     """.trimIndent()
