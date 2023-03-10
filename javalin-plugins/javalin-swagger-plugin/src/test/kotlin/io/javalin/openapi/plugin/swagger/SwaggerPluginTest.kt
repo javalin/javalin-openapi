@@ -51,8 +51,9 @@ internal class SwaggerPluginTest {
     @Test
     fun `should have custom css and js injected`() {
         val swaggerConfiguration = SwaggerConfiguration()
-        swaggerConfiguration.injectStylesheet("/swagger.css")
-        swaggerConfiguration.injectJavaScript("/script.js")
+            .injectStylesheet("/swagger.css")
+            .injectStylesheet("/swagger-the-print.css", "print")
+            .injectJavaScript("/script.js")
 
         Javalin.create { it.plugins.register(SwaggerPlugin(swaggerConfiguration)) }
             .start(8080)
@@ -62,6 +63,7 @@ internal class SwaggerPluginTest {
                     .body
 
                 assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
+                assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
                 assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
             }
     }

@@ -17,8 +17,8 @@ class SwaggerHandler(
     private val basePath: String?,
     private val tagsSorter: String,
     private val operationsSorter: String,
-    private val customStylesheetFiles: ArrayList<String>,
-    private val customJavaScriptFiles: ArrayList<String>
+    private val customStylesheetFiles: List<Pair<String, String>>,
+    private val customJavaScriptFiles: List<Pair<String, String>>
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -37,8 +37,10 @@ class SwaggerHandler(
             .loadVersions()
             .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
 
-        val allCustomStylesheets = customStylesheetFiles.joinToString(separator = "\n")
-        val allCustomJavaScripts = customJavaScriptFiles.joinToString(separator = "\n")
+        val allCustomStylesheets = customStylesheetFiles
+            .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
+        val allCustomJavaScripts = customJavaScriptFiles
+            .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
 
         @Language("html")
         val html = """

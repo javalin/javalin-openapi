@@ -31,18 +31,18 @@ class SwaggerConfiguration {
     /** Operations sorter algorithm expression. */
     var operationsSorter: String = "'alpha'"
     /**  Custom CSS files to be injected into Swagger HTML */
-    var customStylesheetFiles: ArrayList<String> = arrayListOf()
+    var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf()
     /**  Custom JavaScript files to be injected into Swagger HTML */
-    var customJavaScriptFiles: ArrayList<String> = arrayListOf()
+    var customJavaScriptFiles: MutableList<Pair<String, String>> = arrayListOf()
 
     @JvmOverloads
-    fun injectStylesheet(path: String, media: String = "screen") {
-        customStylesheetFiles.add("<link href='${path}' rel='stylesheet' media='${media}' type='text/css' />")
+    fun injectStylesheet(path: String, media: String = "screen"): SwaggerConfiguration = also {
+        customStylesheetFiles.add(Pair(path, media));
     }
 
     @JvmOverloads
-    fun injectJavaScript(path: String, type: String = "text/javascript") {
-        customJavaScriptFiles.add("<script src='${path}' type='${type}' />")
+    fun injectJavaScript(path: String, type: String = "text/javascript"): SwaggerConfiguration = also  {
+        customJavaScriptFiles.add(Pair(path, type))
     }
 }
 
