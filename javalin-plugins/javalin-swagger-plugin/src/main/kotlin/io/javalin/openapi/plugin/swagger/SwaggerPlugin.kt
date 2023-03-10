@@ -30,6 +30,20 @@ class SwaggerConfiguration {
     var tagsSorter: String = "'alpha'"
     /** Operations sorter algorithm expression. */
     var operationsSorter: String = "'alpha'"
+    /**  Custom CSS files to be injected into Swagger HTML */
+    var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf()
+    /**  Custom JavaScript files to be injected into Swagger HTML */
+    var customJavaScriptFiles: MutableList<Pair<String, String>> = arrayListOf()
+
+    @JvmOverloads
+    fun injectStylesheet(path: String, media: String = "screen"): SwaggerConfiguration = also {
+        customStylesheetFiles.add(Pair(path, media));
+    }
+
+    @JvmOverloads
+    fun injectJavaScript(path: String, type: String = "text/javascript"): SwaggerConfiguration = also  {
+        customJavaScriptFiles.add(Pair(path, type))
+    }
 }
 
 open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin {
@@ -43,7 +57,9 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
             routingPath = app.cfg.routing.contextPath,
             basePath = configuration.basePath,
             tagsSorter = configuration.tagsSorter,
-            operationsSorter = configuration.operationsSorter
+            operationsSorter = configuration.operationsSorter,
+            customStylesheetFiles = configuration.customStylesheetFiles,
+            customJavaScriptFiles = configuration.customJavaScriptFiles
         )
 
         val swaggerWebJarHandler = SwaggerWebJarHandler(
