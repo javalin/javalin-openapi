@@ -50,11 +50,11 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
 
     @OpenApi(
         path = "/type",
-        versions = ["should_chane_property_type"],
+        versions = ["should_change_property_type"],
         responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = ClassWithOpenApiType::class)])]
     )
     @Test
-    fun should_chane_property_type() = withOpenApi("should_chane_property_type") {
+    fun should_change_property_type() = withOpenApi("should_change_property_type") {
         println(it)
 
         assertThatJson(it)
