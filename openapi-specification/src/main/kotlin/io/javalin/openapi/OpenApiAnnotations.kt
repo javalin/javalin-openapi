@@ -173,6 +173,13 @@ annotation class OpenApiExample(
     val value: String
 )
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+@CustomAnnotation
+annotation class OpenApiNullable(
+    val nullable: Boolean = true
+)
+
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, CLASS)
 @Retention(RUNTIME)
 annotation class OpenApiDescription(

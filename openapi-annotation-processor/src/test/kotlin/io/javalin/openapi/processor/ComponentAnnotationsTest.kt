@@ -6,6 +6,7 @@ import io.javalin.openapi.Nullability.NULLABLE
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiDescription
+import io.javalin.openapi.OpenApiNullable
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
@@ -72,6 +73,26 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
                     }
                 }
             """))
+    }
+
+    private class ClassWithNullableProperty(
+        @get:OpenApiNullable
+        val testProperty: String
+    )
+
+    @OpenApi(
+        path = "/nullable",
+        versions = ["should_add_nullable_property"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = ClassWithNullableProperty::class)])]
+    )
+    @Test
+    fun should_add_nullable_property() = withOpenApi("should_add_nullable_property") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.ClassWithNullableProperty.properties.testProperty")
+            .isObject
+            .containsEntry("nullable", true)
     }
 
 }
