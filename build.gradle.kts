@@ -121,9 +121,9 @@ subprojects {
 
         testImplementation("org.assertj:assertj-core:3.24.2")
         testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.1")
-        testImplementation("com.konghq:unirest-java:3.14.1")
+        testImplementation("com.konghq:unirest-java:3.14.2")
 
-        testImplementation("ch.qos.logback:logback-classic:1.4.5")
+        testImplementation("ch.qos.logback:logback-classic:1.4.6")
     }
 
     tasks.withType<Test> {

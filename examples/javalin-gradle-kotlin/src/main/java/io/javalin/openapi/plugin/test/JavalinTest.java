@@ -91,7 +91,6 @@ public final class JavalinTest implements Handler {
                             openApiLicense.setIdentifier("Apache-2.0");
 
                             openApiInfo.setTitle("Awesome App");
-                            openApiInfo.setSummary("App summary");
                             openApiInfo.setDescription("App description goes right here");
                             openApiInfo.setTermsOfService("https://example.com/tos");
                             openApiInfo.setContact(openApiContact);

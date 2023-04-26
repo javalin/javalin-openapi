@@ -98,7 +98,7 @@ internal class OpenApiGenerator {
      */
     private fun generateSchema(openApiAnnotations: Collection<Pair<Element, OpenApi>>): String {
         val openApi = JsonObject()
-        openApi.addProperty("openapi", "3.0.3")
+        openApi.addProperty("openapi", "3.1.0")
 
         // fill info
         val info = JsonObject()

@@ -1,11 +1,10 @@
 package io.javalin.openapi.plugin
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.Javalin
-import io.javalin.json.JavalinJackson
-import io.javalin.json.jsonMapper
 import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
 import kotlin.DeprecationLevel.WARNING
@@ -28,9 +27,9 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
 
     private fun createDocumentation(app: Javalin): Lazy<Map<String, String>> =
         lazy {
-            val jsonMapper = when (val jsonMapper = app.jsonMapper()) {
-                is JavalinJackson -> jsonMapper.mapper
-                else -> JavalinJackson.defaultMapper()
+            // skip nulls from cfg
+            val jsonMapper = lazy {
+                ObjectMapper().setSerializationInclusion(Include.NON_NULL)
             }
 
             OpenApiLoader()
@@ -38,7 +37,7 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
                 .mapValues { (version, rawDocs) ->
                     configuration.definitionConfiguration
                         ?.let { DefinitionConfiguration().also { definition -> it.accept(version, definition) } }
-                        ?.applyConfigurationTo(jsonMapper, version, rawDocs)
+                        ?.applyConfigurationTo(jsonMapper.value, version, rawDocs)
                         ?: rawDocs
                 }
         }
