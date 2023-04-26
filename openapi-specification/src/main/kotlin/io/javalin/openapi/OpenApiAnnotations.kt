@@ -161,6 +161,10 @@ annotation class OpenApiSecurity(
 @Retention(RUNTIME)
 annotation class OpenApiIgnore
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiRequired
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiName(

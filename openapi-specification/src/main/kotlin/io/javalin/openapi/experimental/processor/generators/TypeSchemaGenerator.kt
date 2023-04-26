@@ -13,6 +13,7 @@ import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
+import io.javalin.openapi.OpenApiRequired
 import io.javalin.openapi.Visibility
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
@@ -266,12 +267,17 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 else -> false
             }
 
+            val required = when {
+                property.getAnnotation(OpenApiRequired::class.java) != null -> true
+                else -> requireNonNulls && isNotNull
+            }
+
             properties.add(
                 Property(
                     name = name,
                     type = propertyType.toClassDefinition(),
                     composition = findCompositionInElement(context, property),
-                    required = requireNonNulls && isNotNull,
+                    required = required,
                     extra = property.findExtra(context)
                 )
             )
