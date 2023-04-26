@@ -14,7 +14,11 @@ class SwaggerHandler(
     private val swaggerVersion: String,
     private val validatorUrl: String?,
     private val routingPath: String,
-    private val basePath: String?
+    private val basePath: String?,
+    private val tagsSorter: String,
+    private val operationsSorter: String,
+    private val customStylesheetFiles: List<Pair<String, String>>,
+    private val customJavaScriptFiles: List<Pair<String, String>>
 ) : Handler {
 
     override fun handle(context: Context) {
@@ -33,6 +37,11 @@ class SwaggerHandler(
             .loadVersions()
             .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
 
+        val allCustomStylesheets = customStylesheetFiles
+            .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
+        val allCustomJavaScripts = customJavaScriptFiles
+            .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
+
         @Language("html")
         val html = """
         <!-- HTML for static distribution bundle build -->
@@ -43,6 +52,7 @@ class SwaggerHandler(
                 <title>$title</title>
                 <link rel="stylesheet" type="text/css" href="$publicSwaggerAssetsPath/swagger-ui.css" >
                 <link rel="icon" type="image/png" href="$publicSwaggerAssetsPath/favicon-32x32.png" sizes="32x32" />
+                $allCustomStylesheets
                 <style>
                     html {
                         box-sizing: border-box;
@@ -78,10 +88,13 @@ class SwaggerHandler(
                           SwaggerUIBundle.plugins.DownloadUrl
                         ],
                         layout: "StandaloneLayout",
+                        tagsSorter: $tagsSorter,
+                        operationsSorter: $operationsSorter,
                         validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
                       })
                 }
                 </script>
+                $allCustomJavaScripts
             </body>
         </html>
     """.trimIndent()

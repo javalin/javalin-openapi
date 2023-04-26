@@ -14,6 +14,7 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
 
     @Override
     void configure(OpenApiAnnotationProcessorConfiguration configuration) {
+        configuration.validateWithParser = false
         // configuration.debug = false
 
         // Used by TypeMappersTest

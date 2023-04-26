@@ -27,8 +27,8 @@ data class SimpleType @JvmOverloads constructor(
 )
 
 class OpenApiAnnotationProcessorConfiguration {
-
     var debug: Boolean = false
+    var validateWithParser: Boolean = true
     var propertyInSchemeFilter: PropertyInSchemeFilter? = null
     val simpleTypeMappings: MutableMap<String, SimpleType> = createDefaultSimpleTypeMappings()
     val embeddedTypeProcessors: MutableList<EmbeddedTypeProcessor> = mutableListOf(

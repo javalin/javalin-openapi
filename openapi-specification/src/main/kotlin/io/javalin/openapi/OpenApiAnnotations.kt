@@ -161,6 +161,10 @@ annotation class OpenApiSecurity(
 @Retention(RUNTIME)
 annotation class OpenApiIgnore
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiRequired
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiName(
@@ -173,16 +177,30 @@ annotation class OpenApiExample(
     val value: String
 )
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+@CustomAnnotation
+annotation class OpenApiNullable(
+    val nullable: Boolean = true
+)
+
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, CLASS)
 @Retention(RUNTIME)
 annotation class OpenApiDescription(
     val value: String
 )
 
+enum class Nullability {
+    NULLABLE,
+    NOT_NULL,
+    AUTO
+}
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(
-    val definedBy: KClass<*>
+    val definedBy: KClass<*>,
+    val nullability: Nullability = Nullability.AUTO
 )
 
 enum class Visibility(val priority: Int) {

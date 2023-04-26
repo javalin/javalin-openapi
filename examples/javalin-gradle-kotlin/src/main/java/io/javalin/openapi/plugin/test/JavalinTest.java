@@ -91,7 +91,6 @@ public final class JavalinTest implements Handler {
                             openApiLicense.setIdentifier("Apache-2.0");
 
                             openApiInfo.setTitle("Awesome App");
-                            openApiInfo.setSummary("App summary");
                             openApiInfo.setDescription("App description goes right here");
                             openApiInfo.setTermsOfService("https://example.com/tos");
                             openApiInfo.setContact(openApiContact);
@@ -147,7 +146,7 @@ public final class JavalinTest implements Handler {
         operationId = "cli",
         summary = "Remote command execution",
         description = "Execute command using POST request. The commands are the same as in the console and can be listed using the 'help' command.",
-        tags = { "Cli" },
+        tags = { "Default", "Cli" },
         security = {
             @OpenApiSecurity(name = "BasicAuth")
         },

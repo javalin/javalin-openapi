@@ -49,6 +49,26 @@ internal class SwaggerPluginTest {
     }
 
     @Test
+    fun `should have custom css and js injected`() {
+        val swaggerConfiguration = SwaggerConfiguration()
+            .injectStylesheet("/swagger.css")
+            .injectStylesheet("/swagger-the-print.css", "print")
+            .injectJavaScript("/script.js")
+
+        Javalin.create { it.plugins.register(SwaggerPlugin(swaggerConfiguration)) }
+            .start(8080)
+            .use {
+                val response = Unirest.get("http://localhost:8080/swagger")
+                    .asString()
+                    .body
+
+                assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
+                assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
+                assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
+            }
+    }
+
+    @Test
     fun `should not fail if second swagger plugin is registered`(){
         val swaggerConfiguration = SwaggerConfiguration();
         val otherConfiguration = ExampleSwaggerPlugin();

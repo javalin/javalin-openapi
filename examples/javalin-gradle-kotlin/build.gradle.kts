@@ -12,7 +12,7 @@ java {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = "17"
-        languageVersion = "1.7"
+        languageVersion = "1.8"
         freeCompilerArgs = listOf("-Xjvm-default=all") // For generating default methods in interfaces
     }
 }
@@ -23,7 +23,7 @@ sourceSets.getByName("main") {
 
 dependencies {
     // declare lombok annotation processor as first
-    val lombok = "1.18.24"
+    val lombok = "1.18.26"
     compileOnly("org.projectlombok:lombok:$lombok")
     annotationProcessor("org.projectlombok:lombok:$lombok")
     testCompileOnly("org.projectlombok:lombok:$lombok")
@@ -37,14 +37,14 @@ dependencies {
     testImplementation("org.apache.groovy:groovy:4.0.7")
 
     // javalin
-    implementation("io.javalin:javalin:5.3.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
+    implementation("io.javalin:javalin:5.4.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.4.4")
+    implementation("ch.qos.logback:logback-classic:1.4.5")
 
     // some test integrations
-    implementation("org.mongodb:bson:4.7.2")
+    implementation("org.mongodb:bson:4.9.0")
 }
 repositories {
     mavenCentral()
