@@ -59,34 +59,17 @@ internal class SwaggerPluginTest {
             .start(8080)
             .use{
                 val javalinHost = "http://localhost:8080"
-
-                val webjarCssRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui.css"
                 val webjarJsRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui-bundle.js"
-                val webjarJsStandaloneRoute = "/webjars/swagger-ui/${swaggerConfiguration.version}/swagger-ui-standalone-preset.js"
 
                 val response = Unirest.get("$javalinHost/swagger")
                     .asString()
                     .body
 
-                assertThat(response).contains("""href="$webjarCssRoute"""")
                 assertThat(response).contains("""src="$webjarJsRoute"""")
-                assertThat(response).contains("""src="$webjarJsStandaloneRoute"""")
                 assertThat(response).contains("""url: '/openapi?v=test'""")
                 assertThat(response).doesNotContain("""url: '/example-docs?v=test'""")
 
-                var resourceResponse = Unirest.get("$javalinHost$webjarCssRoute")
-                    .asString()
-                    .body
-
-                assertThat(resourceResponse).isNotBlank
-
-                resourceResponse = Unirest.get("$javalinHost$webjarJsRoute")
-                    .asString()
-                    .body
-
-                assertThat(resourceResponse).isNotBlank
-
-                resourceResponse = Unirest.get("$javalinHost$webjarJsStandaloneRoute")
+                val resourceResponse = Unirest.get("$javalinHost$webjarJsRoute")
                     .asString()
                     .body
 

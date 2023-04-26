@@ -40,13 +40,15 @@ open class SwaggerPlugin @JvmOverloads constructor(private val configuration: Sw
         app.get(configuration.uiPath, swaggerHandler, *configuration.roles)
 
         /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
-        val routes = app.javalinServlet().matcher.findEntries(HandlerType.GET, "${configuration.webJarPath}/*")
-        if(routes.isEmpty() || (routes.isNotEmpty() && routes.first().handler !is SwaggerWebJarHandler)){
-            val swaggerWebJarHandler = SwaggerWebJarHandler(
-                swaggerWebJarPath = configuration.webJarPath
-            )
-            app.get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
-        }
+        app.javalinServlet().matcher
+            .findEntries(HandlerType.GET, "${configuration.webJarPath}/*")
+            .takeIf { routes -> routes.none { it.handler is SwaggerWebJarHandler } }
+            ?.run {
+                val swaggerWebJarHandler = SwaggerWebJarHandler(
+                    swaggerWebJarPath = configuration.webJarPath
+                )
+                app.get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
+            }
     }
 
 }
