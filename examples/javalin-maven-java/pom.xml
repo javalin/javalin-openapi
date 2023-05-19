@@ -11,7 +11,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <javalin.openapi>5.5.0</javalin.openapi>
+        <javalin.openapi>5.5.0-1</javalin.openapi>
     </properties>
 
     <repositories>
