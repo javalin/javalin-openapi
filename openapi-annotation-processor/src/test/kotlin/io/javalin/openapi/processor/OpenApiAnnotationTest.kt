@@ -23,7 +23,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
     fun should_generate_info() = withOpenApi("should_generate_info") {
         assertThatJson(it)
             .isObject
-            .containsEntry("openapi", "3.1.0")
+            .containsEntry("openapi", "3.0.3")
             .containsEntry("info", json("""{ "title":"", "version": "" }"""))
     }
 
