@@ -28,6 +28,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:$lombok")
     testCompileOnly("org.projectlombok:lombok:$lombok")
     testAnnotationProcessor("org.projectlombok:lombok:$lombok")
+    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
 
     // then openapi annotation processor
     kapt(project(":openapi-annotation-processor"))

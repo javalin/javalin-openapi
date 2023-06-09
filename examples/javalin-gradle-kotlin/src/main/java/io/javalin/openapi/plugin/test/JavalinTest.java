@@ -48,6 +48,7 @@ import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.NotEmpty;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -406,7 +407,10 @@ public final class JavalinTest implements Handler {
     }
 
     // should match properties of record class
-    record RecordEntity(String name, String surname) {}
+    record RecordEntity(
+        @NotEmpty String name,
+        @NotEmpty String surname
+    ) {}
 
     // should query fields
     @OpenApiByFields(Visibility.PROTECTED) // by default: PUBLIC

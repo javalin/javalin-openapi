@@ -63,6 +63,7 @@ class AnnotationProcessorContext(
             ?.getAnnotation(OpenApiName::class.java)
             ?.value
             ?.let { mirror.toString().substringBeforeLast(".") + "." + it }
+            ?: env.typeUtils.asElement(mirror)?.toString()?.substringBefore("<")
             ?: mirror.toString().substringBefore("<")
 
     /* Extension methods, should be replaced by context receivers in the future */
