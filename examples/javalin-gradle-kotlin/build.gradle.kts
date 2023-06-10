@@ -23,7 +23,7 @@ sourceSets.getByName("main") {
 
 dependencies {
     // declare lombok annotation processor as first
-    val lombok = "1.18.26"
+    val lombok = "1.18.28"
     compileOnly("org.projectlombok:lombok:$lombok")
     annotationProcessor("org.projectlombok:lombok:$lombok")
     testCompileOnly("org.projectlombok:lombok:$lombok")
@@ -35,18 +35,19 @@ dependencies {
     implementation(project(":javalin-plugins:javalin-openapi-plugin"))
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
-    testImplementation("org.apache.groovy:groovy:4.0.7")
+    testImplementation("org.apache.groovy:groovy:4.0.12")
 
     // javalin
-    implementation("io.javalin:javalin:5.5.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
+    implementation("io.javalin:javalin:5.6.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.4.5")
+    implementation("ch.qos.logback:logback-classic:1.4.7")
 
     // some test integrations
-    implementation("org.mongodb:bson:4.9.0")
+    implementation("org.mongodb:bson:4.9.1")
 }
+
 repositories {
     mavenCentral()
 }

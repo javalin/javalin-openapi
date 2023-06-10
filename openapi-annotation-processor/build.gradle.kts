@@ -18,7 +18,7 @@ dependencies {
         exclude(group = "org.slf4j")
     }
 
-    implementation("io.swagger.parser.v3:swagger-parser:2.1.12")
+    implementation("io.swagger.parser.v3:swagger-parser:2.1.15")
 
     implementation("ch.qos.logback:logback-classic:1.4.5")
 
