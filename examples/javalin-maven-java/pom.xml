@@ -11,7 +11,8 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <javalin.openapi>5.6.0</javalin.openapi>
+        <javalin.version>5.6.0</javalin.version>
+        <javalin.openapi.version>5.6.0</javalin.openapi.version>
     </properties>
 
     <repositories>
@@ -25,7 +26,33 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.6.0</version>
+            <version>${javalin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin.community.openapi</groupId>
+            <artifactId>javalin-openapi-plugin</artifactId>
+            <version>${javalin.openapi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin.community.openapi</groupId>
+            <artifactId>javalin-swagger-plugin</artifactId>
+            <version>${javalin.openapi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.javalin.community.openapi</groupId>
+            <artifactId>javalin-redoc-plugin</artifactId>
+            <version>${javalin.openapi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>redoc</artifactId>
+            <version>2.0.0-rc.56</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.tinylog</groupId>
@@ -42,32 +69,6 @@
             <artifactId>slf4j-tinylog</artifactId>
             <version>2.4.1</version>
         </dependency>
-        <dependency>
-            <groupId>io.javalin.community.openapi</groupId>
-            <artifactId>javalin-openapi-plugin</artifactId>
-            <version>${javalin.openapi}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.javalin.community.openapi</groupId>
-            <artifactId>javalin-swagger-plugin</artifactId>
-            <version>${javalin.openapi}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.javalin.community.openapi</groupId>
-            <artifactId>javalin-redoc-plugin</artifactId>
-            <version>${javalin.openapi}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>redoc</artifactId>
-            <version>2.0.0-rc.56</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
@@ -82,7 +83,7 @@
                             <annotationProcessorPath>
                                 <groupId>io.javalin.community.openapi</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
-                                <version>${javalin.openapi}</version>
+                                <version>${javalin.openapi.version}</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
