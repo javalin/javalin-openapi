@@ -37,8 +37,10 @@ class ClassDefinition(
             with(context) {
                 with (mirror) {
                     when (this) {
-                        is TypeVariable -> upperBound?.toClassDefinition(generics, type) ?: lowerBound?.toClassDefinition(generics, type)
-                        is ArrayType -> componentType.toClassDefinition(generics, type = ARRAY)
+                        is TypeVariable ->
+                            upperBound?.toClassDefinition(generics, type) ?: lowerBound?.toClassDefinition(generics, type)
+                        is ArrayType ->
+                            componentType.toClassDefinition(generics, type = ARRAY)
                         is PrimitiveType ->
                             ClassDefinition(
                                 context = context,
@@ -47,32 +49,34 @@ class ClassDefinition(
                                 generics = generics,
                                 structureType = type
                             )
-                        is DeclaredType -> when {
-                            types.isAssignable(types.erasure(this), mapType().asType()) ->
-                                ClassDefinition(
-                                    context = context,
-                                    mirror = this,
-                                    source = mapType(),
-                                    generics = listOfNotNull(
-                                        typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(),
-                                        typeArguments.getOrElse(1) { objectType().asType() }.toClassDefinition()
-                                    ),
-                                    structureType = DICTIONARY
-                                )
-                            types.isAssignable(types.erasure(this), collectionType().asType()) ->
-                                typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(generics, ARRAY)
-                            else ->
-                                ClassDefinition(
-                                    context = context,
-                                    mirror = this,
-                                    source = asElement(),
-                                    generics = typeArguments.mapNotNull { it.toClassDefinition() },
-                                    structureType = type
-                                )
-                        }
-                        else -> types.asElement(this)?.asType()?.toClassDefinition(generics, type)
+                        is DeclaredType ->
+                            when {
+                                types.isAssignable(types.erasure(this), mapType().asType()) ->
+                                    ClassDefinition(
+                                        context = context,
+                                        mirror = this,
+                                        source = mapType(),
+                                        generics = listOfNotNull(
+                                            typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(),
+                                            typeArguments.getOrElse(1) { objectType().asType() }.toClassDefinition()
+                                        ),
+                                        structureType = DICTIONARY
+                                    )
+                                types.isAssignable(types.erasure(this), collectionType().asType()) ->
+                                    typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(generics, ARRAY)
+                                else ->
+                                    ClassDefinition(
+                                        context = context,
+                                        mirror = this,
+                                        source = asElement(),
+                                        generics = typeArguments.mapNotNull { it.toClassDefinition() },
+                                        structureType = type
+                                    )
+                            }
+                        else ->
+                            types.asElement(this)?.asType()?.toClassDefinition(generics, type)
                     }
-                } ?: objectType().asType().toClassDefinition()
+                } ?: objectType().asType().toClassDefinition(type = type)
             }
 
     }

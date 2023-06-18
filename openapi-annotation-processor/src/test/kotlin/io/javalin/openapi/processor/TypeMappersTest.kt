@@ -54,7 +54,8 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val localDateTime: LocalDateTime,
         val instant: Instant,
         val obj: Object,
-        val map: Map<*, *>
+        val map: Map<*, *>,
+        val mapWithList: Map<*, List<*>>
     )
 
     @OpenApi(
@@ -181,6 +182,15 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                     "type": "object",
                     "additionalProperties": {
                       "type": "object"
+                    }
+                  },
+                  "mapWithList": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
                     }
                   }
                 }"""

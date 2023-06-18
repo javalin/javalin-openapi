@@ -11,7 +11,6 @@ import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
-import net.javacrumbs.jsonunit.assertj.JsonAssertions.value
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal

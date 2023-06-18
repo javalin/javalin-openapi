@@ -11,7 +11,25 @@ class DictionaryEmbeddedTypeProcessor : EmbeddedTypeProcessor {
         if (type.structureType == DICTIONARY) {
             scheme.addProperty("type", "object")
             val additionalProperties = JsonObject()
-            parentContext.typeSchemaGenerator.addType(additionalProperties, context.type.generics[1], inlineRefs, references, requiresNonNulls)
+            val additionalType = context.type.generics[1]
+
+            context.parentContext.configuration.embeddedTypeProcessors
+                .firstOrNull {
+                    it.process(
+                        context.copy(
+                            scheme = additionalProperties,
+                            type = additionalType
+                        )
+                    )
+                }
+                ?: parentContext.typeSchemaGenerator.addType(
+                    scheme = additionalProperties,
+                    type = additionalType,
+                    inlineRefs = inlineRefs,
+                    references = references,
+                    requiresNonNulls = requiresNonNulls
+                )
+
             scheme.add("additionalProperties", additionalProperties)
             return true
         }
