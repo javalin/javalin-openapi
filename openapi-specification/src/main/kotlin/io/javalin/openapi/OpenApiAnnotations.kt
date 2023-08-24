@@ -9,6 +9,7 @@ import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.RUNTIME
+import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FIELD
 import kotlin.annotation.AnnotationTarget.FUNCTION
@@ -174,7 +175,16 @@ annotation class OpenApiName(
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiExample(
-    val value: String
+    val value: String = NULL_STRING,
+    val objects: Array<OpenApiExampleObject> = []
+)
+
+@Target(ANNOTATION_CLASS)
+@Retention(RUNTIME)
+annotation class OpenApiExampleObject(
+    val name: String = NULL_STRING,
+    val value: String = NULL_STRING,
+    val objects: Array<OpenApiExampleObject> = []
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)

@@ -6,10 +6,12 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.Custom
 import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.Nullability
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
+import io.javalin.openapi.OpenApiExampleObject
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
@@ -301,9 +303,20 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
 
 private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, Any?> = context.inContext {
     val extra = mutableMapOf<String, Any?>(
-        "example" to getAnnotation(OpenApiExample::class.java)?.value,
         "description" to getAnnotation(OpenApiDescription::class.java)?.value
     )
+
+    getAnnotationsByType(OpenApiExample::class.java).forEach { example ->
+        when {
+            example.value != NULL_STRING -> {
+                extra["example"] = example.value
+            }
+            example.objects.isNotEmpty() -> {
+                val result = ExampleGenerator.generateFromExamples(example.objects)
+                extra["example"] = result.jsonElement ?: result.simpleValue
+            }
+        }
+    }
 
     getAnnotationsByType(Custom::class.java).forEach { custom ->
         extra[custom.name] = custom.value
