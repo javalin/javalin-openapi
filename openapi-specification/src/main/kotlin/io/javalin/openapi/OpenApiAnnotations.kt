@@ -176,15 +176,15 @@ annotation class OpenApiName(
 @Retention(RUNTIME)
 annotation class OpenApiExample(
     val value: String = NULL_STRING,
-    val objects: Array<OpenApiExampleObject> = []
+    val objects: Array<OpenApiExampleProperty> = []
 )
 
 @Target(ANNOTATION_CLASS)
 @Retention(RUNTIME)
-annotation class OpenApiExampleObject(
+annotation class OpenApiExampleProperty(
     val name: String = NULL_STRING,
     val value: String = NULL_STRING,
-    val objects: Array<OpenApiExampleObject> = []
+    val objects: Array<OpenApiExampleProperty> = []
 )
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)

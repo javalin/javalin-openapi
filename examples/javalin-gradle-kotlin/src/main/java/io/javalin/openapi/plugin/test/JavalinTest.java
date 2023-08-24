@@ -25,7 +25,7 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
 import io.javalin.openapi.OpenApiDescription;
 import io.javalin.openapi.OpenApiExample;
-import io.javalin.openapi.OpenApiExampleObject;
+import io.javalin.openapi.OpenApiExampleProperty;
 import io.javalin.openapi.OpenApiIgnore;
 import io.javalin.openapi.OpenApiLicense;
 import io.javalin.openapi.OpenApiName;
@@ -331,8 +331,8 @@ public final class JavalinTest implements Handler {
 
         // should contain examples
         @OpenApiExample(objects = {
-            @OpenApiExampleObject(value = "2022-08-14T21:13:03.546Z"),
-            @OpenApiExampleObject(value = "2022-08-14T21:13:03.546Z")
+            @OpenApiExampleProperty(value = "2022-08-14T21:13:03.546Z"),
+            @OpenApiExampleProperty(value = "2022-08-14T21:13:03.546Z")
         })
         public @NotNull String[] getTimestamps() {
             return new String[] { timestamp };
@@ -340,9 +340,9 @@ public final class JavalinTest implements Handler {
 
         // should contain object example
         @OpenApiExample(objects = {
-                @OpenApiExampleObject(name = "Barbie", objects = {
-                        @OpenApiExampleObject(name = "name", value = "Margot Robbie"),
-                        @OpenApiExampleObject(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                @OpenApiExampleProperty(name = "Barbie", objects = {
+                        @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
+                        @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
                 }),
         })
         public @NotNull Object[] getExampleObjects() {

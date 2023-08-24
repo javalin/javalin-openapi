@@ -11,7 +11,6 @@ import io.javalin.openapi.Nullability
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
-import io.javalin.openapi.OpenApiExampleObject
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiPropertyType
