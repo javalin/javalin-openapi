@@ -17,6 +17,7 @@ import javax.lang.model.util.Types
 import kotlin.reflect.KClass
 
 class AnnotationProcessorContext(
+    val parameters: OpenApiAnnotationProcessorParameters,
     val configuration: OpenApiAnnotationProcessorConfiguration,
     val env: ProcessingEnvironment,
     val trees: Trees?,

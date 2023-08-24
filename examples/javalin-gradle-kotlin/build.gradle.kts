@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.tasks.Kapt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -46,6 +47,13 @@ dependencies {
 
     // some test integrations
     implementation("org.mongodb:bson:4.9.1")
+}
+
+kapt {
+    arguments {
+        arg("openapi.info.title", "Awesome App")
+        arg("openapi.info.version", "1.0.0")
+    }
 }
 
 repositories {

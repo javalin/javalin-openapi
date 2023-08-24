@@ -102,8 +102,8 @@ internal class OpenApiGenerator {
 
         // fill info
         val info = JsonObject()
-        info.addProperty("title", "")
-        info.addProperty("version", "")
+        info.addProperty("title", context.parameters.info.title)
+        info.addProperty("version", context.parameters.info.version)
         openApi.add("info", info)
 
         // fill paths

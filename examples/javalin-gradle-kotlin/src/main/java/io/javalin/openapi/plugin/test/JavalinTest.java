@@ -92,12 +92,10 @@ public final class JavalinTest implements Handler {
                             openApiLicense.setName("Apache 2.0");
                             openApiLicense.setIdentifier("Apache-2.0");
 
-                            openApiInfo.setTitle("Awesome App");
                             openApiInfo.setDescription("App description goes right here");
                             openApiInfo.setTermsOfService("https://example.com/tos");
                             openApiInfo.setContact(openApiContact);
                             openApiInfo.setLicense(openApiLicense);
-                            openApiInfo.setVersion("1.0.0");
                         })
                         .withServer((openApiServer) -> {
                             openApiServer.setUrl(("http://localhost:{port}{basePath}/" + version + "/"));

@@ -5,7 +5,11 @@ import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.experimental.AnnotationProcessorContext
+import io.javalin.openapi.experimental.OPENAPI_INFO_TITLE
+import io.javalin.openapi.experimental.OPENAPI_INFO_VERSION
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
+import io.javalin.openapi.experimental.OpenApiAnnotationProcessorParameters
+import io.javalin.openapi.experimental.OpenApiAnnotationProcessorParameters.Info
 import io.javalin.openapi.processor.configuration.OpenApiPrecompileScriptingEngine
 import io.javalin.openapi.processor.generators.JsonSchemaGenerator
 import io.javalin.openapi.processor.generators.OpenApiGenerator
@@ -24,6 +28,12 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
     override fun init(processingEnv: ProcessingEnvironment) {
         context = AnnotationProcessorContext(
+            parameters = OpenApiAnnotationProcessorParameters(
+                info = Info(
+                    title = processingEnv.options[OPENAPI_INFO_TITLE] ?: "",
+                    version = processingEnv.options[OPENAPI_INFO_VERSION] ?: ""
+                )
+            ),
             configuration = OpenApiAnnotationProcessorConfiguration(),
             env = processingEnv,
             trees = AnnotationProcessorTools.createTrees(processingEnv)
@@ -53,6 +63,12 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
 
         return true
     }
+
+    override fun getSupportedOptions(): Set<String> =
+        setOf(
+            OPENAPI_INFO_TITLE,
+            OPENAPI_INFO_VERSION,
+        )
 
     override fun getSupportedAnnotationTypes(): Set<String> =
         setOf(

@@ -46,7 +46,8 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
         val docsNode = jsonMapper.readTree(content) as ObjectNode
 
         //process OpenAPI "info"
-        docsNode.replace("info", jsonMapper.convertValue(info, JsonNode::class.java))
+        val currentInfo = jsonMapper.readerForUpdating(docsNode.get("info"))
+        docsNode.replace("info", currentInfo.readValue(jsonMapper.convertValue(info, JsonNode::class.java)))
 
         // process OpenAPI "servers"
         docsNode.replace("servers", jsonMapper.convertValue(servers, JsonNode::class.java))
