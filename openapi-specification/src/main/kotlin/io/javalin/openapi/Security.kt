@@ -89,5 +89,5 @@ class ClientCredentials @JvmOverloads constructor(
     val tokenUrl: String,
     override val scopes: MutableMap<String, String> = mutableMapOf()
 ) : OAuth2Flow<ClientCredentials> {
-    override val flowType: String = "clientCredentials "
+    override val flowType: String = "clientCredentials"
 }

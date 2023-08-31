@@ -3,10 +3,12 @@ package io.javalin.openapi.plugin.test;
 import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.http.CreatedResponse;
 import io.javalin.http.Handler;
 import io.javalin.openapi.ApiKeyAuth;
 import io.javalin.openapi.BasicAuth;
 import io.javalin.openapi.BearerAuth;
+import io.javalin.openapi.ClientCredentials;
 import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.Custom;
 import io.javalin.openapi.CustomAnnotation;
@@ -113,7 +115,10 @@ public final class JavalinTest implements Handler {
                             .withSecurityScheme("OAuth2", new OAuth2("This API uses OAuth 2 with the implicit grant flow.")
                                 .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
                                     .withScope("read_pets", "read your pets")
-                                    .withScope("write_pets", "modify pets in your account")))
+                                    .withScope("write_pets", "modify pets in your account")
+                                )
+                                .withFlow(new ClientCredentials("https://api.example.com/credentials/authorize"))
+                            )
                             .withGlobalSecurity(new Security("OAuth2")
                                 .withScope("write_pets")
                                 .withScope("read_pets"))
