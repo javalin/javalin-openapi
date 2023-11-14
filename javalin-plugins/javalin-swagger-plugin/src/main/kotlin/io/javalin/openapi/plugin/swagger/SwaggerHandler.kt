@@ -101,9 +101,9 @@ class SwaggerHandler(
         return html
     }
 
-    private val multiplePathOperatorsRegex = Regex("/+")
-
-    private fun String.removedDoubledPathOperators(): String =
-        replace(multiplePathOperatorsRegex, "/")
+    private fun String.removedDoubledPathOperators(): String {
+        val multiplePathOperatorsRegex = Regex("/+")
+        return replace(multiplePathOperatorsRegex, "/")
+    }
 
 }

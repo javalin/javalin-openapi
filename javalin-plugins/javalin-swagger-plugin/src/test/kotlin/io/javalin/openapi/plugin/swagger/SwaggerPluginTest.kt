@@ -70,8 +70,8 @@ internal class SwaggerPluginTest {
 
     @Test
     fun `should not fail if second swagger plugin is registered`(){
-        val swaggerConfiguration = SwaggerConfiguration();
-        val otherConfiguration = ExampleSwaggerPlugin();
+        val swaggerConfiguration = SwaggerConfiguration()
+        val otherConfiguration = ExampleSwaggerPlugin()
         Javalin.create{
             it.plugins.register(SwaggerPlugin(swaggerConfiguration))
             it.plugins.register(otherConfiguration)
