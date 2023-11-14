@@ -2,6 +2,7 @@ package io.javalin.openapi.plugin.swagger
 
 import io.javalin.Javalin
 import io.javalin.http.HandlerType
+import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
 
@@ -50,9 +51,13 @@ class SwaggerConfiguration {
 open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin {
 
     override fun apply(app: Javalin) {
+        val versions = OpenApiLoader()
+            .loadVersions()
+
         val swaggerHandler = SwaggerHandler(
             title = configuration.title,
             documentationPath = configuration.documentationPath,
+            versions = versions,
             swaggerVersion = configuration.version,
             validatorUrl = configuration.validatorUrl,
             routingPath = app.cfg.routing.contextPath,

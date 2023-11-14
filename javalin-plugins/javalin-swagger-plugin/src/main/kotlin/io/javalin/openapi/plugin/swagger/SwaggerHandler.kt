@@ -2,7 +2,6 @@ package io.javalin.openapi.plugin.swagger
 
 import io.javalin.http.Context
 import io.javalin.http.Handler
-import io.javalin.openapi.OpenApiLoader
 import org.intellij.lang.annotations.Language
 
 /**
@@ -11,6 +10,7 @@ import org.intellij.lang.annotations.Language
 class SwaggerHandler(
     private val title: String,
     private val documentationPath: String,
+    private val versions: Set<String>,
     private val swaggerVersion: String,
     private val validatorUrl: String?,
     private val routingPath: String,
@@ -21,9 +21,11 @@ class SwaggerHandler(
     private val customJavaScriptFiles: List<Pair<String, String>>
 ) : Handler {
 
+    private val swaggerUiHtml = createSwaggerUiHtml()
+
     override fun handle(context: Context) {
         context
-            .html(createSwaggerUiHtml())
+            .html(swaggerUiHtml)
             .res()
             .characterEncoding = "UTF-8"
     }
@@ -32,11 +34,8 @@ class SwaggerHandler(
         val rootPath = (basePath ?: "") + routingPath
         val publicSwaggerAssetsPath = "$rootPath/webjars/swagger-ui/$swaggerVersion".removedDoubledPathOperators()
         val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
-
-        val allDocumentations = OpenApiLoader()
-            .loadVersions()
+        val allDocumentations = versions
             .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
-
         val allCustomStylesheets = customStylesheetFiles
             .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
         val allCustomJavaScripts = customJavaScriptFiles
