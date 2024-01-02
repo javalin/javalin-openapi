@@ -24,12 +24,27 @@ the API looks quite the same despite some minor changes.
 * [Reposilite](https://github.com/dzikoysk/reposilite) - real world app using Javalin and OpenApi integration
 
 ### Repository structure
-* `openapi-annotation-processor` - compile-time annotation processor, should generate `/openapi-plugin/openapi.json` resource
-* `openapi-specification` - annotations & classes used to describe OpenAPI specification
-* `openapi-test` - example Javalin application that uses OpenApi plugin in Gradle & Maven
 
-Javalin:
+#### Universal modules
 
-* `javalin-openapi-plugin` - loads `/openapi-plugin/openapi.json` resource and serves main OpenApi endpoint
-* `javalin-swagger-plugin` - serves Swagger UI
-* `javalin-redoc-plugin` - serves ReDoc UI
+| Module                         | Description                                                                                |
+|:-------------------------------|:-------------------------------------------------------------------------------------------|
+| `openapi-annotation-processor` | Compile-time annotation processor, should generate `/openapi-plugin/openapi.json` resource |
+| `openapi-specification`        | Annotations & classes used to describe OpenAPI specification                               |
+| `openapi-test`                 | Example Javalin application that uses OpenApi plugin in Gradle & Maven                     |
+
+#### Javalin plugins
+
+| Plugin                   | Description                                                                    |
+|:-------------------------|:-------------------------------------------------------------------------------|
+| `javalin-openapi-plugin` | Loads `/openapi-plugin/openapi.json` resource and serves main OpenApi endpoint |
+| `javalin-swagger-plugin` | Serves Swagger UI                                                              |
+| `javalin-redoc-plugin`   | Serves ReDoc UI                                                                |
+
+#### Branches
+
+| Branch                                                       | Javalin version | OpenApi Version | Java Version |
+|:-------------------------------------------------------------|:----------------|:----------------|:-------------|
+| [main](https://github.com/javalin/javalin-openapi/tree/main) | 6.x             | 6.x             | JDK11        |
+| [5.x](https://github.com/javalin/javalin-openapi/tree/5.x)   | 5.x             | 5.x             | JDK11        |
+| [4.x](https://github.com/javalin/javalin-openapi/tree/4.x)   | 4.x             | 1.x             | JDK8         |

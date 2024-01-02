@@ -12,7 +12,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <javalin.version>5.6.3</javalin.version>
-        <javalin.openapi.version>5.6.3-2</javalin.openapi.version>
+        <javalin.openapi.version>5.6.3-3</javalin.openapi.version>
     </properties>
 
     <repositories>
