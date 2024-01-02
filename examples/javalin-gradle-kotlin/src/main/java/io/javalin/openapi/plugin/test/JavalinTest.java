@@ -80,8 +80,8 @@ public final class JavalinTest implements Handler {
             // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
 
-            config.plugins.register(new OpenApiPlugin(
-                new OpenApiPluginConfiguration()
+            config.registerPlugin(new OpenApiPlugin(openApiConfig ->
+                openApiConfig
                     .withDocumentationPath(deprecatedDocsPath)
                     .withDefinitionConfiguration((version, definition) -> definition
                         .withOpenApiInfo((openApiInfo) -> {
@@ -129,13 +129,13 @@ public final class JavalinTest implements Handler {
                         }))
             ));
 
-            SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
-            swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.plugins.register(new SwaggerPlugin(swaggerConfiguration));
+            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
+                swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
+            }));
 
-            ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
-            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.plugins.register(new ReDocPlugin(reDocConfiguration));
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration -> {
+                reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
+            }));
 
             for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
                 System.out.println(generatedJsonSchema.getName());

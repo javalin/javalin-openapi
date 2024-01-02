@@ -2,7 +2,22 @@ package io.javalin.openapi.plugin.swagger
 
 import io.javalin.http.Context
 import io.javalin.http.Handler
+import io.javalin.http.HandlerType
+import io.javalin.router.Endpoint
+import io.javalin.security.RouteRole
 import org.intellij.lang.annotations.Language
+
+class SwaggerEndpoint(
+    method: HandlerType,
+    path: String,
+    roles: Set<RouteRole>,
+    handler: Handler
+) : Endpoint(
+    method = method,
+    path = path,
+    roles = roles.toTypedArray(),
+    handler = handler
+)
 
 /**
  * Based on https://github.com/tipsy/javalin/blob/master/javalin-openapi/src/main/java/io/javalin/plugin/openapi/ui/SwaggerRenderer.kt by @chsfleury

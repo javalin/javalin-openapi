@@ -4,28 +4,24 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.javalin.Javalin
+import io.javalin.config.JavalinConfig
 import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
-import kotlin.DeprecationLevel.WARNING
+import java.util.function.Consumer
 
-open class OpenApiPlugin @JvmOverloads constructor(private val configuration: OpenApiPluginConfiguration = OpenApiPluginConfiguration()) : Plugin {
+open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plugin<OpenApiPluginConfiguration>(userConfig, OpenApiPluginConfiguration()) {
 
-    @Deprecated(
-        message = "Use OpenApiPluginConfiguration instead of OpenApiConfiguration",
-        level = WARNING
-    )
-    constructor(oldConfiguration: OpenApiConfiguration) : this(oldConfiguration.toNewOpenApiPluginConfiguration())
-
-    override fun apply(app: Javalin) {
-        app.get(
-            configuration.documentationPath,
-            OpenApiHandler(createDocumentation(app)),
-            *configuration.roles?.toTypedArray() ?: emptyArray()
-        )
+    override fun onStart(config: JavalinConfig) {
+        config.router.mount {
+            it.get(
+                pluginConfig.documentationPath,
+                OpenApiHandler(createDocumentation()),
+                *pluginConfig.roles?.toTypedArray() ?: emptyArray()
+            )
+        }
     }
 
-    private fun createDocumentation(app: Javalin): Lazy<Map<String, String>> =
+    private fun createDocumentation(): Lazy<Map<String, String>> =
         lazy {
             // skip nulls from cfg
             val jsonMapper = lazy {
@@ -35,7 +31,8 @@ open class OpenApiPlugin @JvmOverloads constructor(private val configuration: Op
             OpenApiLoader()
                 .loadOpenApiSchemes()
                 .mapValues { (version, rawDocs) ->
-                    configuration.definitionConfiguration
+                    pluginConfig
+                        .definitionConfiguration
                         ?.let { DefinitionConfiguration().also { definition -> it.accept(version, definition) } }
                         ?.applyConfigurationTo(jsonMapper.value, version, rawDocs)
                         ?: rawDocs

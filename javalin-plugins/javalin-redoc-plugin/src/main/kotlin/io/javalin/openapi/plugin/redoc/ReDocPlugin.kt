@@ -1,9 +1,9 @@
 package io.javalin.openapi.plugin.redoc
 
-import io.javalin.Javalin
+import io.javalin.config.JavalinConfig
 import io.javalin.plugin.Plugin
-import io.javalin.plugin.PluginLifecycleInit
 import io.javalin.security.RouteRole
+import java.util.function.Consumer
 
 class ReDocConfiguration {
     /** Page title */
@@ -22,26 +22,26 @@ class ReDocConfiguration {
     var webJarPath = "/webjars/redoc"
 }
 
-open class ReDocPlugin @JvmOverloads constructor(private val configuration: ReDocConfiguration = ReDocConfiguration()) : Plugin, PluginLifecycleInit {
+open class ReDocPlugin @JvmOverloads constructor(userConfig: Consumer<ReDocConfiguration> = Consumer {}) : Plugin<ReDocConfiguration>(userConfig, ReDocConfiguration()) {
 
-    override fun init(app: Javalin) {}
-
-    override fun apply(app: Javalin) {
+    override fun onStart(config: JavalinConfig) {
         val reDocHandler = ReDocHandler(
-            title = configuration.title,
-            documentationPath = configuration.documentationPath,
-            version = configuration.version,
-            routingPath = app.cfg.routing.contextPath,
-            basePath = configuration.basePath
+            title = pluginConfig.title,
+            documentationPath = pluginConfig.documentationPath,
+            version = pluginConfig.version,
+            routingPath = config.router.contextPath,
+            basePath = pluginConfig.basePath
         )
 
         val webJarHandler = ReDocWebJarHandler(
-            redocWebJarPath = configuration.webJarPath
+            redocWebJarPath = pluginConfig.webJarPath
         )
 
-        app
-            .get(configuration.uiPath, reDocHandler, *configuration.roles)
-            .get("${configuration.webJarPath}/*", webJarHandler, *configuration.roles)
+        config.router.mount { router ->
+            router
+                .get(pluginConfig.uiPath, reDocHandler, *pluginConfig.roles)
+                .get("${pluginConfig.webJarPath}/*", webJarHandler, *pluginConfig.roles)
+        }
     }
 
 }

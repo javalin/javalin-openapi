@@ -10,28 +10,24 @@ internal class RedocPluginTest {
 
     @Test
     fun `should properly host redoc ui`() {
-        val reDocConfiguration = ReDocConfiguration()
+        val app = Javalin.createAndStart { it.registerPlugin(ReDocPlugin()) }
 
-        Javalin.create { it.plugins.register(ReDocPlugin(reDocConfiguration)) }
-            .start(8080)
-            .use {
-                val response = Unirest.get("http://localhost:8080/redoc")
-                    .asString()
-                    .body
+        try {
+            val response = Unirest.get("http://localhost:8080/redoc")
+                .asString()
+                .body
 
-                assertThat(response).contains("""src="/webjars/redoc/${reDocConfiguration.version}/bundles/redoc.standalone.js"""")
-                assertThat(response).contains("""'/openapi'""")
-            }
+            assertThat(response).contains("""src="/webjars/redoc/${ReDocConfiguration().version}/bundles/redoc.standalone.js"""")
+            assertThat(response).contains("""'/openapi'""")
+        } finally {
+            app.stop()
+        }
     }
 
     @Test
     fun `should support custom base path`() {
-        val reDocConfiguration = ReDocConfiguration().apply {
-            basePath = "/custom"
-        }
-
         JavalinBehindProxy(
-            javalinSupplier = { Javalin.create { it.plugins.register(ReDocPlugin(reDocConfiguration)) } },
+            javalinSupplier = { Javalin.create { it.registerPlugin(ReDocPlugin { redoc -> redoc.basePath = "/custom" }) } },
             port = 8080,
             basePath = "/custom"
         ).use {
@@ -39,7 +35,7 @@ internal class RedocPluginTest {
                 .asString()
                 .body
 
-            assertThat(response).contains("""src="/custom/webjars/redoc/${reDocConfiguration.version}/bundles/redoc.standalone.js"""")
+            assertThat(response).contains("""src="/custom/webjars/redoc/${ReDocConfiguration().version}/bundles/redoc.standalone.js"""")
             assertThat(response).contains("""'/custom/openapi'""")
         }
     }

@@ -1,4 +1,4 @@
-description = "Javalin OpenAPI Specification | Compile-time OpenAPI integration for Javalin 5.x"
+description = "Javalin OpenAPI Specification | Compile-time OpenAPI integration for Javalin 6.x"
 
 dependencies {
     val jacksonVersion = "2.15.2"

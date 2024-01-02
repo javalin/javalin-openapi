@@ -1,10 +1,12 @@
 package io.javalin.openapi.plugin.swagger
 
-import io.javalin.Javalin
+import io.javalin.config.JavalinConfig
 import io.javalin.http.HandlerType
+import io.javalin.http.HandlerType.GET
 import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
+import java.util.function.Consumer
 
 class SwaggerConfiguration {
     /** Location of OpenApi documentation */
@@ -48,38 +50,58 @@ class SwaggerConfiguration {
     }
 }
 
-open class SwaggerPlugin @JvmOverloads constructor(private val configuration: SwaggerConfiguration = SwaggerConfiguration()) : Plugin {
+open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerConfiguration> = Consumer {}) : Plugin<SwaggerConfiguration>(userConfig, SwaggerConfiguration()) {
 
-    override fun apply(app: Javalin) {
+    override fun onStart(config: JavalinConfig) {
         val versions = OpenApiLoader()
             .loadVersions()
 
         val swaggerHandler = SwaggerHandler(
-            title = configuration.title,
-            documentationPath = configuration.documentationPath,
+            title = pluginConfig.title,
+            documentationPath = pluginConfig.documentationPath,
             versions = versions,
-            swaggerVersion = configuration.version,
-            validatorUrl = configuration.validatorUrl,
-            routingPath = app.cfg.routing.contextPath,
-            basePath = configuration.basePath,
-            tagsSorter = configuration.tagsSorter,
-            operationsSorter = configuration.operationsSorter,
-            customStylesheetFiles = configuration.customStylesheetFiles,
-            customJavaScriptFiles = configuration.customJavaScriptFiles
+            swaggerVersion = pluginConfig.version,
+            validatorUrl = pluginConfig.validatorUrl,
+            routingPath = config.router.contextPath,
+            basePath = pluginConfig.basePath,
+            tagsSorter = pluginConfig.tagsSorter,
+            operationsSorter = pluginConfig.operationsSorter,
+            customStylesheetFiles = pluginConfig.customStylesheetFiles,
+            customJavaScriptFiles = pluginConfig.customJavaScriptFiles
         )
-        /** Register handler for swagger ui */
-        app.get(configuration.uiPath, swaggerHandler, *configuration.roles)
 
-        /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
-        app.javalinServlet().matcher
-            .findEntries(HandlerType.GET, "${configuration.webJarPath}/*")
-            .takeIf { routes -> routes.none { it.handler is SwaggerWebJarHandler } }
-            ?.run {
-                val swaggerWebJarHandler = SwaggerWebJarHandler(
-                    swaggerWebJarPath = configuration.webJarPath
-                )
-                app.get("${configuration.webJarPath}/*", swaggerWebJarHandler, *configuration.roles)
-            }
+        val swaggerEndpoint = SwaggerEndpoint(
+            method = HandlerType.GET,
+            path = pluginConfig.uiPath,
+            roles = pluginConfig.roles.toSet(),
+            handler = swaggerHandler
+        )
+
+        config.router.mount { router ->
+            /** Register handler for swagger ui */
+            router.addEndpoint(swaggerEndpoint)
+
+            /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
+            config.pvt.internalRouter
+                .findHttpHandlerEntries(HandlerType.GET, "${pluginConfig.webJarPath}/*")
+                .takeIf { routes -> routes.noneMatch { it.endpoint is SwaggerEndpoint } }
+                ?.run {
+                    val swaggerWebJarHandler = SwaggerWebJarHandler(
+                        swaggerWebJarPath = pluginConfig.webJarPath
+                    )
+                    router.addEndpoint(
+                        SwaggerEndpoint(
+                            method = GET,
+                            path = "${pluginConfig.webJarPath}/*",
+                            roles = pluginConfig.roles.toSet(),
+                            handler = swaggerWebJarHandler
+                        )
+                    )
+                }
+        }
     }
+
+    override fun repeatable(): Boolean =
+        true
 
 }
