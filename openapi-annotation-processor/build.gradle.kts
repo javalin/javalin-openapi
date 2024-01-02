@@ -20,7 +20,7 @@ dependencies {
 
     implementation("io.swagger.parser.v3:swagger-parser:2.1.15")
 
-    implementation("ch.qos.logback:logback-classic:1.4.5")
+    implementation("ch.qos.logback:logback-classic:1.4.13")
 
     testImplementation("org.mongodb:bson:4.9.0")
 }
