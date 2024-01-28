@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.Kapt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -39,7 +38,7 @@ dependencies {
     testImplementation("org.apache.groovy:groovy:4.0.12")
 
     // javalin
-    implementation("io.javalin:javalin:6.0.0-beta.4")
+    implementation("io.javalin:javalin:6.0.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     // logging
