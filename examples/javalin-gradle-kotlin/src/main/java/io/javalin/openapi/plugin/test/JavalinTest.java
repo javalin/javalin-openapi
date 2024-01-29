@@ -340,7 +340,25 @@ public final class JavalinTest implements Handler {
             return new String[] { timestamp };
         }
 
+        // should contain dedicated foo example
+        @OpenApiExample(objects = {
+                @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
+                @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        })
+        public @NotNull Foo getExampleFoo() {
+            return new Foo();
+        }
+
         // should contain object example
+        @OpenApiExample(objects = {
+            @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
+            @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        })
+        public @NotNull Object getExampleObject() {
+            return new String[] { timestamp };
+        }
+
+        // should contain objects example
         @OpenApiExample(objects = {
                 @OpenApiExampleProperty(name = "Barbie", objects = {
                         @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
@@ -381,19 +399,10 @@ public final class JavalinTest implements Handler {
     }
 
     static final class Foo {
-
-        private String property;
-        private String link;
-
-        public String getProperty() {
-            return property;
-        }
-
         @OpenApiExample("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         public String getLink() {
-            return link;
+            return "";
         }
-
     }
 
     // subtype
