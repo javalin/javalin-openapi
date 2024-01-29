@@ -343,7 +343,7 @@ public final class JavalinTest implements Handler {
         // should contain dedicated foo example
         @OpenApiExample(objects = {
                 @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
-                @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                @OpenApiExampleProperty(name = "link", value = "Dedicated link")
         })
         public @NotNull Foo getExampleFoo() {
             return new Foo();
