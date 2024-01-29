@@ -45,6 +45,12 @@ fun JsonObject.addString(key: String, value: String?): JsonObject = also {
     }
 }
 
+fun JsonObject.addIfNotEmpty(key: String, value: JsonObject): JsonObject = also {
+    if (value.size() > 0) {
+        add(key, value)
+    }
+}
+
 fun createJsonObjectOf(key: String, value: String): JsonObject {
     val jsonObject = JsonObject()
     jsonObject.addProperty(key, value)

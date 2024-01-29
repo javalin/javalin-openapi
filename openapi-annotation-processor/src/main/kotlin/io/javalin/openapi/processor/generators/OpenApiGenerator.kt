@@ -16,6 +16,7 @@ import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.processor.shared.addIfNotEmpty
 import io.javalin.openapi.experimental.processor.shared.addString
 import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
@@ -146,10 +147,9 @@ internal class OpenApiGenerator {
                 )
 
                 parameterAnnotations.forEach { (parameterType, annotations) ->
-                    annotations
-                        .forEach { parameterAnnotation ->
-                            parameters.add(fromParameter(parameterType, parameterAnnotation))
-                        }
+                    annotations.forEach { parameterAnnotation ->
+                        parameters.add(fromParameter(parameterType, parameterAnnotation, explicit = true))
+                    }
                 }
 
                 operation.add("parameters", parameters)
@@ -262,11 +262,7 @@ internal class OpenApiGenerator {
         val requestBody = JsonObject()
         requestBody.addString("description", requestBodyAnnotation.description)
         requestBody.addContent(openApiElement, requestBodyAnnotation.content)
-
-        if (requestBody.size() > 0) {
-            add("requestBody", requestBody)
-        }
-
+        addIfNotEmpty("requestBody", requestBody)
         requestBody.addProperty("required", requestBodyAnnotation.required)
     }
 
@@ -278,13 +274,19 @@ internal class OpenApiGenerator {
 
             val description = responseAnnotation.description
                 .takeIf { it != NULL_STRING }
-                ?: responseAnnotation.status
+                ?: responseAnnotation
+                    .status
                     .toIntOrNull()
-                    ?.let { HttpStatus.forStatus(it) }?.message
+                    ?.let { HttpStatus.forStatus(it) }
+                    ?.message
 
             response.addString("description", description)
             response.addContent(openApiElement, responseAnnotation.content)
             responses.add(responseAnnotation.status, response)
+
+            val headers = JsonObject()
+            responseAnnotation.headers.forEach { headers.add(it.name, fromParameter(HEADER, it, explicit = false)) }
+            response.addIfNotEmpty("headers", headers)
         }
 
         add("responses", responses)
@@ -300,21 +302,35 @@ internal class OpenApiGenerator {
 
     // Parameter
     // https://swagger.io/specification/#parameter-object
-    private fun fromParameter(`in`: In, parameterInstance: OpenApiParam?): JsonObject {
+    private fun fromParameter(`in`: In, parameterInstance: OpenApiParam, explicit: Boolean): JsonObject {
         val parameter = JsonObject()
-        parameter.addString("name", parameterInstance!!.name)
-        parameter.addString("in", `in`.identifier)
+
+        if (explicit) {
+            parameter.addString("name", parameterInstance.name)
+            parameter.addString("in", `in`.identifier)
+        }
+
         parameter.addString("description", parameterInstance.description)
-        parameter.addProperty("required", parameterInstance.required)
-        parameter.addProperty("deprecated", parameterInstance.deprecated)
-        parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue)
+
+        if (explicit || parameterInstance.required) {
+            parameter.addProperty("required", parameterInstance.required)
+        }
+
+        if (explicit || parameterInstance.deprecated) {
+            parameter.addProperty("deprecated", parameterInstance.deprecated)
+        }
+
+        if (explicit || parameterInstance.allowEmptyValue) {
+            parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue)
+        }
 
         val schema = createTypeDescriptionWithReferences(parameterInstance.getTypeMirror { type })
-        parameterInstance.example
-            .takeIf { it.isNotEmpty() }
-            .let { schema.addProperty("example", it) }
-        parameter.add("schema", schema)
 
+        if (parameterInstance.example.isNotEmpty()) {
+            schema.addProperty("example", parameterInstance.example)
+        }
+
+        parameter.add("schema", schema)
         return parameter
     }
 

@@ -3,7 +3,6 @@ package io.javalin.openapi.plugin.test;
 import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import io.javalin.http.CreatedResponse;
 import io.javalin.http.Handler;
 import io.javalin.openapi.ApiKeyAuth;
 import io.javalin.openapi.BasicAuth;
@@ -39,12 +38,9 @@ import io.javalin.openapi.OpenApiSecurity;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.Security;
 import io.javalin.openapi.Visibility;
-import io.javalin.openapi.plugin.OpenApiPluginConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.SecurityComponentConfiguration;
-import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
-import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -187,7 +183,10 @@ public final class JavalinTest implements Handler {
             @OpenApiResponse(
                 status = "400",
                 description = "Error message related to the invalid command format (0 < command length < " + 10 + ")",
-                content = @OpenApiContent(from = EntityDto[].class)
+                content = @OpenApiContent(from = EntityDto[].class),
+                headers = {
+                    @OpenApiParam(name = "X-Error-Message", description = "Error message", type = String.class)
+                }
             ),
             @OpenApiResponse(status = "401", description = "Error message related to the unauthorized access", content = {
                 @OpenApiContent(from = EntityDto[].class)

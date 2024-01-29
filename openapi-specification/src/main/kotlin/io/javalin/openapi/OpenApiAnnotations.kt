@@ -96,7 +96,8 @@ annotation class OpenApis(
 annotation class OpenApiResponse(
     val status: String,
     val content: Array<OpenApiContent> = [],
-    val description: String = NULL_STRING
+    val description: String = NULL_STRING,
+    val headers: Array<OpenApiParam> = [],
 )
 
 @Target()
@@ -108,7 +109,6 @@ annotation class OpenApiParam(
     val deprecated: Boolean = false,
     val required: Boolean = false,
     val allowEmptyValue: Boolean = false,
-    val isRepeatable: Boolean = false,
     val example: String = ""
 )
 
