@@ -139,7 +139,9 @@ annotation class OpenApiContent(
     val mimeType: String = ContentType.AUTODETECT,
     val type: String = NULL_STRING,
     val format: String = NULL_STRING,
-    val properties: Array<OpenApiContentProperty> = []
+    val properties: Array<OpenApiContentProperty> = [],
+    val example: String = NULL_STRING,
+    val exampleObjects: Array<OpenApiExampleProperty> = [],
 )
 
 @Target()

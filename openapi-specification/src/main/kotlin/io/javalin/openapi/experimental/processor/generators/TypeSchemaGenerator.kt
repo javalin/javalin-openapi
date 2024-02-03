@@ -20,6 +20,8 @@ import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.ExampleProperty
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.MessagerWriter
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import io.javalin.openapi.experimental.processor.shared.hasAnnotation
@@ -311,7 +313,7 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
                 extra["example"] = example.value
             }
             example.objects.isNotEmpty() -> {
-                val result = ExampleGenerator.generateFromExamples(example.objects)
+                val result = ExampleGenerator.generateFromExamples(example.objects.map { it.toExampleProperty() })
                 extra["example"] = result.jsonElement ?: result.simpleValue
             }
         }

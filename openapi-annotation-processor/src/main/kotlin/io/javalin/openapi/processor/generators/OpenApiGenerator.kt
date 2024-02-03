@@ -16,6 +16,8 @@ import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.addIfNotEmpty
 import io.javalin.openapi.experimental.processor.shared.addString
 import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
@@ -353,8 +355,11 @@ internal class OpenApiGenerator {
                     .map { pathPart ->
                         if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
                             /* Case this is a path parameter */
-                            val pathParam = pathPart.drop(1).dropLast(1)
-                                .split('-').joinToString(separator = ""){it.capitalise()}
+                            val pathParam = pathPart
+                                .drop(1)
+                                .dropLast(1)
+                                .split('-')
+                                .joinToString(separator = "") { it.capitalise() }
                             pathParamPrefix + pathParam
                         } else {
                             /* Case this is a regular part of the path */
@@ -386,6 +391,8 @@ internal class OpenApiGenerator {
             val properties = contentAnnotation.properties
             var type = contentAnnotation.type.takeIf { it != NULL_STRING }
             var mimeType = contentAnnotation.mimeType.takeIf { it != AUTODETECT }
+            val example = contentAnnotation.example.takeIf { it != NULL_STRING }
+            val exampleObjects = contentAnnotation.exampleObjects.map { it.toExampleProperty() }
 
             if (mimeType == null) {
                 when (NULL_CLASS::class.qualifiedName) {
@@ -464,6 +471,19 @@ internal class OpenApiGenerator {
 
             if (schema.size() > 0) {
                 mediaType.add("schema", schema)
+            }
+
+            if (example != null) {
+                mediaType.addProperty("example", example)
+            }
+
+            if (exampleObjects.isNotEmpty()) {
+                val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects)
+
+                when {
+                    generatorResult.simpleValue != null -> mediaType.addProperty("example", generatorResult.simpleValue)
+                    generatorResult.jsonElement != null -> mediaType.add("example", generatorResult.jsonElement)
+                }
             }
 
             requestBodySchemes[mimeType] = mediaType

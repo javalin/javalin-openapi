@@ -166,18 +166,21 @@ public final class JavalinTest implements Handler {
         requestBody = @OpenApiRequestBody(
                 description = "Supports multiple request bodies",
                 content = {
-                        @OpenApiContent(from = String.class), // simple type
-                        @OpenApiContent(from = LombokEntity.class), // lombok
-                        @OpenApiContent(from = KotlinEntity.class), // kotlin
+                        @OpenApiContent(from = String.class, example = "value"), // simple type
+                        @OpenApiContent(from = KotlinEntity.class, mimeType = "app/barbie", exampleObjects = {
+                                @OpenApiExampleProperty(name = "name", value = "Margot Robbie")
+                        }), // kotlin
+                        @OpenApiContent(from = LombokEntity.class, mimeType = "app/lombok"), // lombok
                         @OpenApiContent(from = EntityWithGenericType.class), // generics
-                        @OpenApiContent(from = RecordEntity.class), // record class
-                        @OpenApiContent(from = DtoWithFields.class), // map only fields
-                        @OpenApiContent(from = EnumEntity.class), // enum,
-                        @OpenApiContent(from = CustomNameEntity.class) // custom name
+                        @OpenApiContent(from = RecordEntity.class, mimeType = "app/record"), // record class
+                        @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto"), // map only fields
+                        @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
+                        @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity") // custom name
                 }
         ),
         responses = {
             @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
+                @OpenApiContent(from = String.class, example = "Value"),
                 @OpenApiContent(from = EntityDto[].class)
             }),
             @OpenApiResponse(
@@ -189,7 +192,9 @@ public final class JavalinTest implements Handler {
                 }
             ),
             @OpenApiResponse(status = "401", description = "Error message related to the unauthorized access", content = {
-                @OpenApiContent(from = EntityDto[].class)
+                @OpenApiContent(from = EntityDto[].class, exampleObjects = {
+                    @OpenApiExampleProperty(name = "error", value = "ERROR-CODE-401"),
+                })
             }),
             @OpenApiResponse(status = "500") // fill description with HttpStatus message
         },
