@@ -4,44 +4,33 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.openapi.ApiKeyAuth;
-import io.javalin.openapi.BasicAuth;
-import io.javalin.openapi.BearerAuth;
-import io.javalin.openapi.ClientCredentials;
-import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.Custom;
 import io.javalin.openapi.CustomAnnotation;
 import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.ImplicitFlow;
 import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.JsonSchemaLoader;
 import io.javalin.openapi.JsonSchemaResource;
-import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OneOf;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiByFields;
 import io.javalin.openapi.OpenApiCallback;
-import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
 import io.javalin.openapi.OpenApiDescription;
 import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiExampleProperty;
 import io.javalin.openapi.OpenApiIgnore;
-import io.javalin.openapi.OpenApiLicense;
 import io.javalin.openapi.OpenApiName;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-import io.javalin.openapi.OpenID;
-import io.javalin.openapi.Security;
 import io.javalin.openapi.Visibility;
 import io.javalin.openapi.plugin.OpenApiPlugin;
-import io.javalin.openapi.plugin.SecurityComponentConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import io.javalin.security.RouteRole;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -66,64 +55,69 @@ import java.util.UUID;
  */
 public final class JavalinTest implements Handler {
 
+    enum Rules implements RouteRole {
+        ANONYMOUS,
+        USER,
+    }
+
     /**
      * Runs server on localhost:8080
      *
      * @param args args
      */
     public static void main(String[] args) {
-        Javalin.create(config -> {
+        Javalin.createAndStart(config -> {
             // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
 
             config.registerPlugin(new OpenApiPlugin(openApiConfig ->
                 openApiConfig
                     .withDocumentationPath(deprecatedDocsPath)
-                    .withDefinitionConfiguration((version, definition) -> definition
-                        .withOpenApiInfo((openApiInfo) -> {
-                            OpenApiContact openApiContact = new OpenApiContact();
-                            openApiContact.setName("API Support");
-                            openApiContact.setUrl("https://www.example.com/support");
-                            openApiContact.setEmail("support@example.com");
-
-                            OpenApiLicense openApiLicense = new OpenApiLicense();
-                            openApiLicense.setName("Apache 2.0");
-                            openApiLicense.setIdentifier("Apache-2.0");
-
-                            openApiInfo.setDescription("App description goes right here");
-                            openApiInfo.setTermsOfService("https://example.com/tos");
-                            openApiInfo.setContact(openApiContact);
-                            openApiInfo.setLicense(openApiLicense);
-                        })
-                        .withServer((openApiServer) -> {
-                            openApiServer.setUrl(("http://localhost:{port}{basePath}/" + version + "/"));
-                            openApiServer.setDescription("Server description goes here");
-                            openApiServer.addVariable("port", "8080", new String[] { "7070", "8080" }, "Port of the server");
-                            openApiServer.addVariable("basePath", "", new String[] { "", "v1" }, "Base path of the server");
-                        })
-                        // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-                        .withSecurity(new SecurityComponentConfiguration()
-                            .withSecurityScheme("BasicAuth", new BasicAuth())
-                            .withSecurityScheme("BearerAuth", new BearerAuth())
-                            .withSecurityScheme("ApiKeyAuth", new ApiKeyAuth())
-                            .withSecurityScheme("CookieAuth", new CookieAuth("JSESSIONID"))
-                            .withSecurityScheme("OpenID", new OpenID("https://example.com/.well-known/openid-configuration"))
-                            .withSecurityScheme("OAuth2", new OAuth2("This API uses OAuth 2 with the implicit grant flow.")
-                                .withFlow(new ImplicitFlow("https://api.example.com/oauth2/authorize")
-                                    .withScope("read_pets", "read your pets")
-                                    .withScope("write_pets", "modify pets in your account")
-                                )
-                                .withFlow(new ClientCredentials("https://api.example.com/credentials/authorize"))
+                    .withRoles(Rules.ANONYMOUS)
+                    .withDefinitionConfiguration((version, openApiDefinition) ->
+                        openApiDefinition
+                            .withInfo(openApiInfo ->
+                                openApiInfo
+                                    .description("App description goes right here")
+                                    .termsOfService("https://example.com/tos")
+                                    .contact("API Support", "https://www.example.com/support", "support@example.com")
+                                    .license("Apache 2.0", "https://www.apache.org/licenses/", "Apache-2.0")
                             )
-                            .withGlobalSecurity(new Security("OAuth2")
-                                .withScope("write_pets")
-                                .withScope("read_pets"))
-                        )
-                        .withDefinitionProcessor(content -> { // you can add whatever you want to this document using your favourite json api
-                            content.set("test", new TextNode("Value"));
-                            return content.toPrettyString();
-                        }))
-            ));
+                            .withServer(openApiServer ->
+                                openApiServer
+                                    .description("Server description goes here")
+                                    .url("http://localhost:{port}{basePath}/" + version + "/")
+                                    .variable("port", "Server's port", "8080", "8080", "7070")
+                                    .variable("basePath", "Base path of the server", "", "", "v1")
+                            )
+                            // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
+                            .withSecurity(openApiSecurity ->
+                                openApiSecurity
+                                    .withBasicAuth()
+                                    .withBearerAuth()
+                                    .withApiKeyAuth("ApiKeyAuth", "X-Api-Key")
+                                    .withCookieAuth("CookieAuth", "JSESSIONID")
+                                    .withOpenID("OpenID", "https://example.com/.well-known/openid-configuration")
+                                    .withOAuth2("OAuth2", "This API uses OAuth 2 with the implicit grant flow.", oauth2 ->
+                                        oauth2
+                                            .withClientCredentials("https://api.example.com/credentials/authorize")
+                                            .withImplicitFlow("https://api.example.com/oauth2/authorize", flow ->
+                                                flow
+                                                    .withScope("read_pets", "read your pets")
+                                                    .withScope("write_pets", "modify pets in your account")
+                                            )
+                                    )
+                                    .withGlobalSecurity("OAuth2", globalSecurity ->
+                                        globalSecurity
+                                            .withScope("write_pets")
+                                            .withScope("read_pets")
+                                    )
+                            )
+                            .withDefinitionProcessor(content -> { // you can add whatever you want to this document using your favourite json api
+                                content.set("test", new TextNode("Value"));
+                                return content.toPrettyString();
+                            })
+                    )));
 
             config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
                 swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
@@ -137,8 +131,7 @@ public final class JavalinTest implements Handler {
                 System.out.println(generatedJsonSchema.getName());
                 System.out.println(generatedJsonSchema.getContentAsString());
             }
-        })
-        .start(8080);
+        });
     }
 
     @OpenApi(
@@ -164,19 +157,19 @@ public final class JavalinTest implements Handler {
             @OpenApiParam(name = "query", description = "Some query", required = true, type = Integer.class)
         },
         requestBody = @OpenApiRequestBody(
-                description = "Supports multiple request bodies",
-                content = {
-                        @OpenApiContent(from = String.class, example = "value"), // simple type
-                        @OpenApiContent(from = KotlinEntity.class, mimeType = "app/barbie", exampleObjects = {
-                                @OpenApiExampleProperty(name = "name", value = "Margot Robbie")
-                        }), // kotlin
-                        @OpenApiContent(from = LombokEntity.class, mimeType = "app/lombok"), // lombok
-                        @OpenApiContent(from = EntityWithGenericType.class), // generics
-                        @OpenApiContent(from = RecordEntity.class, mimeType = "app/record"), // record class
-                        @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto"), // map only fields
-                        @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
-                        @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity") // custom name
-                }
+            description = "Supports multiple request bodies",
+            content = {
+                @OpenApiContent(from = String.class, example = "value"), // simple type
+                @OpenApiContent(from = KotlinEntity.class, mimeType = "app/barbie", exampleObjects = {
+                    @OpenApiExampleProperty(name = "name", value = "Margot Robbie")
+                }), // kotlin
+                @OpenApiContent(from = LombokEntity.class, mimeType = "app/lombok"), // lombok
+                @OpenApiContent(from = EntityWithGenericType.class), // generics
+                @OpenApiContent(from = RecordEntity.class, mimeType = "app/record"), // record class
+                @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto"), // map only fields
+                @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
+                @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity") // custom name
+            }
         ),
         responses = {
             @OpenApiResponse(status = "200", description = "Status of the executed command", content = {
@@ -237,7 +230,7 @@ public final class JavalinTest implements Handler {
         )
     )
     @Override
-    public void handle(@NotNull Context ctx) { }
+    public void handle(@NotNull Context ctx) {}
 
     @OpenApi(
         path = "/standalone",
@@ -347,8 +340,8 @@ public final class JavalinTest implements Handler {
 
         // should contain dedicated foo example
         @OpenApiExample(objects = {
-                @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
-                @OpenApiExampleProperty(name = "link", value = "Dedicated link")
+            @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
+            @OpenApiExampleProperty(name = "link", value = "Dedicated link")
         })
         public @NotNull Foo getExampleFoo() {
             return new Foo();
@@ -365,10 +358,10 @@ public final class JavalinTest implements Handler {
 
         // should contain objects example
         @OpenApiExample(objects = {
-                @OpenApiExampleProperty(name = "Barbie", objects = {
-                        @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
-                        @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-                }),
+            @OpenApiExampleProperty(name = "Barbie", objects = {
+                @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
+                @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            }),
         })
         public @NotNull Object[] getExampleObjects() {
             return new String[] { timestamp };
@@ -404,6 +397,7 @@ public final class JavalinTest implements Handler {
     }
 
     static final class Foo {
+
         @OpenApiExample("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         public String getLink() {
             return "";
@@ -424,6 +418,7 @@ public final class JavalinTest implements Handler {
     // should work with properties generated by another annotation processor
     @Data
     static final class LombokEntity {
+
         private String property;
     }
 
@@ -452,6 +447,7 @@ public final class JavalinTest implements Handler {
     // should query fields
     @OpenApiByFields(Visibility.PROTECTED) // by default: PUBLIC
     static final class DtoWithFields {
+
         public String publicName;
         String defaultName;
         protected String protectedName;
@@ -508,11 +504,14 @@ public final class JavalinTest implements Handler {
 
     }
 
-    @Target({ElementType.METHOD, ElementType.TYPE})
+    @Target({ ElementType.METHOD, ElementType.TYPE })
     @CustomAnnotation
     @interface Description {
+
         String title();
+
         String description();
+
         int statusCode();
     }
 

@@ -1,6 +1,7 @@
 package io.javalin.openapi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import java.util.function.Consumer
 
 data class Security @JvmOverloads constructor(
     val name: String,
@@ -26,15 +27,15 @@ class BasicAuth : HttpAuth(scheme = "basic")
 class BearerAuth : HttpAuth(scheme = "bearer")
 
 open class ApiKeyAuth(
-    open val `in`: String = "header",
-    open val name: String = "X-API-Key"
+    open var `in`: String = "header",
+    open var name: String = "X-API-Key"
 ) : SecurityScheme {
     override val type: String = "apiKey"
 }
 
 class CookieAuth @JvmOverloads constructor(
-    override val name: String,
-    override val `in`: String = "cookie"
+    override var name: String,
+    override var `in`: String = "cookie"
 ) : ApiKeyAuth()
 
 class OpenID (val openIdConnectUrl: String) : SecurityScheme {
@@ -42,7 +43,7 @@ class OpenID (val openIdConnectUrl: String) : SecurityScheme {
 }
 
 class OAuth2 @JvmOverloads constructor(
-    val description: String,
+    var description: String,
     val flows: MutableMap<String, OAuth2Flow<*>> = mutableMapOf(),
 ) : SecurityScheme {
     override val type: String = "oauth2"
@@ -50,6 +51,23 @@ class OAuth2 @JvmOverloads constructor(
     fun withFlow(flow: OAuth2Flow<*>): OAuth2 = also {
         flows[flow.flowType] = flow
     }
+
+    @JvmOverloads
+    fun withAuthorizationCodeFlow(authorizationUrl: String, tokenUrl: String, flow: Consumer<AuthorizationCodeFlow> = Consumer {}): OAuth2 =
+        withFlow(AuthorizationCodeFlow(authorizationUrl, tokenUrl).also { flow.accept(it) })
+
+    @JvmOverloads
+    fun withImplicitFlow(authorizationUrl: String, flow: Consumer<ImplicitFlow> = Consumer {}): OAuth2 =
+        withFlow(ImplicitFlow(authorizationUrl).also { flow.accept(it) })
+
+    @JvmOverloads
+    fun withPasswordFlow(tokenUrl: String, flow: Consumer<PasswordFlow> = Consumer {}): OAuth2 =
+        withFlow(PasswordFlow(tokenUrl).also { flow.accept(it) })
+
+    @JvmOverloads
+    fun withClientCredentials(tokenUrl: String, flow: Consumer<ClientCredentials> = Consumer {}): OAuth2 =
+        withFlow(ClientCredentials(tokenUrl).also { flow.accept(it) })
+
 }
 
 interface OAuth2Flow<I : OAuth2Flow<I>> {
@@ -64,29 +82,29 @@ interface OAuth2Flow<I : OAuth2Flow<I>> {
 }
 
 class AuthorizationCodeFlow @JvmOverloads constructor(
-    val authorizationUrl: String,
-    val tokenUrl: String,
-    override val scopes: MutableMap<String, String> = mutableMapOf()
+    var authorizationUrl: String,
+    var tokenUrl: String,
+    override var scopes: MutableMap<String, String> = mutableMapOf()
 ) : OAuth2Flow<AuthorizationCodeFlow> {
     override val flowType: String = "authorizationCode"
 }
 
 class ImplicitFlow @JvmOverloads constructor(
-    val authorizationUrl: String,
+    var authorizationUrl: String,
     override val scopes: MutableMap<String, String> = mutableMapOf()
 ) : OAuth2Flow<ImplicitFlow> {
     override val flowType: String = "implicit"
 }
 
 class PasswordFlow @JvmOverloads constructor(
-    val tokenUrl: String,
+    var tokenUrl: String,
     override val scopes: MutableMap<String, String> = mutableMapOf()
 ) : OAuth2Flow<PasswordFlow> {
     override val flowType: String = "password"
 }
 
 class ClientCredentials @JvmOverloads constructor(
-    val tokenUrl: String,
+    var tokenUrl: String,
     override val scopes: MutableMap<String, String> = mutableMapOf()
 ) : OAuth2Flow<ClientCredentials> {
     override val flowType: String = "clientCredentials"

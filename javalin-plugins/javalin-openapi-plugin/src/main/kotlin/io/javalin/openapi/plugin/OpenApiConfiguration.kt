@@ -1,8 +1,14 @@
 package io.javalin.openapi.plugin
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.javalin.openapi.ApiKeyAuth
+import io.javalin.openapi.BasicAuth
+import io.javalin.openapi.BearerAuth
+import io.javalin.openapi.CookieAuth
+import io.javalin.openapi.OAuth2
 import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiServer
+import io.javalin.openapi.OpenID
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
 import io.javalin.security.RouteRole
@@ -11,9 +17,9 @@ import java.util.function.Consumer
 
 /** Configure OpenApi plugin */
 class OpenApiPluginConfiguration @JvmOverloads constructor(
-    @JvmField @JvmSynthetic internal var documentationPath: String = "/openapi",
-    @JvmField @JvmSynthetic internal var roles: List<RouteRole>? = null,
-    @JvmField @JvmSynthetic internal var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
+    @JvmField var documentationPath: String = "/openapi",
+    @JvmField var roles: List<RouteRole>? = null,
+    @JvmField var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
 ) {
 
     /** Path to host documentation as JSON */
@@ -46,9 +52,13 @@ class DefinitionConfiguration @JvmOverloads constructor(
 ) {
 
     /** Define custom info object */
-    fun withOpenApiInfo(openApiInfo: Consumer<OpenApiInfo>): DefinitionConfiguration = also {
+    fun withInfo(openApiInfo: Consumer<OpenApiInfo>): DefinitionConfiguration = also {
         this.info = OpenApiInfo().also { openApiInfo.accept(it) }
     }
+
+    @Deprecated("Use withInfo instead", ReplaceWith("withInfo(openApiInfo)"))
+    fun withOpenApiInfo(openApiInfo: Consumer<OpenApiInfo>): DefinitionConfiguration =
+        withInfo(openApiInfo)
 
     /** Add custom server **/
     fun withServer(server: OpenApiServer): DefinitionConfiguration = also {
@@ -88,8 +98,36 @@ class SecurityComponentConfiguration @JvmOverloads constructor(
         securitySchemes[schemeName] = securityScheme
     }
 
+    @JvmOverloads
+    fun withBasicAuth(schemeName: String = "BasicAuth", securityScheme: Consumer<BasicAuth> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, BasicAuth().also { securityScheme.accept(it) })
+
+    @JvmOverloads
+    fun withBearerAuth(schemeName: String = "BearerAuth", securityScheme: Consumer<BearerAuth> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, BearerAuth().also { securityScheme.accept(it) })
+
+    @JvmOverloads
+    fun withApiKeyAuth(schemeName: String = "ApiKeyAuth", apiKeyHeader: String = "X-Api-Key", securityScheme: Consumer<ApiKeyAuth> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, ApiKeyAuth(apiKeyHeader).also { securityScheme.accept(it) })
+
+    @JvmOverloads
+    fun withCookieAuth(schemeName: String = "CookieAuth", sessionCookie: String = "JSESSIONID", securityScheme: Consumer<CookieAuth> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, CookieAuth(sessionCookie).also { securityScheme.accept(it) })
+
+    @JvmOverloads
+    fun withOpenID(schemeName: String, openIdConnectUrl: String, securityScheme: Consumer<OpenID> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, OpenID(openIdConnectUrl).also { securityScheme.accept(it) })
+
+    @JvmOverloads
+    fun withOAuth2(schemeName: String, description: String, securityScheme: Consumer<OAuth2> = Consumer {}): SecurityComponentConfiguration =
+        withSecurityScheme(schemeName, OAuth2(description).also { securityScheme.accept(it) })
+
     fun withGlobalSecurity(security: Security): SecurityComponentConfiguration = also {
         globalSecurity.add(security)
     }
+
+    @JvmOverloads
+    fun withGlobalSecurity(name: String, security: Consumer<Security> = Consumer {}): SecurityComponentConfiguration =
+        withGlobalSecurity(Security(name).also { security.accept(it) })
 
 }
