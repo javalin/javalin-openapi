@@ -12,6 +12,7 @@ import io.javalin.openapi.JsonSchemaLoader;
 import io.javalin.openapi.JsonSchemaResource;
 import io.javalin.openapi.OneOf;
 import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiArrayValidation;
 import io.javalin.openapi.OpenApiByFields;
 import io.javalin.openapi.OpenApiCallback;
 import io.javalin.openapi.OpenApiContent;
@@ -21,11 +22,14 @@ import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiExampleProperty;
 import io.javalin.openapi.OpenApiIgnore;
 import io.javalin.openapi.OpenApiName;
+import io.javalin.openapi.OpenApiNumberValidation;
+import io.javalin.openapi.OpenApiObjectValidation;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
+import io.javalin.openapi.OpenApiStringValidation;
 import io.javalin.openapi.Visibility;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
@@ -369,6 +373,28 @@ public final class JavalinTest implements Handler {
 
         // should contain example for primitive types, SwaggerUI will automatically display this as an Integer
         @OpenApiExample("5050")
+        @OpenApiNumberValidation(
+                minimum = "5000",
+                exclusiveMinimum = true,
+                maximum = "6000",
+                exclusiveMaximum = true,
+                multipleOf = "50"
+        )
+        @OpenApiStringValidation(
+                minLength = "4",
+                maxLength = "4",
+                pattern = "^[0-9]{4}$",
+                format = "int32"
+        )
+        @OpenApiArrayValidation(
+                minItems = "1",
+                maxItems = "1",
+                uniqueItems = true
+        )
+        @OpenApiObjectValidation(
+                minProperties = "1",
+                maxProperties = "1"
+        )
         public int getVeryImportantNumber() {
             return status + 1;
         }

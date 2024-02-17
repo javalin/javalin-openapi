@@ -8,19 +8,22 @@ import io.javalin.openapi.CustomAnnotation
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.Nullability
+import io.javalin.openapi.OpenApiArrayValidation
 import io.javalin.openapi.OpenApiByFields
 import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.OpenApiNumberValidation
+import io.javalin.openapi.OpenApiObjectValidation
 import io.javalin.openapi.OpenApiPropertyType
 import io.javalin.openapi.OpenApiRequired
+import io.javalin.openapi.OpenApiStringValidation
 import io.javalin.openapi.Visibility
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.ExampleProperty
 import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.MessagerWriter
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
@@ -319,6 +322,31 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
         }
     }
 
+    getAnnotationsByType(OpenApiNumberValidation::class.java).forEach { validation ->
+        extra["minimum"] = validation.minimum.takeIf { it != NULL_STRING }
+        extra["maximum"] = validation.maximum.takeIf { it != NULL_STRING }
+        extra["exclusiveMinimum"] = validation.exclusiveMinimum.takeIf { it }
+        extra["exclusiveMaximum"] = validation.exclusiveMaximum.takeIf { it }
+        extra["multipleOf"] = validation.multipleOf.takeIf { it != NULL_STRING }
+    }
+
+    getAnnotationsByType(OpenApiStringValidation::class.java).forEach { validation ->
+        extra["minLength"] = validation.minLength.takeIf { it != NULL_STRING }
+        extra["maxLength"] = validation.maxLength.takeIf { it != NULL_STRING }
+        extra["pattern"] = validation.pattern.takeIf { it != NULL_STRING }
+    }
+
+    getAnnotationsByType(OpenApiArrayValidation::class.java).forEach { validation ->
+        extra["minItems"] = validation.minItems.takeIf { it != NULL_STRING }
+        extra["maxItems"] = validation.maxItems.takeIf { it != NULL_STRING }
+        extra["uniqueItems"] = validation.uniqueItems.takeIf { it }
+    }
+
+    getAnnotationsByType(OpenApiObjectValidation::class.java).forEach { validation ->
+        extra["minProperties"] = validation.minProperties.takeIf { it != NULL_STRING }
+        extra["maxProperties"] = validation.maxProperties.takeIf { it != NULL_STRING }
+    }
+
     getAnnotationsByType(Custom::class.java).forEach { custom ->
         extra[custom.name] = custom.value
     }
@@ -327,7 +355,7 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
         .filterNot { it.annotationType.getFullName() == Metadata::class.qualifiedName }
         .onEach { annotation -> inDebug { it.info("TypeSchemaGenerator#findExtra | Annotation: ${annotation.annotationType}") } }
         .filter { annotation ->
-            val isCustom = annotation.annotationType.asElement().getAnnotation(CustomAnnotation::class.java) != null
+            val isCustom = annotation.annotationType?.asElement()?.getAnnotation(CustomAnnotation::class.java) != null
 
             if (!isCustom) {
                 inDebug {

@@ -208,6 +208,40 @@ enum class Nullability {
     AUTO
 }
 
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiNumberValidation(
+    val minimum: String = NULL_STRING,
+    val exclusiveMinimum: Boolean = false,
+    val maximum: String = NULL_STRING,
+    val exclusiveMaximum: Boolean = false,
+    val multipleOf: String = NULL_STRING
+)
+
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiStringValidation(
+    val minLength: String = NULL_STRING,
+    val maxLength: String = NULL_STRING,
+    val format: String = NULL_STRING,
+    val pattern: String = NULL_STRING
+)
+
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiArrayValidation(
+    val minItems: String = NULL_STRING,
+    val maxItems: String = NULL_STRING,
+    val uniqueItems: Boolean = false
+)
+
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Retention(RUNTIME)
+annotation class OpenApiObjectValidation(
+    val minProperties: String = NULL_STRING,
+    val maxProperties: String = NULL_STRING,
+)
+
 @Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(
