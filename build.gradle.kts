@@ -16,7 +16,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "6.1.2"
+    version = "6.1.3-SNAPSHOT"
 
     repositories {
         mavenCentral()
