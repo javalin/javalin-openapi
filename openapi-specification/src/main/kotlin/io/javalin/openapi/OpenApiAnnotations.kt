@@ -160,21 +160,21 @@ annotation class OpenApiSecurity(
     val scopes: Array<String> = []
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiIgnore
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiRequired
 
-@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiName(
     val value: String
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiExample(
     val value: String = NULL_STRING,
@@ -189,14 +189,14 @@ annotation class OpenApiExampleProperty(
     val objects: Array<OpenApiExampleProperty> = []
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 @CustomAnnotation
 annotation class OpenApiNullable(
     val nullable: Boolean = true
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, CLASS)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD, CLASS)
 @Retention(RUNTIME)
 annotation class OpenApiDescription(
     val value: String
@@ -208,7 +208,7 @@ enum class Nullability {
     AUTO
 }
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiNumberValidation(
     val minimum: String = NULL_STRING,
@@ -218,7 +218,7 @@ annotation class OpenApiNumberValidation(
     val multipleOf: String = NULL_STRING
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiStringValidation(
     val minLength: String = NULL_STRING,
@@ -227,7 +227,7 @@ annotation class OpenApiStringValidation(
     val pattern: String = NULL_STRING
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiArrayValidation(
     val minItems: String = NULL_STRING,
@@ -235,14 +235,14 @@ annotation class OpenApiArrayValidation(
     val uniqueItems: Boolean = false
 )
 
-@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiObjectValidation(
     val minProperties: String = NULL_STRING,
     val maxProperties: String = NULL_STRING,
 )
 
-@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
+@Target(CLASS, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiPropertyType(
     val definedBy: KClass<*>,
