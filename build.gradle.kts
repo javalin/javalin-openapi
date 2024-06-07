@@ -123,7 +123,7 @@ subprojects {
         testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.38.0")
         testImplementation("com.konghq:unirest-java:3.14.2")
 
-        testImplementation("ch.qos.logback:logback-classic:1.4.13")
+        testImplementation("ch.qos.logback:logback-classic:1.4.14")
     }
 
     tasks.withType<Test> {
