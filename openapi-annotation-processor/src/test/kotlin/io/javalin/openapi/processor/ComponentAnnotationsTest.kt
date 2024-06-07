@@ -67,6 +67,7 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
                     "properties": {
                         "testProperty": {
                             "type": "number",
+                            "nullable": true,
                             "format": "double"
                         }
                     }

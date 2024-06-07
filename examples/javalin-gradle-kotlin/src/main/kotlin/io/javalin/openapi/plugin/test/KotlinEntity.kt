@@ -13,7 +13,8 @@ data class KotlinEntity(
     val name: String,
     val primitive: Int,
     val custom: Elements,
-    val oneOfResult: Result
+    val oneOfResult: Result,
+    val nullable: Any?,
 )
 
 @JsonSchema(

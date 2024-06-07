@@ -278,13 +278,25 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 else -> requireNonNulls && isNotNull
             }
 
+            val extra = mutableMapOf<String, Any?>()
+
+            val isExplicitlyNullable = when {
+                customType?.nullability == Nullability.NULLABLE -> true
+                property.hasAnnotation("Nullable") -> true
+                else -> false
+            }
+
+            if (isExplicitlyNullable) {
+                extra["nullable"] = true
+            }
+
             properties.add(
                 Property(
                     name = name,
                     type = propertyType.toClassDefinition(),
                     composition = findCompositionInElement(context, property),
                     required = required,
-                    extra = property.findExtra(context)
+                    extra = extra + property.findExtra(context)
                 )
             )
         }
