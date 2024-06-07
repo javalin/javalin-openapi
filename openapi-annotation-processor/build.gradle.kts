@@ -12,7 +12,7 @@ dependencies {
     testImplementation(project(":openapi-annotation-processor"))
 
     implementation(kotlin("reflect"))
-    implementation("org.apache.groovy:groovy:4.0.9")
+    implementation("org.apache.groovy:groovy:4.0.21")
 
     implementation("io.javalin:javalin:6.1.6") {
         exclude(group = "org.slf4j")
