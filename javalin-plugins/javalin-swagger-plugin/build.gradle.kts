@@ -3,5 +3,5 @@ description = "Javalin Swagger Plugin | Serve Swagger UI for OpenAPI specificati
 dependencies {
     api(project(":openapi-specification"))
     @Suppress("GradlePackageUpdate")
-    api("org.webjars:swagger-ui:3.52.5") // also bump swagger-ui version in OpenApiConfiguration
+    api("org.webjars:swagger-ui:5.17.14") // also bump swagger-ui version in OpenApiConfiguration
 }
