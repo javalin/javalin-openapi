@@ -110,7 +110,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     dependencies {
-        val javalin = "6.2.0"
+        val javalin = "6.3.0"
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 

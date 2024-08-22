@@ -1,6 +1,5 @@
 package io.javalin.openapi.processor
 
-import com.sun.source.util.Trees
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
