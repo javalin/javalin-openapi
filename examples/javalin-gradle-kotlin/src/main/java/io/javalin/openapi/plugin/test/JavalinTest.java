@@ -4,33 +4,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.openapi.Custom;
-import io.javalin.openapi.CustomAnnotation;
-import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.JsonSchema;
-import io.javalin.openapi.JsonSchemaLoader;
-import io.javalin.openapi.JsonSchemaResource;
-import io.javalin.openapi.OneOf;
-import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiArrayValidation;
-import io.javalin.openapi.OpenApiByFields;
-import io.javalin.openapi.OpenApiCallback;
-import io.javalin.openapi.OpenApiContent;
-import io.javalin.openapi.OpenApiContentProperty;
-import io.javalin.openapi.OpenApiDescription;
-import io.javalin.openapi.OpenApiExample;
-import io.javalin.openapi.OpenApiExampleProperty;
-import io.javalin.openapi.OpenApiIgnore;
-import io.javalin.openapi.OpenApiName;
-import io.javalin.openapi.OpenApiNumberValidation;
-import io.javalin.openapi.OpenApiObjectValidation;
-import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiPropertyType;
-import io.javalin.openapi.OpenApiRequestBody;
-import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
-import io.javalin.openapi.OpenApiStringValidation;
-import io.javalin.openapi.Visibility;
+import io.javalin.openapi.*;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
@@ -57,6 +31,7 @@ import java.util.UUID;
 /**
  * Starts Javalin server with OpenAPI plugin
  */
+@SuppressWarnings({"unused", "LombokGetterMayBeUsed", "LombokSetterMayBeUsed", "ProtectedMemberInFinalClass", "InnerClassMayBeStatic"})
 public final class JavalinTest implements Handler {
 
     enum Rules implements RouteRole {
@@ -420,6 +395,12 @@ public final class JavalinTest implements Handler {
             return "static";
         }
 
+        // by default nullable fields are not required, but we can force it
+        @OpenApiRequired
+        public String getNullableIsRequired() {
+            return "required";
+        }
+
     }
 
     static final class Foo {
@@ -498,9 +479,10 @@ public final class JavalinTest implements Handler {
 
     }
 
-    @JsonSchema
+    @JsonSchema(requireNonNulls = false)
     static final class JsonSchemaEntity {
 
+        @OpenApiRequired
         public List<EntityDto> getEntities() {
             return Collections.emptyList();
         }
