@@ -396,9 +396,9 @@ public final class JavalinTest implements Handler {
         }
 
         // by default nullable fields are not required, but we can force it
-        @OpenApiRequired
-        public String getNullableIsRequired() {
-            return "required";
+        //@OpenApiRequired
+        public JsonSchemaEntity getNullableIsRequired() {
+            return null;
         }
 
     }

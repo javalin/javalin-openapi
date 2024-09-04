@@ -51,6 +51,10 @@ data class ResultScheme(
 
 class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
 
+    // The cache helps to avoid processing the same property multiple times & prevent infinite recursion
+    // ~ https://github.com/javalin/javalin-openapi/issues/230
+    private val processedProperties = mutableMapOf<Property, ResultScheme>()
+
     fun createTypeSchema(
         type: ClassDefinition,
         inlineRefs: Boolean = false,
@@ -102,15 +106,23 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                 val properties = type.findAllProperties(requireNonNulls)
 
                 properties.forEach { property ->
-                    val (propertySchema, refs) = createEmbeddedTypeDescription(
-                        type = property.type,
-                        inlineRefs = inlineRefs,
-                        requiresNonNulls = requireNonNulls,
-                        composition = property.composition,
-                        extra = property.extra
-                    )
-                    propertiesObject.add(property.name, propertySchema)
-                    references.addAll(refs)
+                    val result =
+                        when {
+                            processedProperties.contains(property) ->
+                                processedProperties[property]!!
+                            else ->
+                                createEmbeddedTypeDescription(
+                                    type = property.type,
+                                    inlineRefs = inlineRefs,
+                                    requiresNonNulls = requireNonNulls,
+                                    composition = property.composition,
+                                    extra = property.extra
+                                ).also {
+                                    processedProperties[property] = it
+                                }
+                        }
+                    propertiesObject.add(property.name, result.json)
+                    references.addAll(result.references)
                 }
 
                 if (properties.any { it.required }) {
