@@ -67,7 +67,7 @@ public final class JavalinTest implements Handler {
                                     .description("Server description goes here")
                                     .url("http://localhost:{port}{basePath}/" + version + "/")
                                     .variable("port", "Server's port", "8080", "8080", "7070")
-                                    .variable("basePath", "Base path of the server", "", "", "v1")
+                                    .variable("basePath", "Base path of the server", "", "", "/v1")
                             )
                             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
                             .withSecurity(openApiSecurity ->

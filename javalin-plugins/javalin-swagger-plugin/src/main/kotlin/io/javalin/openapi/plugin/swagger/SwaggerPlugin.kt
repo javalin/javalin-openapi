@@ -20,7 +20,7 @@ class SwaggerConfiguration {
 
     // WebJar configuration
     /** Swagger UI Bundle version */
-    var version = "3.52.5"
+    var version = "5.17.14"
     /** Swagger UI Bundler webjar location */
     var webJarPath = "/webjars/swagger-ui"
 
