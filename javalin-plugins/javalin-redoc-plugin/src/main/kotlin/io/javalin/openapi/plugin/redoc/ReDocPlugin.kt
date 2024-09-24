@@ -17,7 +17,7 @@ class ReDocConfiguration {
     /* Custom base path */
     var basePath: String? = null
     /** ReDoc Bundle version **/
-    var version = "2.0.0-rc.70"
+    var version = "2.1.4"
     /** ReDoc WebJar route */
     var webJarPath = "/webjars/redoc"
 }
