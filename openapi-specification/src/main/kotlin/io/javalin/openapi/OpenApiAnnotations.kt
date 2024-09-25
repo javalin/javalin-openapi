@@ -302,7 +302,9 @@ enum class HttpMethod {
 class OpenApiLoader {
 
     fun loadOpenApiSchemes(): Map<String, String> =
-        loadVersions().associateWith { loadVersion(it) ?: "{}" }
+        loadVersions()
+            .ifEmpty { setOf("default") }
+            .associateWith { loadVersion(it) ?: "{}" }
 
     fun loadVersions(): Set<String> =
         OpenApiLoader::class.java.getResourceAsStream("/openapi-plugin/.index")
