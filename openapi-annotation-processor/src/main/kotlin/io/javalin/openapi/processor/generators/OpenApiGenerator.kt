@@ -444,22 +444,29 @@ internal class OpenApiGenerator {
                     schema.addProperty("type", "object")
 
                     for (contentProperty in properties) {
-                        val propertyScheme = JsonObject()
                         val propertyFormat = contentProperty.format.takeIf { it != NULL_STRING }
 
-                        if (contentProperty.isArray) {
-                            propertyScheme.addProperty("type", "array")
-
-                            val items = JsonObject()
-                            items.addProperty("type", contentProperty.type)
-                            propertyFormat?.let { items.addProperty("format", it) }
-                            propertyScheme.add("items", items)
+                        val contentPropertyFrom = contentAnnotation.getTypeMirror { contentProperty.from }
+                        val propertyScheme = if (contentPropertyFrom.getFullName() != NULL_CLASS::class.java.name) {
+                            createTypeDescriptionWithReferences(contentPropertyFrom)
                         } else {
-                            propertyScheme.addProperty("type", contentProperty.type)
-                            propertyFormat?.let { propertyScheme.addProperty("format", it) }
+                            JsonObject().apply {
+                                addProperty("type", contentProperty.type)
+                                propertyFormat?.let { addProperty("format", it) }
+                            }
                         }
 
-                        propertiesSchema.add(contentProperty.name, propertyScheme)
+                        propertiesSchema.add(contentProperty.name,
+                            if (contentProperty.isArray) {
+                                // wrap into OpenAPI array object
+                                JsonObject().apply {
+                                    addProperty("type", "array")
+                                    add("items", propertyScheme)
+                                }
+                            } else {
+                                propertyScheme
+                            }
+                        )
                     }
 
                     schema.add("properties", propertiesSchema)

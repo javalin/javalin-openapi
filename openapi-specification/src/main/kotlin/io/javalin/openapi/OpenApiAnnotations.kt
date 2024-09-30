@@ -147,9 +147,10 @@ annotation class OpenApiContent(
 @Target()
 @Retention(RUNTIME)
 annotation class OpenApiContentProperty(
+    val from: KClass<*> = NULL_CLASS::class,
     val name: String,
     val isArray: Boolean = false,
-    val type: String,
+    val type: String = NULL_STRING,
     val format: String = NULL_STRING
 )
 
