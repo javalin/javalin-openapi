@@ -197,4 +197,21 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             ))
     }
 
+    private class Loop(
+        val self: Loop?,
+    )
+
+
+    @OpenApi(
+        path = "recursive",
+        versions = ["should_map_recursive_type"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = Loop::class)])]
+    )
+    @Test
+    fun should_map_recursive_type() = withOpenApi("should_map_recursive_type") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.Loop.properties.self")
+            .isObject
+            .containsEntry("\$ref", "#/components/schemas/Loop")
+    }
 }
