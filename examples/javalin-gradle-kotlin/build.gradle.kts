@@ -39,7 +39,7 @@ dependencies {
 
     // javalin
     implementation("io.javalin:javalin:6.4.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.1")
 
     // logging
     implementation("ch.qos.logback:logback-classic:1.4.14")
