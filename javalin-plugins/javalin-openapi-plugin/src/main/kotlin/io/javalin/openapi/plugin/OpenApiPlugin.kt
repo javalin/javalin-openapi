@@ -34,12 +34,16 @@ open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plu
                     pluginConfig
                         .definitionConfiguration
                         ?.let { DefinitionConfiguration().also { definition -> it.accept(version, definition) } }
-                        ?.applyConfigurationTo(jsonMapper.value, version, rawDocs)
+                        ?.applyConfigurationTo(
+                            jsonMapper = jsonMapper.value,
+                            content = rawDocs,
+                            prettyOutputEnabled = pluginConfig.prettyOutputEnabled
+                        )
                         ?: rawDocs
                 }
         }
 
-    private fun DefinitionConfiguration.applyConfigurationTo(jsonMapper: ObjectMapper, version: String, content: String): String {
+    private fun DefinitionConfiguration.applyConfigurationTo(jsonMapper: ObjectMapper, content: String, prettyOutputEnabled: Boolean): String {
         val docsNode = jsonMapper.readTree(content) as ObjectNode
 
         //process OpenAPI "info"
@@ -63,7 +67,7 @@ open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plu
 
         return definitionProcessor
             ?.process(docsNode)
-            ?: docsNode.toPrettyString()
+            ?: if (prettyOutputEnabled) docsNode.toPrettyString() else docsNode.toString()
     }
 
 }

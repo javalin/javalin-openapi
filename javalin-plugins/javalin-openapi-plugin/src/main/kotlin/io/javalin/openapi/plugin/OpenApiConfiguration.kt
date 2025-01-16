@@ -21,6 +21,7 @@ import java.util.function.Consumer
 class OpenApiPluginConfiguration @JvmOverloads constructor(
     @JvmField var documentationPath: String = "/openapi",
     @JvmField var roles: List<RouteRole>? = null,
+    @JvmField var prettyOutputEnabled: Boolean = true,
     @JvmField var definitionConfiguration: BiConsumer<String, DefinitionConfiguration>? = null
 ) {
 
@@ -34,7 +35,13 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
         this.roles = roles.toList()
     }
 
-    /* */
+    /** Path to host documentation as JSON */
+    @JvmOverloads
+    fun withPrettyOutput(enabled: Boolean = true): OpenApiPluginConfiguration = also {
+        this.prettyOutputEnabled = enabled
+    }
+
+    /* Dynamically apply custom changes to generated OpenApi specifications */
     fun withDefinitionConfiguration(definitionConfigurationConfigurer: BiConsumer<String, DefinitionConfiguration>): OpenApiPluginConfiguration = also {
         definitionConfiguration = definitionConfigurationConfigurer
     }

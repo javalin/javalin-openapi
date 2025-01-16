@@ -53,6 +53,7 @@ public final class JavalinTest implements Handler {
                 openApiConfig
                     .withDocumentationPath(deprecatedDocsPath)
                     .withRoles(Rules.ANONYMOUS)
+                    .withPrettyOutput()
                     .withDefinitionConfiguration((version, openApiDefinition) ->
                         openApiDefinition
                             .withInfo(openApiInfo ->
