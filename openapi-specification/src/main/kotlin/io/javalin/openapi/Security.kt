@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.javalin.openapi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -28,7 +30,7 @@ class BearerAuth : HttpAuth(scheme = "bearer")
 
 open class ApiKeyAuth(
     open var `in`: String = "header",
-    open var name: String = "X-API-Key"
+    open var name: String = "X-API-Key",
 ) : SecurityScheme {
     override val type: String = "apiKey"
 }
@@ -54,19 +56,19 @@ class OAuth2 @JvmOverloads constructor(
 
     @JvmOverloads
     fun withAuthorizationCodeFlow(authorizationUrl: String, tokenUrl: String, flow: Consumer<AuthorizationCodeFlow> = Consumer {}): OAuth2 =
-        withFlow(AuthorizationCodeFlow(authorizationUrl, tokenUrl).also { flow.accept(it) })
+        withFlow(AuthorizationCodeFlow(authorizationUrl = authorizationUrl, tokenUrl = tokenUrl).also { flow.accept(it) })
 
     @JvmOverloads
     fun withImplicitFlow(authorizationUrl: String, flow: Consumer<ImplicitFlow> = Consumer {}): OAuth2 =
-        withFlow(ImplicitFlow(authorizationUrl).also { flow.accept(it) })
+        withFlow(ImplicitFlow(authorizationUrl = authorizationUrl).also { flow.accept(it) })
 
     @JvmOverloads
     fun withPasswordFlow(tokenUrl: String, flow: Consumer<PasswordFlow> = Consumer {}): OAuth2 =
-        withFlow(PasswordFlow(tokenUrl).also { flow.accept(it) })
+        withFlow(PasswordFlow(tokenUrl = tokenUrl).also { flow.accept(it) })
 
     @JvmOverloads
     fun withClientCredentials(tokenUrl: String, flow: Consumer<ClientCredentials> = Consumer {}): OAuth2 =
-        withFlow(ClientCredentials(tokenUrl).also { flow.accept(it) })
+        withFlow(ClientCredentials(tokenUrl = tokenUrl).also { flow.accept(it) })
 
 }
 

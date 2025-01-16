@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package io.javalin.openapi.plugin
 
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -108,19 +110,19 @@ class SecurityComponentConfiguration @JvmOverloads constructor(
 
     @JvmOverloads
     fun withApiKeyAuth(schemeName: String = "ApiKeyAuth", apiKeyHeader: String = "X-Api-Key", securityScheme: Consumer<ApiKeyAuth> = Consumer {}): SecurityComponentConfiguration =
-        withSecurityScheme(schemeName, ApiKeyAuth(apiKeyHeader).also { securityScheme.accept(it) })
+        withSecurityScheme(schemeName, ApiKeyAuth(name = apiKeyHeader).also { securityScheme.accept(it) })
 
     @JvmOverloads
     fun withCookieAuth(schemeName: String = "CookieAuth", sessionCookie: String = "JSESSIONID", securityScheme: Consumer<CookieAuth> = Consumer {}): SecurityComponentConfiguration =
-        withSecurityScheme(schemeName, CookieAuth(sessionCookie).also { securityScheme.accept(it) })
+        withSecurityScheme(schemeName, CookieAuth(name = sessionCookie).also { securityScheme.accept(it) })
 
     @JvmOverloads
     fun withOpenID(schemeName: String, openIdConnectUrl: String, securityScheme: Consumer<OpenID> = Consumer {}): SecurityComponentConfiguration =
-        withSecurityScheme(schemeName, OpenID(openIdConnectUrl).also { securityScheme.accept(it) })
+        withSecurityScheme(schemeName, OpenID(openIdConnectUrl = openIdConnectUrl).also { securityScheme.accept(it) })
 
     @JvmOverloads
     fun withOAuth2(schemeName: String, description: String, securityScheme: Consumer<OAuth2> = Consumer {}): SecurityComponentConfiguration =
-        withSecurityScheme(schemeName, OAuth2(description).also { securityScheme.accept(it) })
+        withSecurityScheme(schemeName, OAuth2(description = description).also { securityScheme.accept(it) })
 
     fun withGlobalSecurity(security: Security): SecurityComponentConfiguration = also {
         globalSecurity.add(security)
@@ -128,6 +130,6 @@ class SecurityComponentConfiguration @JvmOverloads constructor(
 
     @JvmOverloads
     fun withGlobalSecurity(name: String, security: Consumer<Security> = Consumer {}): SecurityComponentConfiguration =
-        withGlobalSecurity(Security(name).also { security.accept(it) })
+        withGlobalSecurity(Security(name = name).also { security.accept(it) })
 
 }
