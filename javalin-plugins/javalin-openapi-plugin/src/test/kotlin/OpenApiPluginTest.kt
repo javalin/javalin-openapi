@@ -1,8 +1,9 @@
 import io.javalin.Javalin
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.plugin.OpenApiPlugin
+import kong.unirest.Unirest
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 
 class OpenApiPluginTest {
 
@@ -13,8 +14,10 @@ class OpenApiPluginTest {
 
     @Test
     fun `should support schema modifications in definition configuration`() {
-        assertDoesNotThrow {
-            Javalin.create { config ->
+        val app =
+            Javalin.createAndStart { config ->
+                config.jetty.defaultPort = 0
+
                 config.registerPlugin(
                     OpenApiPlugin { openApiConfig ->
                         openApiConfig.withDefinitionConfiguration { _, def ->
@@ -25,21 +28,40 @@ class OpenApiPluginTest {
                     }
                 )
             }
+
+        try {
+            val response = Unirest.get("http://localhost:${app.port()}/openapi")
+                .asString()
+                .body
+
+            assertThat(response).contains(""""title" : "My API"""")
+        } finally {
+            app.stop()
         }
     }
 
     @Test
     fun `should support empty definition configuration`() {
-        assertDoesNotThrow {
-            Javalin.create { config ->
-                config.registerPlugin(
-                    OpenApiPlugin {
-                        it.withDefinitionConfiguration { _, _ ->
-                            /* do nothing */
-                        }
+        val app = Javalin.createAndStart { config ->
+            config.jetty.defaultPort = 0
+
+            config.registerPlugin(
+                OpenApiPlugin {
+                    it.withDefinitionConfiguration { _, _ ->
+                        /* do nothing */
                     }
-                )
-            }
+                }
+            )
+        }
+
+        try {
+            val response = Unirest.get("http://localhost:${app.port()}/openapi")
+                .asString()
+                .body
+
+            assertThat(response).contains(""""title" : """"")
+        } finally {
+            app.stop()
         }
     }
 
