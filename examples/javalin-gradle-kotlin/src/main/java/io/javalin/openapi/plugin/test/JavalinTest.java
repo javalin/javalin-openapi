@@ -92,6 +92,7 @@ public final class JavalinTest implements Handler {
                                             .withScope("write_pets")
                                             .withScope("read_pets")
                                     )
+                                    .withGlobalSecurity("BearerAuth")
                             )
                             .withDefinitionProcessor(content -> { // you can add whatever you want to this document using your favourite json api
                                 content.set("test", new TextNode("Value"));
