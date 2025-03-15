@@ -250,7 +250,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 }
             }
 
-            if (property.getAnnotation(OpenApiIgnore::class.java) != null) {
+            if (property.getAnnotation(OpenApiIgnore::class.java) != null || property.modifiers.contains(Modifier.TRANSIENT)) {
                 continue
             }
 
