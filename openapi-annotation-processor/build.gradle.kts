@@ -14,7 +14,7 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation("org.apache.groovy:groovy:4.0.27")
 
-    implementation("io.javalin:javalin:6.6.0") {
+    implementation("io.javalin:javalin:6.7.0") {
         exclude(group = "org.slf4j")
     }
 
