@@ -3,21 +3,11 @@ package io.javalin.openapi.processor.generators
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.javalin.http.HttpStatus
-import io.javalin.openapi.ContentType.AUTODETECT
-import io.javalin.openapi.HttpMethod
-import io.javalin.openapi.NULL_CLASS
-import io.javalin.openapi.NULL_STRING
-import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiContent
+import io.javalin.openapi.*
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
-import io.javalin.openapi.OpenApiParam
-import io.javalin.openapi.OpenApiRequestBody
-import io.javalin.openapi.OpenApiResponse
-import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.addIfNotEmpty
 import io.javalin.openapi.experimental.processor.shared.addString
 import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
@@ -26,7 +16,6 @@ import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.saveResource
 import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toPrettyString
-import io.javalin.openapi.getFormattedPath
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
@@ -381,32 +370,46 @@ internal class OpenApiGenerator {
         it.titlecase(Locale.getDefault())
     }
 
-    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) = context.inContext {
-        val requestBodyContent = JsonObject()
-        val requestBodySchemes = TreeMap<String, JsonObject>()
+    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) =
+        context.inContext {
+            val requestBodyContent = JsonObject()
+            val requestBodySchemes = TreeMap<String, JsonObject>()
 
-        for (contentAnnotation in contentAnnotations) {
-            val from = contentAnnotation.getTypeMirror { from }
-            val format = contentAnnotation.format.takeIf { it != NULL_STRING }
-            val properties = contentAnnotation.properties
-            var type = contentAnnotation.type.takeIf { it != NULL_STRING }
-            var mimeType = contentAnnotation.mimeType.takeIf { it != AUTODETECT }
-            val example = contentAnnotation.example.takeIf { it != NULL_STRING }
-            val exampleObjects = contentAnnotation.exampleObjects.map { it.toExampleProperty() }
+            for (contentAnnotation in contentAnnotations) {
+                val (mimeType, mediaTypeSchema) =
+                    contentAnnotation
+                        .toData()
+                        .toMimeTypeSchema(element, contentAnnotation)
+                        ?: continue
 
-            if (mimeType == null) {
-                when (NULL_CLASS::class.qualifiedName) {
-                    // Use 'type` as `mimeType` if there's no other mime-type declaration in @OpenApiContent annotation
-                    // ~ https://github.com/javalin/javalin-openapi/issues/88
-                    from.getFullName() -> {
-                        mimeType = type
-                        type = null
-                    }
-                    else -> mimeType = detectContentType(from)
-                }
+                requestBodySchemes[mimeType] = mediaTypeSchema
             }
 
-            if (mimeType == null) {
+            requestBodySchemes.forEach { (mimeType, scheme) ->
+                requestBodyContent.add(mimeType, scheme)
+            }
+
+            if (requestBodyContent.size() > 0) {
+                add("content", requestBodyContent)
+            }
+        }
+
+    private fun OpenApiContentData.toMimeTypeSchema(element: Element, source: Annotation): Pair<String, JsonObject>? =
+        context.inContext {
+            var contentData = this@toMimeTypeSchema
+            val from = source.getTypeMirror { contentData.from() }
+
+            if (contentData.mimeType == null) {
+                contentData =
+                    when (NULL_CLASS::class.qualifiedName) {
+                        // Use 'type` as `mimeType` if there's no other mime-type declaration in @OpenApiContent annotation
+                        // ~ https://github.com/javalin/javalin-openapi/issues/88
+                        from.getFullName() -> contentData.copy(mimeType = type, type = null)
+                        else -> contentData.copy(mimeType = detectContentType(from))
+                    }
+            }
+
+            if (contentData.mimeType == null) {
                 val trees = context.trees
 
                 if (trees != null) {
@@ -421,106 +424,122 @@ internal class OpenApiGenerator {
                         Source: 
                             Annotation in ${compilationUnit.lineMap.getLineNumber(startPosition)} at ${compilationUnit.sourceFile.name} line
                         Annotation: 
-                            $contentAnnotation
+                            $source
                         """.trimIndent()
                     )
                 }
 
-                continue
-            }
-
-            val schema: JsonObject = when {
-                properties.isEmpty() && from.getFullName() != NULL_CLASS::class.java.name ->
-                    createTypeDescriptionWithReferences(from)
-                properties.isEmpty() -> {
-                    val schema = JsonObject()
-                    type?.also { schema.addProperty("type", it) }
-                    format?.also { schema.addProperty("format", it) }
-                    schema
-                }
-                else -> {
-                    val schema = JsonObject()
-                    val propertiesSchema = JsonObject()
-                    schema.addProperty("type", "object")
-
-                    for (contentProperty in properties) {
-                        val propertyFormat = contentProperty.format.takeIf { it != NULL_STRING }
-
-                        val contentPropertyFrom = contentAnnotation.getTypeMirror { contentProperty.from }
-                        val propertyScheme = if (contentPropertyFrom.getFullName() != NULL_CLASS::class.java.name) {
-                            createTypeDescriptionWithReferences(contentPropertyFrom)
-                        } else {
-                            JsonObject().apply {
-                                addProperty("type", contentProperty.type)
-                                propertyFormat?.let { addProperty("format", it) }
-                            }
-                        }
-
-                        propertiesSchema.add(contentProperty.name,
-                            if (contentProperty.isArray) {
-                                // wrap into OpenAPI array object
-                                JsonObject().apply {
-                                    addProperty("type", "array")
-                                    add("items", propertyScheme)
-                                }
-                            } else {
-                                propertyScheme
-                            }
-                        )
-                    }
-
-                    schema.add("properties", propertiesSchema)
-                    schema
-                }
+                return@inContext null
             }
 
             val mediaType = JsonObject()
+            val mediaTypeSchema = contentData.toTypeSchema(source)
 
-            if (schema.size() > 0) {
-                mediaType.add("schema", schema)
+            if (mediaTypeSchema.size() > 0) {
+                mediaType.add("schema", mediaTypeSchema)
             }
+            mediaType.addContentExample(contentData)
 
-            if (example != null) {
-                mediaType.addProperty("example", example)
-            }
-
-            if (exampleObjects.isNotEmpty()) {
-                val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects)
-
-                when {
-                    generatorResult.simpleValue != null -> mediaType.addProperty("example", generatorResult.simpleValue)
-                    generatorResult.jsonElement != null -> mediaType.add("example", generatorResult.jsonElement)
-                }
-            }
-
-            requestBodySchemes[mimeType] = mediaType
+            return@inContext contentData.mimeType!! to mediaType
         }
 
-        requestBodySchemes.forEach { (mimeType, scheme) ->
-            requestBodyContent.add(mimeType, scheme)
+    private fun JsonObject.addContentExample(contentData: OpenApiContentData) {
+        if (contentData.example != null) {
+            addProperty("example", contentData.example)
         }
 
-        if (requestBodyContent.size() > 0) {
-            add("content", requestBodyContent)
+        if (contentData.exampleObjects != null) {
+            val generatorResult = ExampleGenerator.generateFromExamples(contentData.exampleObjects!!)
+
+            when {
+                generatorResult.simpleValue != null -> addProperty("example", generatorResult.simpleValue)
+                generatorResult.jsonElement != null -> add("example", generatorResult.jsonElement)
+            }
         }
+
     }
 
-    private fun detectContentType(typeMirror: TypeMirror): String = context.inContext {
-        val model = typeMirror.toClassDefinition()
+    private fun OpenApiContentData.toTypeSchema(source: Annotation): JsonObject = context.inContext {
+        val from = source.getTypeMirror { from() }
 
         when {
-            (model.structureType == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
-            model.structureType == ARRAY -> "application/json"
-            model.simpleName == "String" -> "text/plain"
-            else -> "application/json"
+            properties == null && additionalProperties == null && from.getFullName() != NULL_CLASS::class.java.name ->
+                createTypeDescriptionWithReferences(from)
+            properties == null && additionalProperties == null -> {
+                val schema = JsonObject()
+                type?.also { schema.addProperty("type", it) }
+                format?.also { schema.addProperty("format", it) }
+                schema
+            }
+            else -> {
+                val schema = JsonObject()
+                schema.addProperty("type", "object")
+
+                if (properties != null) {
+                    schema.add("properties", properties!!.toTypeSchema())
+                }
+
+                additionalProperties?.let {
+                    val additionalPropertiesData = it.toData()
+                    schema.add("additionalProperties", additionalPropertiesData.toTypeSchema(it))
+                    schema.addContentExample(additionalPropertiesData)
+                }
+                schema
+            }
         }
     }
 
-    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject = context.inContext {
-        val model = type.toClassDefinition()
-        val (json, references) = context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
-        componentReferences.putAll(references.associateBy { it.fullName })
-        json
-    }
+    private fun Collection<OpenApiContentProperty>.toTypeSchema(): JsonObject =
+        context.inContext {
+            val propertiesSchema = JsonObject()
+
+            for (contentProperty in this@toTypeSchema) {
+                val propertyFormat = contentProperty.format.takeIf { it != NULL_STRING }
+
+                val contentPropertyFrom = contentProperty.getTypeMirror { contentProperty.from }
+                val propertyScheme = if (contentPropertyFrom.getFullName() != NULL_CLASS::class.java.name) {
+                    createTypeDescriptionWithReferences(contentPropertyFrom)
+                } else {
+                    JsonObject().apply {
+                        addProperty("type", contentProperty.type)
+                        propertyFormat?.let { addProperty("format", it) }
+                    }
+                }
+
+                propertiesSchema.add(contentProperty.name,
+                    if (contentProperty.isArray) {
+                        // wrap into OpenAPI array object
+                        JsonObject().apply {
+                            addProperty("type", "array")
+                            add("items", propertyScheme)
+                        }
+                    } else {
+                        propertyScheme
+                    }
+                )
+            }
+
+            propertiesSchema
+        }
+
+    private fun detectContentType(typeMirror: TypeMirror): String =
+        context.inContext {
+            val model = typeMirror.toClassDefinition()
+
+            when {
+                (model.structureType == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
+                model.structureType == ARRAY -> "application/json"
+                model.simpleName == "String" -> "text/plain"
+                else -> "application/json"
+            }
+        }
+
+    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject =
+        context.inContext {
+            val model = type.toClassDefinition()
+            val (json, references) = context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
+            componentReferences.putAll(references.associateBy { it.fullName })
+            json
+        }
 
 }

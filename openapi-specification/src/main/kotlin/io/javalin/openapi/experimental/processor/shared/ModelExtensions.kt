@@ -36,7 +36,7 @@ fun <A : Annotation> A.getTypeMirrors(supplier: A.() -> Array<out KClass<*>>): S
         mirroredTypeException.typeMirrors.toSet()
     }
 
-fun <A : Annotation> A.getTypeMirror(supplier: A.() -> KClass<*>): TypeMirror =
+fun <A : Annotation, K : KClass<*>> A.getTypeMirror(supplier: A.() -> K): TypeMirror =
     try {
         throw Error(supplier().toString()) // always throws MirroredTypeException, because we cannot get Class instance from annotation at compile-time
     } catch (mirroredTypeException: MirroredTypeException) {

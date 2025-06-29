@@ -141,6 +141,21 @@ public final class JavalinTest implements Handler {
             description = "Supports multiple request bodies",
             content = {
                 @OpenApiContent(from = String.class, example = "value"), // simple type
+                @OpenApiContent(from = String[].class, example = "value"), // array of simple types
+                @OpenApiContent( // map of simple types
+                    mimeType = "application/map-string-string",
+                    additionalProperties = @OpenApiAdditionalContent(
+                        from = String.class,
+                        exampleObjects = {
+                            @OpenApiExampleProperty(name = "en", value = "hey"),
+                            @OpenApiExampleProperty(name = "pl", value = "hejka tu lenka"),
+                        }
+                    )
+                ),
+                @OpenApiContent( // map of complex types
+                    mimeType = "application/map-string-object",
+                    additionalProperties = @OpenApiAdditionalContent(from = Foo.class)
+                ),
                 @OpenApiContent(from = KotlinEntity.class, mimeType = "app/barbie", exampleObjects = {
                     @OpenApiExampleProperty(name = "name", value = "Margot Robbie")
                 }), // kotlin

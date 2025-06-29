@@ -7,6 +7,8 @@ package io.javalin.openapi
 
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
@@ -132,6 +134,17 @@ annotation class OpenApiCallback(
     val responses: Array<OpenApiResponse>
 )
 
+data class OpenApiContentData(
+    val from: (() -> KClass<*>),
+    val mimeType: String?,
+    val type: String?,
+    val format: String?,
+    val properties: List<OpenApiContentProperty>?,
+    val additionalProperties: OpenApiAdditionalContent?,
+    val example: String?,
+    val exampleObjects: List<ExampleGenerator.ExampleProperty>?,
+)
+
 @Target()
 @Retention(RUNTIME)
 annotation class OpenApiContent(
@@ -140,9 +153,47 @@ annotation class OpenApiContent(
     val type: String = NULL_STRING,
     val format: String = NULL_STRING,
     val properties: Array<OpenApiContentProperty> = [],
+    val additionalProperties: OpenApiAdditionalContent = OpenApiAdditionalContent(_ignored = true),
     val example: String = NULL_STRING,
     val exampleObjects: Array<OpenApiExampleProperty> = [],
 )
+
+fun OpenApiContent.toData(): OpenApiContentData =
+    OpenApiContentData(
+        from = { from },
+        mimeType = mimeType.takeIf { it != ContentType.AUTODETECT },
+        type = type.takeIf { it != NULL_STRING },
+        format = format.takeIf { it != NULL_STRING },
+        properties = properties.takeIf { it.isNotEmpty() }?.toList(),
+        additionalProperties = additionalProperties.takeIf { !it._ignored },
+        example = example.takeIf { it != NULL_STRING },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+    )
+
+@Target()
+@Retention(RUNTIME)
+annotation class OpenApiAdditionalContent(
+    val from: KClass<*> = NULL_CLASS::class,
+    val type: String = NULL_STRING,
+    val format: String = NULL_STRING,
+    val properties: Array<OpenApiContentProperty> = [],
+    val example: String = NULL_STRING,
+    val exampleObjects: Array<OpenApiExampleProperty> = [],
+    @Suppress("PropertyName")
+    val _ignored: Boolean = false,
+)
+
+fun OpenApiAdditionalContent.toData(): OpenApiContentData =
+    OpenApiContentData(
+        from = { from },
+        mimeType = null,
+        type = type.takeIf { it != NULL_STRING },
+        format = format.takeIf { it != NULL_STRING },
+        properties = properties.takeIf { it.isNotEmpty() }?.toList(),
+        additionalProperties = null,
+        example = example.takeIf { it != NULL_STRING },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+    )
 
 @Target()
 @Retention(RUNTIME)
