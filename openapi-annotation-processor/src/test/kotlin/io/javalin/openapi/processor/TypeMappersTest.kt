@@ -2,9 +2,7 @@
 
 package io.javalin.openapi.processor
 
-import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApiContent
-import io.javalin.openapi.OpenApiResponse
+import io.javalin.openapi.*
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
@@ -61,7 +59,14 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     @OpenApi(
         path = "simple-types",
         versions = ["should_map_all_simple_types"],
-        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = SimpleTypesList::class)])]
+        responses = [
+            OpenApiResponse(
+                status = "200",
+                content = [
+                    OpenApiContent(from = SimpleTypesList::class),
+                ],
+            ),
+        ]
     )
     @Test
     fun should_map_all_simple_types() = withOpenApi("should_map_all_simple_types") {
@@ -70,7 +75,9 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         assertThatJson(it)
             .inPath("$.components.schemas.SimpleTypesList.properties")
             .isObject
-            .isEqualTo(json("""
+            .isEqualTo(json(
+                // language=json
+                """
                 {
                   "customType": {
                     "type": "string"
@@ -193,14 +200,55 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                       }
                     }
                   }
-                }"""
+                }
+                """
+            ))
+    }
+
+    @OpenApi(
+        path = "dictionary-structure",
+        versions = ["should_output_dictionary_structure"],
+        responses = [
+            OpenApiResponse(
+                status = "200",
+                content = [
+                    OpenApiContent(
+                        mimeType = "application/map-string-string",
+                        additionalProperties = OpenApiAdditionalContent(
+                            from = String::class,
+                            exampleObjects = [OpenApiExampleProperty(name = "monke", value = "banana")]
+                        )
+                    ),
+                ],
+            ),
+        ]
+    )
+    @Test
+    fun should_output_dictionary_structure() = withOpenApi("should_output_dictionary_structure") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/dictionary-structure'].get.responses.200.content['application/map-string-string'].schema")
+            .isObject
+            .isEqualTo(json(
+                // language=json
+                """
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "example": {
+                    "monke": "banana"
+                  }
+                }
+                """,
             ))
     }
 
     private class Loop(
         val self: Loop?,
     )
-
 
     @OpenApi(
         path = "recursive",

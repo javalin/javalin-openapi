@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.javalin.openapi.processor
 
 import io.javalin.openapi.*
