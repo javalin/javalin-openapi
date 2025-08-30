@@ -211,7 +211,9 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                         "type": "object"
                       }
                     }
-                  }
+                  },
+                  "standardEnum":{"${'$'}ref":"#/components/schemas/StandardEnum"},
+                  "capitalizedFirstLetterEnum":{"${'$'}ref":"#/components/schemas/CapitalizedFirstLetterEnum"}
                 }
                 """
             ))
