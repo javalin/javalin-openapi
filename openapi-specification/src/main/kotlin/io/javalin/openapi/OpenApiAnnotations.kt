@@ -308,10 +308,13 @@ enum class Visibility(val priority: Int) {
     PRIVATE(1)
 }
 
+/** Fields with the specified visibility or higher will be included in the schema */
 @Target(CLASS)
 @Retention(RUNTIME)
 annotation class OpenApiByFields(
-    val value: Visibility = PUBLIC
+    val value: Visibility = PUBLIC,
+    /** If true, methods will be ignored */
+    val only: Boolean = false,
 )
 
 /** Null class because annotations do not support null values */

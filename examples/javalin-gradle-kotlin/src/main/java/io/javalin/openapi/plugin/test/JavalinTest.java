@@ -162,7 +162,8 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = LombokEntity.class, mimeType = "app/lombok"), // lombok
                 @OpenApiContent(from = EntityWithGenericType.class), // generics
                 @OpenApiContent(from = RecordEntity.class, mimeType = "app/record"), // record class
-                @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto"), // map only fields
+                @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto-fields"), // map only fields
+                @OpenApiContent(from = DtoWithFieldsAndMethods.class, mimeType = "app/dto-fields-and-methods"), // map fields and methods
                 @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
                 @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity") // custom name
             }
@@ -470,13 +471,31 @@ public final class JavalinTest implements Handler {
     ) {}
 
     // should query fields
-    @OpenApiByFields(Visibility.PROTECTED) // by default: PUBLIC
+    @OpenApiByFields(value = Visibility.PROTECTED, only = true) // by default: PUBLIC
     static final class DtoWithFields {
 
         public String publicName;
         String defaultName;
         protected String protectedName;
         private String privateName;
+
+        public String getCustom() {
+            return "custom";
+        }
+    }
+
+    // should query fields and methods
+    @OpenApiByFields(Visibility.PROTECTED) // by default: PUBLIC
+    static final class DtoWithFieldsAndMethods {
+
+        public String publicName;
+        String defaultName;
+        protected String protectedName;
+        private String privateName;
+
+        public String getCustom() {
+            return "custom";
+        }
     }
 
     enum EnumEntity {

@@ -37,8 +37,7 @@ import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind.ENUM
-import javax.lang.model.element.ElementKind.METHOD
+import javax.lang.model.element.ElementKind.*
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
@@ -75,7 +74,6 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
             composition != null -> {
                 schema.createComposition(context, type, composition, references, inlineRefs, requireNonNullsByDefault)
             }
-
             source.kind == ENUM -> {
                 val values = JsonArray()
                 source.enclosedElements
@@ -88,7 +86,6 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                 schema.addProperty("type", "string")
                 schema.add("enum", values)
             }
-
             else -> {
                 schema.addProperty("type", "object")
                 schema.addProperty("additionalProperties", false)
@@ -209,8 +206,7 @@ data class Property(
 )
 
 internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collection<Property> = context.inContext {
-    val acceptFields = source.getAnnotation(OpenApiByFields::class.java)
-        ?.value
+    val openApiByFields: OpenApiByFields? = source.getAnnotation(OpenApiByFields::class.java)
 
     val isRecord = when (recordType()) {
         null -> false
@@ -230,9 +226,12 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 continue
             }
 
-            if (property.kind != METHOD && acceptFields == null) {
-                continue
+            when {
+                property.kind != METHOD && openApiByFields == null -> continue
+                property.kind == METHOD && openApiByFields?.only == true -> continue
             }
+
+            val acceptFields = openApiByFields?.value
 
             if (acceptFields != null) {
                 val modifiers = property.modifiers
@@ -263,7 +262,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
 
             val name = when {
                 customName != null -> customName.value
-                isRecord || acceptFields != null -> simpleName
+                isRecord || property.kind == FIELD -> simpleName
                 simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").replaceFirstChar { it.lowercase() }
                 simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").replaceFirstChar { it.lowercase() }
                 else -> continue

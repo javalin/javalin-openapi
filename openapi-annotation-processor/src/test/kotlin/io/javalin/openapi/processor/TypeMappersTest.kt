@@ -21,6 +21,16 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
 
     class CustomType // mapped by openapi.groovy
 
+    enum class StandardEnum {
+        VALUE_1,
+        VALUE_2,
+    }
+
+    enum class CapitalizedFirstLetterEnum {
+        Value1,
+        Value2,
+    }
+
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN", "RemoveRedundantQualifierName")
     class SimpleTypesList(
         val customType: CustomType,
@@ -53,7 +63,9 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val instant: Instant,
         val obj: Object,
         val map: Map<*, *>,
-        val mapWithList: Map<*, List<*>>
+        val mapWithList: Map<*, List<*>>,
+        val standardEnum: StandardEnum,
+        val capitalizedFirstLetterEnum: CapitalizedFirstLetterEnum,
     )
 
     @OpenApi(
