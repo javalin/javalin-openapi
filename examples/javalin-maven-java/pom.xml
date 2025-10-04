@@ -23,11 +23,14 @@
     </repositories>
 
     <dependencies>
+        <!-- Javalin core -->
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
             <version>${javalin.version}</version>
         </dependency>
+
+        <!-- OpenAPI and UI plugins -->
         <dependency>
             <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
@@ -43,6 +46,8 @@
             <artifactId>javalin-redoc-plugin</artifactId>
             <version>${javalin.openapi.version}</version>
         </dependency>
+
+        <!-- ReDoc UI -->
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>redoc</artifactId>
@@ -54,6 +59,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- Logging -->
         <dependency>
             <groupId>org.tinylog</groupId>
             <artifactId>tinylog-api</artifactId>
@@ -69,6 +76,28 @@
             <artifactId>slf4j-tinylog</artifactId>
             <version>2.4.1</version>
         </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.28</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jakarta Validation API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+
+        <!-- MongoDB BSON -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <version>4.9.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -80,10 +109,18 @@
                     <version>3.10.1</version>
                     <configuration>
                         <annotationProcessorPaths>
+                            <!-- OpenAPI Annotation Processor -->
                             <annotationProcessorPath>
                                 <groupId>io.javalin.community.openapi</groupId>
                                 <artifactId>openapi-annotation-processor</artifactId>
                                 <version>${javalin.openapi.version}</version>
+                            </annotationProcessorPath>
+
+                            <!-- Lombok Annotation Processor -->
+                            <annotationProcessorPath>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>1.18.28</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
