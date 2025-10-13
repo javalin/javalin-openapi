@@ -365,6 +365,29 @@ public final class JavalinTest implements Handler {
             return new String[] { timestamp };
         }
 
+        // should contain nested list example (list within an object)
+        @OpenApiExample(objects = {
+            @OpenApiExampleProperty(name = "name", value = "Product"),
+            @OpenApiExampleProperty(name = "tags", objects = {
+                @OpenApiExampleProperty(value = "electronics"),
+                @OpenApiExampleProperty(value = "gadgets"),
+                @OpenApiExampleProperty(value = "popular")
+            }),
+            @OpenApiExampleProperty(name = "categories", objects = {
+                @OpenApiExampleProperty(objects = {
+                    @OpenApiExampleProperty(name = "id", value = "1"),
+                    @OpenApiExampleProperty(name = "name", value = "Tech")
+                }),
+                @OpenApiExampleProperty(objects = {
+                    @OpenApiExampleProperty(name = "id", value = "2"),
+                    @OpenApiExampleProperty(name = "name", value = "Home")
+                })
+            })
+        })
+        public @NotNull Object getNestedListExample() {
+            return new Object();
+        }
+
         // should contain example for primitive types, SwaggerUI will automatically display this as an Integer
         @OpenApiExample("5050")
         @OpenApiNumberValidation(

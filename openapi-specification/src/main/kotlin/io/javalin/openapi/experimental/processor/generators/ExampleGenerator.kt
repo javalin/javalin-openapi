@@ -45,7 +45,14 @@ object ExampleGenerator {
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
             this.value != NULL_STRING -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true-> GeneratorResult(null, objects.toJsonObject())
+            this.objects?.isNotEmpty() == true -> {
+                // Check if objects is a list (raw or object list)
+                if (objects.isRawList() || objects.isObjectList()) {
+                    generateFromExamples(objects)
+                } else {
+                    GeneratorResult(null, objects.toJsonObject())
+                }
+            }
             else -> throw IllegalArgumentException("Example object must have either value or objects ($this)")
         }
 
