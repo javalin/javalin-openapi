@@ -1,5 +1,5 @@
-# GitHub Actions workflow to automatically publish snapshot builds.
-name: "Publish snapshots"
+# GitHub Actions workflow to automatically publish to GitHub Packages.
+name: "Publish to GitHub Packages"
 on:
   push:
     branches: [ "main" ]
@@ -8,9 +8,12 @@ env:
   JAVA_VERSION: 17
 
 jobs:
-  maven:
-    name: "Maven"
+  publish:
+    name: "Publish"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v3
@@ -27,7 +30,7 @@ jobs:
       - name: "Gradle publish"
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: "clean build publishAllPublicationsToReposilite-repositoryRepository"
+          arguments: "clean build publishAllPublicationsToGitHubPackagesRepository"
         env:
-          MAVEN_NAME: ${{ secrets.MAVEN_NAME }}
-          MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

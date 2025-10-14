@@ -15,8 +15,8 @@ allprojects {
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
 
-    group = "io.javalin.community.openapi"
-    version = "6.7.0-2"
+    group = "com.goodmem"
+    version = "6.7.0-2-custompatch"
 
     repositories {
         mavenCentral()
@@ -26,12 +26,12 @@ allprojects {
     publishing {
         repositories {
             maven {
-                name = "reposilite-repository"
-                url = uri("https://maven.reposilite.com/${if (version.toString().endsWith("-SNAPSHOT")) "snapshots" else "releases"}")
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/PAIR-Systems-Inc/javalin-openapi")
 
                 credentials {
-                    username = getEnvOrProperty("MAVEN_NAME", "mavenUser")
-                    password = getEnvOrProperty("MAVEN_TOKEN", "mavenPassword")
+                    username = getEnvOrProperty("GITHUB_ACTOR", "githubUser")
+                    password = getEnvOrProperty("GITHUB_TOKEN", "githubToken")
                 }
             }
         }
