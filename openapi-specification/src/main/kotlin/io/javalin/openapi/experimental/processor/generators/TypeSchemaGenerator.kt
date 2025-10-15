@@ -339,8 +339,7 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
                 extra["example"] = example.value
             }
             example.objects.isNotEmpty() -> {
-                val result = ExampleGenerator.generateFromExamples(example.objects.map { it.toExampleProperty() })
-                extra["example"] = result.jsonElement ?: result.simpleValue
+                extra["example"] = ExampleGenerator.generateFromExamples(example.objects.map { it.toExampleProperty() })
             }
         }
     }

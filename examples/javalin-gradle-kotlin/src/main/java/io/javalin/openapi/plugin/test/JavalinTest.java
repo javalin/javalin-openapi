@@ -368,19 +368,29 @@ public final class JavalinTest implements Handler {
         // should contain nested list example (list within an object)
         @OpenApiExample(objects = {
             @OpenApiExampleProperty(name = "name", value = "Product"),
+            @OpenApiExampleProperty(name = "price", value = "99.99", type = ExampleValueType.NUMBER),
+            @OpenApiExampleProperty(name = "inStock", value = "true", type = ExampleValueType.BOOLEAN),
+            @OpenApiExampleProperty(name = "discount", type = ExampleValueType.NULL),
             @OpenApiExampleProperty(name = "tags", objects = {
                 @OpenApiExampleProperty(value = "electronics"),
                 @OpenApiExampleProperty(value = "gadgets"),
                 @OpenApiExampleProperty(value = "popular")
             }),
+            @OpenApiExampleProperty(name = "ratings", objects = {
+                @OpenApiExampleProperty(value = "4.5", type = ExampleValueType.NUMBER),
+                @OpenApiExampleProperty(value = "4.8", type = ExampleValueType.NUMBER),
+                @OpenApiExampleProperty(value = "5.0", type = ExampleValueType.NUMBER)
+            }),
             @OpenApiExampleProperty(name = "categories", objects = {
                 @OpenApiExampleProperty(objects = {
-                    @OpenApiExampleProperty(name = "id", value = "1"),
-                    @OpenApiExampleProperty(name = "name", value = "Tech")
+                    @OpenApiExampleProperty(name = "id", value = "1", type = ExampleValueType.NUMBER),
+                    @OpenApiExampleProperty(name = "name", value = "Tech"),
+                    @OpenApiExampleProperty(name = "active", value = "true", type = ExampleValueType.BOOLEAN)
                 }),
                 @OpenApiExampleProperty(objects = {
-                    @OpenApiExampleProperty(name = "id", value = "2"),
-                    @OpenApiExampleProperty(name = "name", value = "Home")
+                    @OpenApiExampleProperty(name = "id", value = "2", type = ExampleValueType.NUMBER),
+                    @OpenApiExampleProperty(name = "name", value = "Home"),
+                    @OpenApiExampleProperty(name = "active", value = "false", type = ExampleValueType.BOOLEAN)
                 })
             })
         })

@@ -233,11 +233,19 @@ annotation class OpenApiExample(
     val objects: Array<OpenApiExampleProperty> = []
 )
 
+enum class ExampleValueType {
+    STRING,    // "value" (default)
+    NUMBER,    // 123 or 45.67
+    BOOLEAN,   // true or false
+    NULL       // null
+}
+
 @Target(ANNOTATION_CLASS)
 @Retention(RUNTIME)
 annotation class OpenApiExampleProperty(
     val name: String = NULL_STRING,
     val value: String = NULL_STRING,
+    val type: ExampleValueType = ExampleValueType.STRING,
     val objects: Array<OpenApiExampleProperty> = []
 )
 

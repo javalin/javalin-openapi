@@ -449,12 +449,7 @@ internal class OpenApiGenerator {
         }
 
         if (contentData.exampleObjects != null) {
-            val generatorResult = ExampleGenerator.generateFromExamples(contentData.exampleObjects!!)
-
-            when {
-                generatorResult.simpleValue != null -> addProperty("example", generatorResult.simpleValue)
-                generatorResult.jsonElement != null -> add("example", generatorResult.jsonElement)
-            }
+            add("example", ExampleGenerator.generateFromExamples(contentData.exampleObjects!!))
         }
 
     }
