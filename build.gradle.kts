@@ -16,7 +16,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "com.goodmem"
-    version = "6.7.0-2-custompatch"
+    version = "6.7.0-3-custompatch"
 
     repositories {
         mavenCentral()
