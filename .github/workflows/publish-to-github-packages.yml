@@ -1,4 +1,6 @@
 # GitHub Actions workflow to automatically publish to GitHub Packages.
+# Note: JitPack builds are triggered automatically from git tags.
+# To publish to JitPack, create a release/tag and JitPack will build on-demand.
 name: "Publish to GitHub Packages"
 on:
   push:

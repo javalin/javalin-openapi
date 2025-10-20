@@ -21,6 +21,7 @@ allprojects {
     repositories {
         mavenCentral()
         maven("https://maven.reposilite.com/snapshots")
+        maven("https://jitpack.io")
     }
 
     publishing {
