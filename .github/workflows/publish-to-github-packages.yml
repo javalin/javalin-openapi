@@ -1,7 +1,19 @@
-# GitHub Actions workflow to automatically publish to GitHub Packages.
-# Note: JitPack builds are triggered automatically from git tags.
-# To publish to JitPack, create a release/tag and JitPack will build on-demand.
-name: "Publish to GitHub Packages"
+# Publishing via JitPack
+# JitPack builds are triggered automatically from git tags/releases.
+# To publish a new version:
+# 1. Create a git tag: git tag -a v6.7.0-4 -m "Release v6.7.0-4"
+# 2. Push the tag: git push origin v6.7.0-4
+# 3. JitPack will build on-demand when users request the version
+#
+# Users can then add to their build.gradle:
+# repositories {
+#     maven { url 'https://jitpack.io' }
+# }
+# dependencies {
+#     implementation 'com.github.PAIR-Systems-Inc:javalin-openapi:v6.7.0-4'
+# }
+
+name: "Build Verification"
 on:
   push:
     branches: [ "main" ]
@@ -10,12 +22,9 @@ env:
   JAVA_VERSION: 17
 
 jobs:
-  publish:
-    name: "Publish"
+  build:
+    name: "Build"
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v3
@@ -29,10 +38,7 @@ jobs:
       - name: "Grant execute permission for gradlew"
         run: chmod +x gradlew
 
-      - name: "Gradle publish"
+      - name: "Gradle build"
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: "clean build publishAllPublicationsToGitHubPackagesRepository"
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          arguments: "clean build"

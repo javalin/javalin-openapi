@@ -26,15 +26,8 @@ allprojects {
 
     publishing {
         repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/PAIR-Systems-Inc/javalin-openapi")
-
-                credentials {
-                    username = getEnvOrProperty("GITHUB_ACTOR", "githubUser")
-                    password = getEnvOrProperty("GITHUB_TOKEN", "githubToken")
-                }
-            }
+            // JitPack builds directly from GitHub releases/tags
+            // No explicit repository configuration needed
         }
     }
 
