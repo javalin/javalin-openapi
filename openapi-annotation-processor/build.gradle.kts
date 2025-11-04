@@ -18,11 +18,13 @@ dependencies {
         exclude(group = "org.slf4j")
     }
 
-    implementation("io.swagger.parser.v3:swagger-parser:2.1.15")
+    implementation("io.swagger.parser.v3:swagger-parser:2.1.35")
 
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.20")
 
     testImplementation("org.mongodb:bson:4.9.0")
+
+    implementation(platform("org.eclipse.jetty:jetty-http:12.0.12"))
 }
 
 tasks.withType<KaptGenerateStubs> {
