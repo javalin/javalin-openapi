@@ -34,6 +34,8 @@ class SwaggerConfiguration {
     var tagsSorter: String = "'alpha'"
     /** Operations sorter algorithm expression. */
     var operationsSorter: String = "'alpha'"
+    /** Custom version mappings */
+    var customVersions: MutableList<Pair<String, String>> = arrayListOf()
     /**  Custom CSS files to be injected into Swagger HTML */
     var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf()
     /**  Custom JavaScript files to be injected into Swagger HTML */
@@ -41,25 +43,40 @@ class SwaggerConfiguration {
 
     @JvmOverloads
     fun injectStylesheet(path: String, media: String = "screen"): SwaggerConfiguration = also {
-        customStylesheetFiles.add(Pair(path, media));
+        customStylesheetFiles.add(path to media)
     }
 
     @JvmOverloads
     fun injectJavaScript(path: String, type: String = "text/javascript"): SwaggerConfiguration = also  {
-        customJavaScriptFiles.add(Pair(path, type))
+        customJavaScriptFiles.add(path to type)
+    }
+
+    fun injectCustomVersion(name: String, url: String): SwaggerConfiguration = also {
+        customVersions.add(name to url)
     }
 }
 
 open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerConfiguration> = Consumer {}) : Plugin<SwaggerConfiguration>(userConfig, SwaggerConfiguration()) {
 
     override fun onStart(config: JavalinConfig) {
-        val versions = OpenApiLoader()
-            .loadVersions()
+        val openApiLoader = OpenApiLoader()
+        val versions = openApiLoader.loadVersions().map {
+            SwaggerVersionMapping(
+                name = it,
+                type = SwaggerVersionMapping.SwaggerVersionType.OPENAPI_LOADER
+            )
+        }
 
         val swaggerHandler = SwaggerHandler(
             title = pluginConfig.title,
             documentationPath = pluginConfig.documentationPath,
-            versions = versions,
+            versions = versions + pluginConfig.customVersions.map { (name, url) ->
+                SwaggerVersionMapping(
+                    name = name,
+                    url = url,
+                    type = SwaggerVersionMapping.SwaggerVersionType.CUSTOM
+                )
+            },
             swaggerVersion = pluginConfig.version,
             validatorUrl = pluginConfig.validatorUrl,
             routingPath = config.router.contextPath,
@@ -71,7 +88,7 @@ open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerC
         )
 
         val swaggerEndpoint = SwaggerEndpoint(
-            method = HandlerType.GET,
+            method = GET,
             path = pluginConfig.uiPath,
             roles = pluginConfig.roles.toSet(),
             handler = swaggerHandler
