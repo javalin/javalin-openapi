@@ -358,7 +358,9 @@ public final class JavalinTest implements Handler {
         @OpenApiExample(objects = {
             @OpenApiExampleProperty(name = "Barbie", objects = {
                 @OpenApiExampleProperty(name = "name", value = "Margot Robbie"),
-                @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                @OpenApiExampleProperty(name = "link", value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+                @OpenApiExampleProperty(name = "metadata", raw = "{'name': 'Barbie'}"),
+                @OpenApiExampleProperty(name = "additionalInfo", raw = "{}"),
             }),
         })
         public @NotNull Object[] getExampleObjects() {

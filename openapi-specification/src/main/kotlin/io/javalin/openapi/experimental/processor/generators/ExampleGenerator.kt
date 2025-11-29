@@ -1,5 +1,6 @@
 package io.javalin.openapi.experimental.processor.generators
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -11,11 +12,17 @@ object ExampleGenerator {
     data class ExampleProperty(
         val name: String?,
         val value: String?,
+        val raw: String?,
         val objects: List<ExampleProperty>?
     )
 
     fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
-        ExampleProperty(this.name, this.value, this.objects.map { it.toExampleProperty() })
+        ExampleProperty(
+            name = this.name.takeIf { it != NULL_STRING },
+            value = this.value.takeIf { it != NULL_STRING },
+            raw = this.raw.takeIf { it != NULL_STRING },
+            objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
+        )
 
     data class GeneratorResult(val simpleValue: String?, val jsonElement: JsonElement?) {
         init {
@@ -44,16 +51,17 @@ object ExampleGenerator {
 
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
-            this.value != NULL_STRING -> GeneratorResult(this.value, null)
+            this.value != null -> GeneratorResult(this.value, null)
             this.objects?.isNotEmpty() == true-> GeneratorResult(null, objects.toJsonObject())
-            else -> throw IllegalArgumentException("Example object must have either value or objects ($this)")
+            this.raw != null -> GeneratorResult(null, Gson().fromJson(this.raw, JsonElement::class.java))
+            else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
 
     private fun List<ExampleProperty>.toJsonObject(): JsonObject {
         val jsonObject = JsonObject()
         this.forEach {
             val result = it.toSimpleExampleValue()
-            if (it.name == NULL_STRING) {
+            if (it.name == null) {
                 throw IllegalArgumentException("Example object must have a name ($it)")
             }
             when {
@@ -65,9 +73,9 @@ object ExampleGenerator {
     }
 
     private fun List<ExampleProperty>.isObjectList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == NULL_STRING && it.value == NULL_STRING && it.objects?.isNotEmpty() ?: false }
+        this.isNotEmpty() && this.all { it.name == null && it.value == null && it.objects?.isNotEmpty() ?: false }
 
     private fun List<ExampleProperty>.isRawList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == NULL_STRING && it.value != NULL_STRING && it.objects?.isEmpty() ?: true }
+        this.isNotEmpty() && this.all { it.name == null && it.value != null && it.objects?.isEmpty() ?: true }
 
 }

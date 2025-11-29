@@ -238,6 +238,7 @@ annotation class OpenApiExample(
 annotation class OpenApiExampleProperty(
     val name: String = NULL_STRING,
     val value: String = NULL_STRING,
+    val raw: String = NULL_STRING,
     val objects: Array<OpenApiExampleProperty> = []
 )
 
