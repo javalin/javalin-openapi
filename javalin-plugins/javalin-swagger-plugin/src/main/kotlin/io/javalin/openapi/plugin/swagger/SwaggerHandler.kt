@@ -19,13 +19,24 @@ class SwaggerEndpoint(
     handler = handler
 )
 
+data class SwaggerVersionMapping(
+    val name: String,
+    val url: String? = null,
+    val type: SwaggerVersionType,
+) {
+    enum class SwaggerVersionType {
+        CUSTOM,
+        OPENAPI_LOADER
+    }
+}
+
 /**
  * Based on https://github.com/tipsy/javalin/blob/master/javalin-openapi/src/main/java/io/javalin/plugin/openapi/ui/SwaggerRenderer.kt by @chsfleury
  */
 class SwaggerHandler(
     private val title: String,
     private val documentationPath: String,
-    private val versions: Set<String>,
+    private val versions: List<SwaggerVersionMapping>,
     private val swaggerVersion: String,
     private val validatorUrl: String?,
     private val routingPath: String,
@@ -49,8 +60,14 @@ class SwaggerHandler(
         val rootPath = (basePath ?: "") + routingPath
         val publicSwaggerAssetsPath = "$rootPath/webjars/swagger-ui/$swaggerVersion".removedDoubledPathOperators()
         val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
+
         val allDocumentations = versions
-            .joinToString(separator = ",\n") { "{ name: '$it', url: '$publicDocumentationPath?v=$it' }" }
+            .joinToString(separator = ",\n") {
+                when (it.type) {
+                    SwaggerVersionMapping.SwaggerVersionType.OPENAPI_LOADER -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
+                    SwaggerVersionMapping.SwaggerVersionType.CUSTOM -> "{ name: '${it.name}', url: '${it.url!!}' }"
+                }
+            }
         val allCustomStylesheets = customStylesheetFiles
             .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
         val allCustomJavaScripts = customJavaScriptFiles

@@ -1,5 +1,6 @@
 package io.javalin.openapi.experimental.processor.generators
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -72,9 +73,9 @@ object ExampleGenerator {
     }
 
     private fun List<ExampleProperty>.isObjectList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == NULL_STRING && it.value == NULL_STRING && it.objects?.isNotEmpty() ?: false }
+        this.isNotEmpty() && this.all { it.name == null && it.value == null && it.objects?.isNotEmpty() ?: false }
 
     private fun List<ExampleProperty>.isRawList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == NULL_STRING && it.value != NULL_STRING && it.objects?.isEmpty() ?: true }
+        this.isNotEmpty() && this.all { it.name == null && it.value != null && it.objects?.isEmpty() ?: true }
 
 }
