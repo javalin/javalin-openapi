@@ -5,7 +5,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
 }
 
 description = "Javalin OpenAPI Parent | Parent"
@@ -16,7 +16,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "com.goodmem"
-    version = "6.7.0-4-custompatch"
+    version = "6.7.0-3-custompatch"
 
     repositories {
         mavenCentral()
@@ -128,8 +128,6 @@ subprojects {
 nexusPublishing {
     repositories {
         sonatype {
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
             username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
             password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
         }

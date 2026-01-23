@@ -7,15 +7,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class SwaggerPluginTest {
+
     @Test
     fun `should properly host swagger ui`() {
-        val app = Javalin.createAndStart {
-            it.jetty.defaultPort = 0
-            it.registerPlugin(SwaggerPlugin())
-        }
+        val app = Javalin.createAndStart { it.registerPlugin(SwaggerPlugin()) }
 
         try {
-            val response = Unirest.get("http://localhost:${app.port()}/swagger")
+            val response = Unirest.get("http://localhost:8080/swagger")
                 .asString()
                 .body
 
@@ -32,9 +30,10 @@ internal class SwaggerPluginTest {
     fun `should support custom base path`() {
         JavalinBehindProxy(
             javalinSupplier = { Javalin.create { it.registerPlugin(SwaggerPlugin { it.basePath = "/custom" }) } },
+            port = 8080,
             basePath = "/custom"
         ).use {
-            val response = Unirest.get("http://localhost:${it.proxyPort()}/custom/swagger")
+            val response = Unirest.get("http://localhost:8080/custom/swagger")
                 .asString()
                 .body
 
@@ -46,27 +45,22 @@ internal class SwaggerPluginTest {
     }
 
     @Test
-    fun `should have custom version, css and js injected`() {
-        val app = Javalin.createAndStart {
-            it.jetty.defaultPort = 0
-            it.registerPlugin(SwaggerPlugin { swagger ->
-                swagger
-                    .injectStylesheet("/swagger.css")
-                    .injectStylesheet("/swagger-the-print.css", "print")
-                    .injectJavaScript("/script.js")
-                    .injectCustomVersion("custom", "/openapi.yaml")
-            })
-        }
+    fun `should have custom css and js injected`() {
+        val app = Javalin.createAndStart { it.registerPlugin(SwaggerPlugin { swagger ->
+            swagger
+                .injectStylesheet("/swagger.css")
+                .injectStylesheet("/swagger-the-print.css", "print")
+                .injectJavaScript("/script.js")
+        }) }
 
         try {
-            val response = Unirest.get("http://localhost:${app.port()}/swagger")
+            val response = Unirest.get("http://localhost:8080/swagger")
                 .asString()
                 .body
 
             assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
             assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
             assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
-            assertThat(response).contains("{ name: 'custom', url: '/openapi.yaml' }")
         } finally {
             app.stop()
         }
@@ -75,7 +69,6 @@ internal class SwaggerPluginTest {
     @Test
     fun `should not fail if second swagger plugin is registered`() {
         val app = Javalin.createAndStart {
-            it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin())
             it.registerPlugin(SwaggerPlugin { swagger ->
                 swagger.documentationPath = "/example-docs"
@@ -84,7 +77,7 @@ internal class SwaggerPluginTest {
         }
 
         try {
-            val javalinHost = "http://localhost:${app.port()}"
+            val javalinHost = "http://localhost:8080"
             val webjarJsRoute = "/webjars/swagger-ui/${SwaggerConfiguration().version}/swagger-ui-bundle.js"
 
             val response = Unirest.get("$javalinHost/swagger")
@@ -115,7 +108,6 @@ internal class SwaggerPluginTest {
     @Test
     fun `should not fail if second swagger plugin is registered with routes`(){
         val app = Javalin.createAndStart {
-            it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin())
             it.registerPlugin(SwaggerPlugin { swagger ->
                 swagger.documentationPath = "/example-docs"
@@ -127,7 +119,7 @@ internal class SwaggerPluginTest {
         }
 
         try {
-            val javalinHost = "http://localhost:${app.port()}"
+            val javalinHost = "http://localhost:8080"
 
             val webjarCssRoute = "/webjars/swagger-ui/${SwaggerConfiguration().version}/swagger-ui.css"
             val webjarJsRoute = "/webjars/swagger-ui/${SwaggerConfiguration().version}/swagger-ui-bundle.js"
