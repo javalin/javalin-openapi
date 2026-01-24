@@ -42,7 +42,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.1")
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.25")
 
     // some test integrations
     implementation("org.mongodb:bson:4.9.1")
