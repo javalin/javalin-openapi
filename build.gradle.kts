@@ -1,8 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.20"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -16,7 +17,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "6.7.0-5"
+    version = "7.0.0-beta.1"
 
     repositories {
         mavenCentral()
@@ -89,28 +90,26 @@ allprojects {
     }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
-    tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = "11"
-            languageVersion = "1.8"
-            freeCompilerArgs = listOf(
-                "-Xjvm-default=all", // For generating default methods in interfaces
-                // "-Xcontext-receivers"
-            )
-        }
-    }
 }
 
 subprojects {
     apply(plugin = "application")
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            languageVersion.set(KotlinVersion.KOTLIN_2_2)
+            javaParameters.set(true)
+        }
+    }
+
     dependencies {
-        val javalin = "6.7.0"
+        val javalin = "7.0.0-beta.1"
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 
@@ -118,6 +117,7 @@ subprojects {
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
         testImplementation("org.assertj:assertj-core:3.24.2")
         testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.38.0")

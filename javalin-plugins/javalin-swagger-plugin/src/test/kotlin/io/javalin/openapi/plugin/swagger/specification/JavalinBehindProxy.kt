@@ -15,29 +15,32 @@ internal class JavalinBehindProxy(
     private val javalin = javalinSupplier
         .get()
 
-    private val proxy = Javalin.create()
-        .get("/") { it.html("Index") }
-        .get(basePath) { Unirest.get(it.javalinLocation()).redirect(it) }
-        .get("$basePath/<uri>") { Unirest.get(it.javalinLocation()).redirect(it) }
-        .head("$basePath/<uri>") { Unirest.head(it.javalinLocation()).redirect(it) }
-        .post("$basePath/<uri>") { Unirest.post(it.javalinLocation()).redirect(it) }
-        .put("$basePath/<uri>") { Unirest.put(it.javalinLocation()).redirect(it) }
-        .delete("$basePath/<uri>") { Unirest.delete(it.javalinLocation()).redirect(it) }
-        .options("$basePath/<uri>") { Unirest.options(it.javalinLocation()).redirect(it) }
+    private val proxy =
+        Javalin.create { config ->
+            config.routes
+                .get("/") { it.html("Index") }
+                .get(basePath) { Unirest.get(it.javalinLocation()).redirect(it) }
+                .get("$basePath/<uri>") { Unirest.get(it.javalinLocation()).redirect(it) }
+                .head("$basePath/<uri>") { Unirest.head(it.javalinLocation()).redirect(it) }
+                .post("$basePath/<uri>") { Unirest.post(it.javalinLocation()).redirect(it) }
+                .put("$basePath/<uri>") { Unirest.put(it.javalinLocation()).redirect(it) }
+                .delete("$basePath/<uri>") { Unirest.delete(it.javalinLocation()).redirect(it) }
+                .options("$basePath/<uri>") { Unirest.options(it.javalinLocation()).redirect(it) }
+        }
 
     init {
         start()
     }
 
-    fun start(): JavalinBehindProxy = also {
+    fun start(): JavalinBehindProxy = also { _ ->
         val awaitStart = CountDownLatch(2)
 
         proxy
-            .events { it.serverStarted { awaitStart.countDown() } }
+            .also { it.unsafe.events.serverStarted { awaitStart.countDown() } }
             .start(0)
 
         javalin
-            .events { it.serverStarted { awaitStart.countDown() } }
+            .also { it.unsafe.events.serverStarted { awaitStart.countDown() } }
             .start(0)
 
         awaitStart.await()

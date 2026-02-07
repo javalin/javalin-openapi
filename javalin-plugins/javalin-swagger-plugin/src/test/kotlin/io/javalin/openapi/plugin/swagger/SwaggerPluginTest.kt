@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test
 internal class SwaggerPluginTest {
     @Test
     fun `should properly host swagger ui`() {
-        val app = Javalin.createAndStart {
+        val app = Javalin.create {
             it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin())
-        }
+        }.start()
 
         try {
             val response = Unirest.get("http://localhost:${app.port()}/swagger")
@@ -47,7 +47,7 @@ internal class SwaggerPluginTest {
 
     @Test
     fun `should have custom version, css and js injected`() {
-        val app = Javalin.createAndStart {
+        val app = Javalin.create() {
             it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin { swagger ->
                 swagger
@@ -56,7 +56,7 @@ internal class SwaggerPluginTest {
                     .injectJavaScript("/script.js")
                     .injectCustomVersion("custom", "/openapi.yaml")
             })
-        }
+        }.start()
 
         try {
             val response = Unirest.get("http://localhost:${app.port()}/swagger")
@@ -74,14 +74,14 @@ internal class SwaggerPluginTest {
 
     @Test
     fun `should not fail if second swagger plugin is registered`() {
-        val app = Javalin.createAndStart {
+        val app = Javalin.create {
             it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin())
             it.registerPlugin(SwaggerPlugin { swagger ->
                 swagger.documentationPath = "/example-docs"
                 swagger.uiPath = "/example-ui"
             })
-        }
+        }.start()
 
         try {
             val javalinHost = "http://localhost:${app.port()}"
@@ -114,17 +114,15 @@ internal class SwaggerPluginTest {
 
     @Test
     fun `should not fail if second swagger plugin is registered with routes`(){
-        val app = Javalin.createAndStart {
+        val app = Javalin.create {
             it.jetty.defaultPort = 0
             it.registerPlugin(SwaggerPlugin())
             it.registerPlugin(SwaggerPlugin { swagger ->
                 swagger.documentationPath = "/example-docs"
                 swagger.uiPath = "/example-ui"
             })
-            it.router.mount { cfg ->
-                cfg.get("/some/route/") { ctx -> ctx.result("Hello World") }
-            }
-        }
+            it.routes.get("/some/route/") { ctx -> ctx.result("Hello World") }
+        }.start()
 
         try {
             val javalinHost = "http://localhost:${app.port()}"

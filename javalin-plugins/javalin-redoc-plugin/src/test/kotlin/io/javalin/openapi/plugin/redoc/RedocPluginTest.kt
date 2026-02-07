@@ -10,7 +10,7 @@ internal class RedocPluginTest {
 
     @Test
     fun `should properly host redoc ui`() {
-        val app = Javalin.createAndStart { it.registerPlugin(ReDocPlugin()) }
+        val app = Javalin.create { it.registerPlugin(ReDocPlugin()) }.start()
 
         try {
             val response = Unirest.get("http://localhost:8080/redoc")

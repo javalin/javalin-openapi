@@ -8,7 +8,8 @@ import org.eclipse.jetty.http.MimeTypes
 internal class ReDocWebJarHandler(private val redocWebJarPath: String) : Handler {
 
     override fun handle(context: Context) {
-        val resource = ReDocPlugin::class.java.getResourceAsStream("/META-INF/resources" + redocWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(redocWebJarPath, ""))
+        val resourcePath = "/META-INF/resources" + redocWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(redocWebJarPath, "")
+        val resource = ReDocPlugin::class.java.getResourceAsStream(resourcePath)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)
@@ -18,7 +19,7 @@ internal class ReDocWebJarHandler(private val redocWebJarPath: String) : Handler
         context.res().characterEncoding = "UTF-8"
         context.result(resource)
 
-        MimeTypes.getDefaultMimeByExtension(context.path())?.let {
+        MimeTypes.DEFAULTS.getMimeByExtension(context.path())?.let {
             context.contentType(it)
         }
     }

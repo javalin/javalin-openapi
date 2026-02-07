@@ -4,6 +4,7 @@ import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.http.HandlerType
 import io.javalin.router.Endpoint
+import io.javalin.security.Roles
 import io.javalin.security.RouteRole
 import org.intellij.lang.annotations.Language
 
@@ -15,7 +16,7 @@ class SwaggerEndpoint(
 ) : Endpoint(
     method = method,
     path = path,
-    roles = roles.toTypedArray(),
+    metadata = setOf(Roles(roles)),
     handler = handler
 )
 
@@ -73,6 +74,7 @@ class SwaggerHandler(
         val allCustomJavaScripts = customJavaScriptFiles
             .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
 
+        @Suppress("JSUnresolvedReference")
         @Language("html")
         val html = """
         <!-- HTML for static distribution bundle build -->
@@ -105,7 +107,7 @@ class SwaggerHandler(
                 <script src="$publicSwaggerAssetsPath/swagger-ui-standalone-preset.js"> </script>
                 <script>
                 window.onload = function() {
-                    window.ui = SwaggerUIBundle({
+                        window.ui = SwaggerUIBundle({
                         urls: [
                             $allDocumentations
                         ],

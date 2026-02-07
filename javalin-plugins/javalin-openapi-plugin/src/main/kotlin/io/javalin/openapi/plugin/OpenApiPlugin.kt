@@ -4,21 +4,19 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.javalin.config.JavalinConfig
+import io.javalin.config.JavalinState
 import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
 import java.util.function.Consumer
 
 open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plugin<OpenApiPluginConfiguration>(userConfig, OpenApiPluginConfiguration()) {
 
-    override fun onStart(config: JavalinConfig) {
-        config.router.mount {
-            it.get(
-                pluginConfig.documentationPath,
-                OpenApiHandler(createDocumentation()),
-                *pluginConfig.roles?.toTypedArray() ?: emptyArray()
-            )
-        }
+    override fun onStart(state: JavalinState) {
+        state.routes.get(
+            pluginConfig.documentationPath,
+            OpenApiHandler(createDocumentation()),
+            *pluginConfig.roles?.toTypedArray() ?: emptyArray()
+        )
     }
 
     private fun createDocumentation(): Lazy<Map<String, String>> =

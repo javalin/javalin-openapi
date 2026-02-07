@@ -45,7 +45,7 @@ public final class JavalinTest implements Handler {
      * @param args args
      */
     public static void main(String[] args) {
-        Javalin.createAndStart(config -> {
+        var app = Javalin.create(config -> {
             // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
 
@@ -113,6 +113,7 @@ public final class JavalinTest implements Handler {
                 System.out.println(generatedJsonSchema.getContentAsString());
             }
         });
+        app.start();
     }
 
     @OpenApi(
