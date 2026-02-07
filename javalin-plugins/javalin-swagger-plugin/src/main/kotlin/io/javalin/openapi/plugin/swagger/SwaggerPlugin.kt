@@ -1,7 +1,6 @@
 package io.javalin.openapi.plugin.swagger
 
-import io.javalin.config.JavalinConfig
-import io.javalin.http.HandlerType
+import io.javalin.config.JavalinState
 import io.javalin.http.HandlerType.GET
 import io.javalin.openapi.OpenApiLoader
 import io.javalin.plugin.Plugin
@@ -58,7 +57,7 @@ class SwaggerConfiguration {
 
 open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerConfiguration> = Consumer {}) : Plugin<SwaggerConfiguration>(userConfig, SwaggerConfiguration()) {
 
-    override fun onStart(config: JavalinConfig) {
+    override fun onStart(state: JavalinState) {
         val openApiLoader = OpenApiLoader()
         val versions = openApiLoader.loadVersions().map {
             SwaggerVersionMapping(
@@ -79,7 +78,7 @@ open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerC
             },
             swaggerVersion = pluginConfig.version,
             validatorUrl = pluginConfig.validatorUrl,
-            routingPath = config.router.contextPath,
+            routingPath = state.router.contextPath,
             basePath = pluginConfig.basePath,
             tagsSorter = pluginConfig.tagsSorter,
             operationsSorter = pluginConfig.operationsSorter,
@@ -94,13 +93,13 @@ open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerC
             handler = swaggerHandler
         )
 
-        config.router.mount { router ->
+        state.routes.let { router ->
             /** Register handler for swagger ui */
             router.addEndpoint(swaggerEndpoint)
 
             /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
-            config.pvt.internalRouter
-                .findHttpHandlerEntries(HandlerType.GET, "${pluginConfig.webJarPath}/*")
+            state.internalRouter
+                .findHttpHandlerEntries(GET, "${pluginConfig.webJarPath}/*")
                 .takeIf { routes -> routes.noneMatch { it.endpoint is SwaggerEndpoint } }
                 ?.run {
                     val swaggerWebJarHandler = SwaggerWebJarHandler(

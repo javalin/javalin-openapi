@@ -15,7 +15,7 @@ class OpenApiPluginTest {
     @Test
     fun `should support schema modifications in definition configuration`() {
         val app =
-            Javalin.createAndStart { config ->
+            Javalin.create { config ->
                 config.jetty.defaultPort = 0
 
                 config.registerPlugin(
@@ -27,7 +27,7 @@ class OpenApiPluginTest {
                         }
                     }
                 )
-            }
+            }.start()
 
         try {
             val response = Unirest.get("http://localhost:${app.port()}/openapi")
@@ -42,7 +42,7 @@ class OpenApiPluginTest {
 
     @Test
     fun `should support empty definition configuration`() {
-        val app = Javalin.createAndStart { config ->
+        val app = Javalin.create { config ->
             config.jetty.defaultPort = 0
 
             config.registerPlugin(
@@ -52,7 +52,7 @@ class OpenApiPluginTest {
                     }
                 }
             )
-        }
+        }.start()
 
         try {
             val response = Unirest.get("http://localhost:${app.port()}/openapi")

@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     kotlin("kapt")
@@ -9,11 +10,11 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-        languageVersion = "1.8"
-        freeCompilerArgs = listOf("-Xjvm-default=all") // For generating default methods in interfaces
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        languageVersion.set(KotlinVersion.KOTLIN_2_2)
+        freeCompilerArgs.addAll("-Xjvm-default=all")
     }
 }
 
@@ -38,7 +39,7 @@ dependencies {
     testImplementation("org.apache.groovy:groovy:4.0.12")
 
     // javalin
-    implementation("io.javalin:javalin:6.7.0")
+    implementation("io.javalin:javalin:7.0.0-beta.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.1")
 
     // logging
