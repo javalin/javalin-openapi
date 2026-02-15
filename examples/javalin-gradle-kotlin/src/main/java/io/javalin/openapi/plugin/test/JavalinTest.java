@@ -166,7 +166,8 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = DtoWithFields.class, mimeType = "app/dto-fields"), // map only fields
                 @OpenApiContent(from = DtoWithFieldsAndMethods.class, mimeType = "app/dto-fields-and-methods"), // map fields and methods
                 @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
-                @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity") // custom name
+                @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity"), // custom name
+                @OpenApiContent(from = SnakeCaseEntity.class, mimeType = "app/snake-case") // naming strategy
             }
         ),
         responses = {
@@ -592,5 +593,23 @@ public final class JavalinTest implements Handler {
 
     @OpenApiName("EntityWithCustomName")
     class CustomNameEntity {}
+
+    @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
+    static class SnakeCaseEntity {
+
+        public String getFirstName() {
+            return "John";
+        }
+
+        public String getLastName() {
+            return "Doe";
+        }
+
+        @OpenApiName("customField")
+        public String getHomeAddress() {
+            return "123 Main St";
+        }
+
+    }
 
 }
