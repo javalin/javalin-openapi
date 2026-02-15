@@ -30,7 +30,7 @@ jobs:
         id: detect-package-manager
         working-directory: ${{ env.BUILD_PATH }}
         run: |
-          if [ -f "${{ github.workspace }}/package.json" ]; then
+          if [ -f "${{ github.workspace }}/${{ env.BUILD_PATH }}/package.json" ]; then
             echo "manager=npm" >> $GITHUB_OUTPUT
             echo "command=ci" >> $GITHUB_OUTPUT
             echo "runner=npx --no-install" >> $GITHUB_OUTPUT
