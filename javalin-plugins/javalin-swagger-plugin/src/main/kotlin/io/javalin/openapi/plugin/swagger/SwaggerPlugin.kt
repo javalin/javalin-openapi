@@ -55,7 +55,11 @@ class SwaggerConfiguration {
     }
 }
 
-open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerConfiguration> = Consumer {}) : Plugin<SwaggerConfiguration>(userConfig, SwaggerConfiguration()) {
+open class SwaggerPlugin @JvmOverloads constructor(
+    userConfig: Consumer<SwaggerConfiguration> = Consumer {},
+) : Plugin<SwaggerConfiguration>(userConfig, SwaggerConfiguration()) {
+
+    override fun repeatable(): Boolean = true
 
     override fun onStart(state: JavalinState) {
         val openApiLoader = OpenApiLoader()
@@ -116,8 +120,5 @@ open class SwaggerPlugin @JvmOverloads constructor(userConfig: Consumer<SwaggerC
                 }
         }
     }
-
-    override fun repeatable(): Boolean =
-        true
 
 }

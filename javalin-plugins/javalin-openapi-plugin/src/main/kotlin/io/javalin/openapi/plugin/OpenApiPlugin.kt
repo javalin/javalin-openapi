@@ -11,6 +11,8 @@ import java.util.function.Consumer
 
 open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plugin<OpenApiPluginConfiguration>(userConfig, OpenApiPluginConfiguration()) {
 
+    override fun repeatable(): Boolean = true
+
     override fun onStart(state: JavalinState) {
         state.routes.get(
             pluginConfig.documentationPath,

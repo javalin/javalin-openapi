@@ -29,6 +29,8 @@ open class ReDocPlugin @JvmOverloads constructor(
     defaultConfig = ReDocConfiguration(),
 ) {
 
+    override fun repeatable(): Boolean = true
+
     override fun onStart(state: JavalinState) {
         val reDocHandler = ReDocHandler(
             title = pluginConfig.title,
