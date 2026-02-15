@@ -36,7 +36,7 @@ class OpenApiPrecompileScriptingEngine {
             ?.let { scriptFile -> groovyClassLoader.parseClass(scriptFile).getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer }
 
     private fun String.findSourceTargetNameBy(segment: String): String =
-        substringAfter(segment.toPathSegmentIdentifier()).substringBefore(File.separator)
+        substringAfterLast(segment.toPathSegmentIdentifier()).substringBefore(File.separator)
 
     private fun String.toPathSegmentIdentifier(): String =
         File.separator + this + File.separator
