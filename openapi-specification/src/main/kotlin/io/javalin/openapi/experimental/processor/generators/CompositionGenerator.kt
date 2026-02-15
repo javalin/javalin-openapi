@@ -65,7 +65,7 @@ fun JsonObject.createComposition(
             false ->
                 refs
                     .onEach { references.add(it) }
-                    .map { createJsonObjectOf("\$ref", "#/components/schemas/${it.simpleName}") }
+                    .map { createJsonObjectOf($$"$ref", "#/components/schemas/${it.simpleName}") }
                     .toJsonArray { add(it) }
                     .let { add(propertyComposition.type.propertyName, it) }
         }

@@ -18,7 +18,7 @@ class JsonSchemaGenerator {
 
     private fun generate(element: Element): String {
         val scheme = JsonObject()
-        scheme.addProperty("\$schema", "http://json-schema.org/draft-07/schema#")
+        scheme.addProperty($$"$schema", "http://json-schema.org/draft-07/schema#")
 
         context.inContext {
             val (entityScheme) = context.typeSchemaGenerator.createTypeSchema(

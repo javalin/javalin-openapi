@@ -11,7 +11,6 @@ import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
-import net.javacrumbs.jsonunit.assertj.JsonAssertions.value
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 import kotlin.annotation.AnnotationTarget.CLASS
@@ -46,7 +45,7 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
         assertThatJson(it)
             .inPath("$.paths['/custom'].get.responses.200.content['application/json'].schema")
             .isObject
-            .containsEntry("\$ref", "#/components/schemas/CustomEntity")
+            .containsEntry($$"$ref", "#/components/schemas/CustomEntity")
 
         assertThatJson(it)
             .inPath("$.components.schemas.CustomEntity")
@@ -74,7 +73,7 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
         assertThatJson(it)
             .inPath("$.paths['/name'].get.responses.200.content['application/json'].schema")
             .isObject
-            .containsEntry("\$ref", "#/components/schemas/PandaEntity")
+            .containsEntry($$"$ref", "#/components/schemas/PandaEntity")
 
         assertThatJson(it)
             .inPath("$.components.schemas.PandaEntity")

@@ -274,6 +274,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         assertThatJson(it)
             .inPath("$.components.schemas.Loop.properties.self")
             .isObject
-            .containsEntry("\$ref", "#/components/schemas/Loop")
+            .containsEntry($$"$ref", "#/components/schemas/Loop")
     }
 }

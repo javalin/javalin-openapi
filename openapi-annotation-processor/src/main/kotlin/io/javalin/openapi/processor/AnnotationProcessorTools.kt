@@ -26,7 +26,7 @@ object AnnotationProcessorTools {
                 val invocationHandler = Proxy.getInvocationHandler(processingEnv)
 
                 try {
-                    val field = invocationHandler.javaClass.getDeclaredField("val\$delegateTo")
+                    val field = invocationHandler.javaClass.getDeclaredField($$"val$delegateTo")
                     field.isAccessible = true
 
                     when (val delegateTo = field.get(invocationHandler)) {

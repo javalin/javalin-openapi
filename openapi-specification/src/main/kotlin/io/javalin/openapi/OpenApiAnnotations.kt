@@ -226,6 +226,18 @@ annotation class OpenApiName(
     val value: String
 )
 
+enum class OpenApiNamingStrategy {
+    DEFAULT,
+    SNAKE_CASE,
+    KEBAB_CASE
+}
+
+@Target(CLASS)
+@Retention(RUNTIME)
+annotation class OpenApiNaming(
+    val value: OpenApiNamingStrategy
+)
+
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
 annotation class OpenApiExample(

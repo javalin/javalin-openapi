@@ -14,6 +14,8 @@ import io.javalin.openapi.OpenApiDescription
 import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.OpenApiNaming
+import io.javalin.openapi.OpenApiNamingStrategy
 import io.javalin.openapi.OpenApiNumberValidation
 import io.javalin.openapi.OpenApiObjectValidation
 import io.javalin.openapi.OpenApiPropertyType
@@ -185,7 +187,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                     references.addAll(subReferences)
                 } else {
                     references.add(type)
-                    scheme.addProperty("\$ref", "#/components/schemas/${type.simpleName}")
+                    scheme.addProperty($$"$ref", "#/components/schemas/${type.simpleName}")
                 }
             }
             else -> {
@@ -259,6 +261,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
 
             val simpleName = property.toSimpleName()
             val customName = property.getAnnotation(OpenApiName::class.java)
+            val namingStrategy = source.getAnnotation(OpenApiNaming::class.java)?.value
 
             val name = when {
                 customName != null -> customName.value
@@ -266,6 +269,12 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
                 simpleName.startsWith("get") -> simpleName.replaceFirst("get", "").replaceFirstChar { it.lowercase() }
                 simpleName.startsWith("is") -> simpleName.replaceFirst("is", "").replaceFirstChar { it.lowercase() }
                 else -> continue
+            }
+
+            val finalName = if (customName == null && namingStrategy != null) {
+                translatePropertyName(namingStrategy, name)
+            } else {
+                name
             }
 
             val customType = property.getAnnotation(OpenApiPropertyType::class.java)
@@ -303,7 +312,7 @@ internal fun ClassDefinition.findAllProperties(requireNonNulls: Boolean): Collec
 
             properties.add(
                 Property(
-                    name = name,
+                    name = finalName,
                     type = propertyType.toClassDefinition(),
                     composition = findCompositionInElement(context, property),
                     required = required,
@@ -432,6 +441,29 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
 
     extra
 }
+
+fun splitCamelCase(name: String): List<String> {
+    val words = mutableListOf<String>()
+    val current = StringBuilder()
+    for (char in name) {
+        if (char.isUpperCase() && current.isNotEmpty()) {
+            words.add(current.toString())
+            current.clear()
+        }
+        current.append(char)
+    }
+    if (current.isNotEmpty()) {
+        words.add(current.toString())
+    }
+    return words
+}
+
+fun translatePropertyName(strategy: OpenApiNamingStrategy, name: String): String =
+    when (strategy) {
+        OpenApiNamingStrategy.DEFAULT -> name
+        OpenApiNamingStrategy.SNAKE_CASE -> splitCamelCase(name).joinToString("_") { it.lowercase() }
+        OpenApiNamingStrategy.KEBAB_CASE -> splitCamelCase(name).joinToString("-") { it.lowercase() }
+    }
 
 private fun JsonObject.addExtra(extra: Map<String, Any?>): JsonObject = also {
     extra
