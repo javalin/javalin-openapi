@@ -260,6 +260,59 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             ))
     }
 
+    @OpenApi(
+        path = "nested-list-example",
+        versions = ["should_support_nested_lists_in_example_objects"],
+        responses = [
+            OpenApiResponse(
+                status = "200",
+                content = [
+                    OpenApiContent(
+                        from = String::class,
+                        exampleObjects = [
+                            OpenApiExampleProperty(name = "name", value = "document"),
+                            OpenApiExampleProperty(
+                                name = "metadata",
+                                objects = [
+                                    OpenApiExampleProperty(name = "source", value = "document"),
+                                    OpenApiExampleProperty(name = "author", value = "John Doe"),
+                                    OpenApiExampleProperty(
+                                        name = "tags",
+                                        objects = [
+                                            OpenApiExampleProperty(value = "important"),
+                                            OpenApiExampleProperty(value = "research")
+                                        ]
+                                    )
+                                ]
+                            )
+                        ]
+                    ),
+                ],
+            ),
+        ]
+    )
+    @Test
+    fun should_support_nested_lists_in_example_objects() = withOpenApi("should_support_nested_lists_in_example_objects") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.paths['/nested-list-example'].get.responses.200.content['text/plain'].example")
+            .isObject
+            .isEqualTo(json(
+                // language=json
+                """
+                {
+                  "name": "document",
+                  "metadata": {
+                    "source": "document",
+                    "author": "John Doe",
+                    "tags": ["important", "research"]
+                  }
+                }
+                """
+            ))
+    }
+
     private class Loop(
         val self: Loop?,
     )

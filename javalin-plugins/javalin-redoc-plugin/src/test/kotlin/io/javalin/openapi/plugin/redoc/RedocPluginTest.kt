@@ -10,10 +10,10 @@ internal class RedocPluginTest {
 
     @Test
     fun `should properly host redoc ui`() {
-        val app = Javalin.create { it.registerPlugin(ReDocPlugin()) }.start()
+        val app = Javalin.create { it.registerPlugin(ReDocPlugin()) }.start(0)
 
         try {
-            val response = Unirest.get("http://localhost:8080/redoc")
+            val response = Unirest.get("http://localhost:${app.port()}/redoc")
                 .asString()
                 .body
 
@@ -28,10 +28,9 @@ internal class RedocPluginTest {
     fun `should support custom base path`() {
         JavalinBehindProxy(
             javalinSupplier = { Javalin.create { it.registerPlugin(ReDocPlugin { redoc -> redoc.basePath = "/custom" }) } },
-            port = 8080,
             basePath = "/custom"
         ).use {
-            val response = Unirest.get("http://localhost:8080/custom/redoc")
+            val response = Unirest.get("http://localhost:${it.proxyPort()}/custom/redoc")
                 .asString()
                 .body
 

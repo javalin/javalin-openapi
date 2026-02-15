@@ -52,7 +52,7 @@ object ExampleGenerator {
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
             this.value != null -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true-> GeneratorResult(null, objects.toJsonObject())
+            this.objects?.isNotEmpty() == true -> generateFromExamples(objects)
             this.raw != null -> GeneratorResult(null, Gson().fromJson(this.raw, JsonElement::class.java))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
