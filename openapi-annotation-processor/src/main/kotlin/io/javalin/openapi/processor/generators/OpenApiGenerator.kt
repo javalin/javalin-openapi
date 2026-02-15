@@ -3,13 +3,9 @@ package io.javalin.openapi.processor.generators
 import io.javalin.http.HttpStatus
 import io.javalin.openapi.*
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
-import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
-import com.google.gson.JsonObject
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
-import io.javalin.openapi.experimental.processor.generators.toExampleProperty
+import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
-import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.saveResource
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
@@ -29,8 +25,6 @@ import javax.tools.Diagnostic
 import javax.tools.Diagnostic.Kind.WARNING
 
 internal class OpenApiGenerator {
-
-    private val componentReferences = mutableMapOf<String, ClassDefinition>()
 
     fun generate(roundEnvironment: RoundEnvironment) {
         val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
@@ -141,7 +135,7 @@ internal class OpenApiGenerator {
             }
         }
 
-        resolveComponentReferences(schema)
+        schema.resolveComponentReferences(context)
         return schema.toJson()
     }
 
@@ -265,46 +259,6 @@ internal class OpenApiGenerator {
         resolvedEntries.forEach { (mimeType, configure) -> mediaType(mimeType, configure) }
     }
 
-    private fun resolveComponentReferences(schema: OpenApiSchemaBuilder) {
-        val generatedComponents = TreeMap<String, Pair<ClassDefinition, JsonObject>?> { a, b -> a.compareTo(b) }
-
-        while (generatedComponents.size < componentReferences.size) {
-            for ((name, componentReference) in componentReferences.toMutableMap()) {
-                if (generatedComponents.containsKey(name)) {
-                    continue
-                }
-
-                if (componentReference.fullName == "java.lang.Object") {
-                    generatedComponents[name] = null
-                    continue
-                }
-
-                val (json, references) = context.typeSchemaGenerator.createTypeSchema(componentReference, false)
-                componentReferences.putAll(references.associateBy { it.fullName })
-                generatedComponents[name] = componentReference to json
-            }
-        }
-
-        componentReferences.clear()
-
-        generatedComponents
-            .mapNotNull { it.value }
-            .filter { (type, _) ->
-                val alreadyExists = schema.hasComponentSchema(type.simpleName)
-
-                context.inDebug {
-                    if (alreadyExists) {
-                        context.env.messager.info("Scheme component '${type.simpleName}' already exists. Generated scheme for ${type.fullName} won't be added to the OpenAPI document.")
-                    }
-                }
-
-                !alreadyExists
-            }
-            .forEach { (type, json) ->
-                schema.addComponentSchema(type.simpleName, json)
-            }
-    }
-
     enum class In(val identifier: String) {
         QUERY("query"),
         HEADER("header"),
@@ -425,12 +379,7 @@ internal class OpenApiGenerator {
         }
 
         if (contentData.exampleObjects != null) {
-            val generatorResult = ExampleGenerator.generateFromExamples(contentData.exampleObjects!!.map { it.toExampleProperty() })
-
-            when {
-                generatorResult.simpleValue != null -> example(generatorResult.simpleValue!!)
-                generatorResult.jsonElement != null -> exampleJson(generatorResult.jsonElement!!)
-            }
+            applyExamples(contentData.exampleObjects!!)
         }
     }
 
@@ -485,12 +434,10 @@ internal class OpenApiGenerator {
             }
         }
 
-    private fun createTypeDescriptionWithReferences(type: TypeMirror): JsonObject =
+    private fun createTypeDescriptionWithReferences(type: TypeMirror): ResultScheme =
         context.inContext {
             val model = type.toClassDefinition()
-            val (json, references) = context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
-            componentReferences.putAll(references.associateBy { it.fullName })
-            json
+            context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
         }
 
 }

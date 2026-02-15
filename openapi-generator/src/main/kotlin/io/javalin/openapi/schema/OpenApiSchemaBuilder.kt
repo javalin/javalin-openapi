@@ -3,16 +3,26 @@ package io.javalin.openapi.schema
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import io.javalin.openapi.OpenApiExampleProperty
+import io.javalin.openapi.experimental.AnnotationProcessorContext
+import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
+import io.javalin.openapi.experimental.processor.generators.ResultScheme
+import io.javalin.openapi.experimental.processor.generators.toExampleProperty
+import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.toPrettyString
-
-@JvmInline
-value class ResolvedSchema(internal val json: JsonObject)
+import java.util.TreeMap
 
 class OpenApiSchemaBuilder {
 
     private val root = JsonObject()
     private val paths = JsonObject()
     private val componentSchemas = JsonObject()
+    internal val componentReferences = mutableMapOf<String, ClassDefinition>()
+
+    private val refCollector: (Set<ClassDefinition>) -> Unit = { refs ->
+        componentReferences.putAll(refs.associateBy { it.fullName })
+    }
 
     fun openApiVersion(version: String): OpenApiSchemaBuilder = apply {
         root.addProperty("openapi", version)
@@ -29,15 +39,56 @@ class OpenApiSchemaBuilder {
         if (!paths.has(path)) {
             paths.add(path, JsonObject())
         }
-        return PathItemBuilder(paths.getAsJsonObject(path))
+        return PathItemBuilder(paths.getAsJsonObject(path), refCollector)
     }
 
-    fun addComponentSchema(name: String, schema: JsonObject) {
-        componentSchemas.add(name, schema)
+    fun addComponentSchema(name: String, schema: ResultScheme) {
+        refCollector(schema.references)
+        componentSchemas.add(name, schema.json)
     }
 
     fun hasComponentSchema(name: String): Boolean =
         componentSchemas.has(name)
+
+    fun resolveComponentReferences(context: AnnotationProcessorContext) {
+        val generatedComponents = TreeMap<String, Pair<ClassDefinition, JsonObject>?> { a, b -> a.compareTo(b) }
+
+        while (generatedComponents.size < componentReferences.size) {
+            for ((name, componentReference) in componentReferences.toMutableMap()) {
+                if (generatedComponents.containsKey(name)) {
+                    continue
+                }
+
+                if (componentReference.fullName == "java.lang.Object") {
+                    generatedComponents[name] = null
+                    continue
+                }
+
+                val (json, references) = context.typeSchemaGenerator.createTypeSchema(componentReference, false)
+                componentReferences.putAll(references.associateBy { it.fullName })
+                generatedComponents[name] = componentReference to json
+            }
+        }
+
+        componentReferences.clear()
+
+        generatedComponents
+            .mapNotNull { it.value }
+            .filter { (type, _) ->
+                val alreadyExists = hasComponentSchema(type.simpleName)
+
+                context.inDebug {
+                    if (alreadyExists) {
+                        context.env.messager.info("Scheme component '${type.simpleName}' already exists. Generated scheme for ${type.fullName} won't be added to the OpenAPI document.")
+                    }
+                }
+
+                !alreadyExists
+            }
+            .forEach { (type, json) ->
+                componentSchemas.add(type.simpleName, json)
+            }
+    }
 
     fun toJson(): String {
         root.add("paths", paths)
@@ -48,16 +99,21 @@ class OpenApiSchemaBuilder {
     }
 }
 
-class PathItemBuilder(private val pathItem: JsonObject) {
+class PathItemBuilder(
+    private val pathItem: JsonObject,
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     fun operation(method: String, configure: OperationBuilder.() -> Unit) {
-        val builder = OperationBuilder()
+        val builder = OperationBuilder(refCollector)
         builder.configure()
         pathItem.add(method, builder.build())
     }
 }
 
-class OperationBuilder {
+class OperationBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val operation = JsonObject()
     private var tagsArray = JsonArray()
@@ -94,13 +150,13 @@ class OperationBuilder {
     }
 
     fun parameters(configure: ParametersBuilder.() -> Unit) {
-        val builder = ParametersBuilder()
+        val builder = ParametersBuilder(refCollector)
         builder.configure()
         parametersArray = builder.build()
     }
 
     fun requestBody(configure: RequestBodyBuilder.() -> Unit) {
-        val builder = RequestBodyBuilder()
+        val builder = RequestBodyBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -109,13 +165,13 @@ class OperationBuilder {
     }
 
     fun responses(configure: ResponsesBuilder.() -> Unit) {
-        val builder = ResponsesBuilder()
+        val builder = ResponsesBuilder(refCollector)
         builder.configure()
         responsesObject = builder.build()
     }
 
     fun callbacks(configure: CallbacksBuilder.() -> Unit) {
-        val builder = CallbacksBuilder()
+        val builder = CallbacksBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -157,20 +213,24 @@ class OperationBuilder {
     }
 }
 
-class ParametersBuilder {
+class ParametersBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val parameters = JsonArray()
 
     fun parameter(
         name: String,
         location: String,
-        schema: JsonObject,
+        schema: ResultScheme,
         description: String? = null,
         required: Boolean = false,
         deprecated: Boolean = false,
         allowEmptyValue: Boolean = false,
         example: String? = null,
     ) {
+        refCollector(schema.references)
+        val schemaJson = schema.json
         val param = JsonObject()
         param.addProperty("name", name)
         param.addProperty("in", location)
@@ -179,16 +239,18 @@ class ParametersBuilder {
         param.addProperty("deprecated", deprecated)
         param.addProperty("allowEmptyValue", allowEmptyValue)
         if (example != null) {
-            schema.addProperty("example", example)
+            schemaJson.addProperty("example", example)
         }
-        param.add("schema", schema)
+        param.add("schema", schemaJson)
         parameters.add(param)
     }
 
     internal fun build(): JsonArray = parameters
 }
 
-class RequestBodyBuilder {
+class RequestBodyBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val requestBody = JsonObject()
     private var contentObject: JsonObject? = null
@@ -202,7 +264,7 @@ class RequestBodyBuilder {
     }
 
     fun content(configure: ContentBuilder.() -> Unit) {
-        val builder = ContentBuilder()
+        val builder = ContentBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -235,20 +297,23 @@ class RequestBodyBuilder {
     }
 }
 
-class ContentBuilder {
+class ContentBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val content = JsonObject()
 
     fun mediaType(
         mimeType: String,
-        schema: JsonObject? = null,
+        schema: ResultScheme? = null,
         example: String? = null,
         exampleJson: JsonElement? = null,
     ) {
+        schema?.let { refCollector(it.references) }
         val mediaType = JsonObject()
 
-        if (schema != null && schema.size() > 0) {
-            mediaType.add("schema", schema)
+        if (schema != null && schema.json.size() > 0) {
+            mediaType.add("schema", schema.json)
         }
 
         when {
@@ -260,7 +325,7 @@ class ContentBuilder {
     }
 
     fun mediaType(mimeType: String, configure: MediaTypeBuilder.() -> Unit) {
-        val builder = MediaTypeBuilder()
+        val builder = MediaTypeBuilder(refCollector)
         builder.configure()
         content.add(mimeType, builder.build())
     }
@@ -271,15 +336,26 @@ class ContentBuilder {
 interface ExampleHolder {
     fun example(value: String)
     fun exampleJson(value: JsonElement)
+
+    fun applyExamples(exampleObjects: List<OpenApiExampleProperty>) {
+        val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects.map { it.toExampleProperty() })
+        when {
+            generatorResult.simpleValue != null -> example(generatorResult.simpleValue!!)
+            generatorResult.jsonElement != null -> exampleJson(generatorResult.jsonElement!!)
+        }
+    }
 }
 
-class MediaTypeBuilder : ExampleHolder {
+class MediaTypeBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) : ExampleHolder {
 
     private val mediaType = JsonObject()
     private var schemaObject: JsonObject? = null
 
-    fun schema(resolved: JsonObject) {
-        schemaObject = resolved
+    fun schema(resolved: ResultScheme) {
+        refCollector(resolved.references)
+        schemaObject = resolved.json
     }
 
     fun simpleSchema(type: String?, format: String?) {
@@ -290,7 +366,7 @@ class MediaTypeBuilder : ExampleHolder {
     }
 
     fun objectSchema(configure: ObjectSchemaBuilder.() -> Unit) {
-        val builder = ObjectSchemaBuilder()
+        val builder = ObjectSchemaBuilder(refCollector)
         builder.configure()
         schemaObject = builder.build()
     }
@@ -320,15 +396,18 @@ class MediaTypeBuilder : ExampleHolder {
     }
 }
 
-class ObjectSchemaBuilder : ExampleHolder {
+class ObjectSchemaBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) : ExampleHolder {
 
     private val properties = JsonObject()
     private var additionalPropertiesObject: JsonObject? = null
     private var exampleValue: String? = null
     private var exampleJsonValue: JsonElement? = null
 
-    fun property(name: String, schema: JsonObject) {
-        properties.add(name, schema)
+    fun property(name: String, schema: ResultScheme) {
+        refCollector(schema.references)
+        properties.add(name, schema.json)
     }
 
     fun property(name: String, type: String, format: String?) {
@@ -338,10 +417,11 @@ class ObjectSchemaBuilder : ExampleHolder {
         properties.add(name, schema)
     }
 
-    fun arrayProperty(name: String, itemSchema: JsonObject) {
+    fun arrayProperty(name: String, itemSchema: ResultScheme) {
+        refCollector(itemSchema.references)
         val schema = JsonObject()
         schema.addProperty("type", "array")
-        schema.add("items", itemSchema)
+        schema.add("items", itemSchema.json)
         properties.add(name, schema)
     }
 
@@ -355,8 +435,9 @@ class ObjectSchemaBuilder : ExampleHolder {
         properties.add(name, schema)
     }
 
-    fun additionalProperties(schema: JsonObject) {
-        additionalPropertiesObject = schema
+    fun additionalProperties(schema: ResultScheme) {
+        refCollector(schema.references)
+        additionalPropertiesObject = schema.json
     }
 
     fun additionalProperties(type: String?, format: String?) {
@@ -395,12 +476,14 @@ class ObjectSchemaBuilder : ExampleHolder {
     }
 }
 
-class ResponsesBuilder {
+class ResponsesBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val responses = JsonObject()
 
     fun response(status: String, configure: ResponseBuilder.() -> Unit) {
-        val builder = ResponseBuilder()
+        val builder = ResponseBuilder(refCollector)
         builder.configure()
         responses.add(status, builder.build())
     }
@@ -408,7 +491,9 @@ class ResponsesBuilder {
     internal fun build(): JsonObject = responses
 }
 
-class ResponseBuilder {
+class ResponseBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val response = JsonObject()
     private var contentObject: JsonObject? = null
@@ -419,7 +504,7 @@ class ResponseBuilder {
     }
 
     fun content(configure: ContentBuilder.() -> Unit) {
-        val builder = ContentBuilder()
+        val builder = ContentBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -428,7 +513,7 @@ class ResponseBuilder {
     }
 
     fun headers(configure: HeadersBuilder.() -> Unit) {
-        val builder = HeadersBuilder()
+        val builder = HeadersBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -450,19 +535,23 @@ class ResponseBuilder {
     }
 }
 
-class HeadersBuilder {
+class HeadersBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val headers = JsonObject()
 
     fun header(
         name: String,
-        schema: JsonObject,
+        schema: ResultScheme,
         description: String? = null,
         required: Boolean = false,
         deprecated: Boolean = false,
         allowEmptyValue: Boolean = false,
         example: String? = null,
     ) {
+        refCollector(schema.references)
+        val schemaJson = schema.json
         val header = JsonObject()
         description?.let { header.addProperty("description", it) }
         if (required) {
@@ -475,21 +564,23 @@ class HeadersBuilder {
             header.addProperty("allowEmptyValue", true)
         }
         if (example != null) {
-            schema.addProperty("example", example)
+            schemaJson.addProperty("example", example)
         }
-        header.add("schema", schema)
+        header.add("schema", schemaJson)
         headers.add(name, header)
     }
 
     internal fun build(): JsonObject = headers
 }
 
-class CallbacksBuilder {
+class CallbacksBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val callbacks = JsonObject()
 
     fun callback(name: String, url: String, method: String, configure: CallbackOperationBuilder.() -> Unit) {
-        val builder = CallbackOperationBuilder()
+        val builder = CallbackOperationBuilder(refCollector)
         builder.configure()
 
         val eventObject = if (callbacks.has(name)) {
@@ -510,7 +601,9 @@ class CallbacksBuilder {
     internal fun build(): JsonObject = callbacks
 }
 
-class CallbackOperationBuilder {
+class CallbackOperationBuilder(
+    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+) {
 
     private val operation = JsonObject()
     private var requestBodyObject: JsonObject? = null
@@ -525,7 +618,7 @@ class CallbackOperationBuilder {
     }
 
     fun requestBody(configure: RequestBodyBuilder.() -> Unit) {
-        val builder = RequestBodyBuilder()
+        val builder = RequestBodyBuilder(refCollector)
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
@@ -534,7 +627,7 @@ class CallbackOperationBuilder {
     }
 
     fun responses(configure: ResponsesBuilder.() -> Unit) {
-        val builder = ResponsesBuilder()
+        val builder = ResponsesBuilder(refCollector)
         builder.configure()
         responsesObject = builder.build()
     }

@@ -2,11 +2,15 @@ package io.javalin.openapi.schema
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 
 internal class OpenApiSchemaBuilderTest {
+
+    private fun resultScheme(configure: JsonObject.() -> Unit = {}): ResultScheme =
+        ResultScheme(JsonObject().apply(configure), emptySet())
 
     @Test
     fun `should build minimal document`() {
@@ -93,7 +97,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build parameters`() {
-        val intSchema = JsonObject().apply { addProperty("type", "integer") }
+        val intSchema = resultScheme { addProperty("type", "integer") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -134,7 +138,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build parameter with example`() {
-        val stringSchema = JsonObject().apply { addProperty("type", "string") }
+        val stringSchema = resultScheme { addProperty("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -163,7 +167,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build request body with content`() {
-        val userSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/User") }
+        val userSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -217,8 +221,8 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build responses with content and headers`() {
-        val userSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/User") }
-        val headerSchema = JsonObject().apply { addProperty("type", "string") }
+        val userSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
+        val headerSchema = resultScheme { addProperty("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -265,7 +269,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build callbacks`() {
-        val stringSchema = JsonObject().apply { addProperty("type", "string") }
+        val stringSchema = resultScheme { addProperty("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -339,12 +343,12 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should add component schemas`() {
-        val userSchema = JsonObject().apply {
+        val userSchema = ResultScheme(JsonObject().apply {
             addProperty("type", "object")
             val props = JsonObject()
             props.add("name", JsonObject().apply { addProperty("type", "string") })
             add("properties", props)
-        }
+        }, emptySet())
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -365,13 +369,13 @@ internal class OpenApiSchemaBuilderTest {
             .info(title = "", version = "")
 
         assert(!schema.hasComponentSchema("User"))
-        schema.addComponentSchema("User", JsonObject())
+        schema.addComponentSchema("User", resultScheme())
         assert(schema.hasComponentSchema("User"))
     }
 
     @Test
     fun `should build content with example`() {
-        val stringSchema = JsonObject().apply { addProperty("type", "string") }
+        val stringSchema = resultScheme { addProperty("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -452,7 +456,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build media type via lambda with resolved schema`() {
-        val refSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/User") }
+        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -615,7 +619,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with resolved property`() {
-        val refSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/Address") }
+        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Address") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -646,7 +650,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with array properties`() {
-        val refSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/Tag") }
+        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Tag") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -726,7 +730,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with resolved additional properties`() {
-        val refSchema = JsonObject().apply { addProperty("\$ref", "#/components/schemas/Value") }
+        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Value") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")

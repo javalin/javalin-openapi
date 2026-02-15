@@ -31,6 +31,7 @@ import io.javalin.openapi.experimental.processor.shared.MessagerWriter
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import io.javalin.openapi.experimental.processor.shared.hasAnnotation
 import io.javalin.openapi.experimental.processor.shared.info
+import io.javalin.openapi.experimental.processor.shared.toPrettyString
 import io.javalin.openapi.experimental.processor.shared.isPrimitive
 import io.javalin.openapi.experimental.processor.shared.objectType
 import io.javalin.openapi.experimental.processor.shared.recordType
@@ -46,9 +47,16 @@ import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 
 data class ResultScheme(
-    val json: JsonObject,
+    internal val json: JsonObject,
     val references: Set<ClassDefinition>
-)
+) {
+    fun toJsonSchemaString(): String {
+        val scheme = JsonObject()
+        scheme.addProperty("\$schema", "http://json-schema.org/draft-07/schema#")
+        json.entrySet().forEach { (key, value) -> scheme.add(key, value) }
+        return scheme.toPrettyString()
+    }
+}
 
 class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
 
