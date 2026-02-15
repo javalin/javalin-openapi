@@ -7,8 +7,6 @@ package io.javalin.openapi
 
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
@@ -142,7 +140,7 @@ data class OpenApiContentData(
     val properties: List<OpenApiContentProperty>?,
     val additionalProperties: OpenApiAdditionalContent?,
     val example: String?,
-    val exampleObjects: List<ExampleGenerator.ExampleProperty>?,
+    val exampleObjects: List<OpenApiExampleProperty>?,
 )
 
 @Target()
@@ -167,7 +165,7 @@ fun OpenApiContent.toData(): OpenApiContentData =
         properties = properties.takeIf { it.isNotEmpty() }?.toList(),
         additionalProperties = additionalProperties.takeIf { !it._ignored },
         example = example.takeIf { it != NULL_STRING },
-        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.toList(),
     )
 
 @Target()
@@ -192,7 +190,7 @@ fun OpenApiAdditionalContent.toData(): OpenApiContentData =
         properties = properties.takeIf { it.isNotEmpty() }?.toList(),
         additionalProperties = null,
         example = example.takeIf { it != NULL_STRING },
-        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.toList(),
     )
 
 @Target()

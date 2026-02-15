@@ -2,6 +2,7 @@ rootProject.name = "javalin-openapi"
 
 include(
     "openapi-specification",
+    "openapi-generator",
     "openapi-annotation-processor",
     "javalin-plugins",
     "javalin-plugins:javalin-openapi-plugin",

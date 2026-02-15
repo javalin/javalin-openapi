@@ -1,27 +1,23 @@
 package io.javalin.openapi.processor.generators
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import io.javalin.http.HttpStatus
 import io.javalin.openapi.*
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import com.google.gson.JsonObject
 import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
-import io.javalin.openapi.experimental.processor.shared.addIfNotEmpty
-import io.javalin.openapi.experimental.processor.shared.addString
-import io.javalin.openapi.experimental.processor.shared.computeIfAbsent
+import io.javalin.openapi.experimental.processor.generators.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.experimental.processor.shared.saveResource
-import io.javalin.openapi.experimental.processor.shared.toJsonArray
-import io.javalin.openapi.experimental.processor.shared.toPrettyString
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.COOKIE
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.FORM_DATA
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.HEADER
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.PATH
 import io.javalin.openapi.processor.generators.OpenApiGenerator.In.QUERY
+import io.javalin.openapi.schema.*
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.util.Locale
@@ -89,122 +85,187 @@ internal class OpenApiGenerator {
      * @return OpenApi JSON response
      */
     private fun generateSchema(openApiAnnotations: Collection<Pair<Element, OpenApi>>): String {
-        val openApi = JsonObject()
-        openApi.addProperty("openapi", "3.0.3")
-
-        // fill info
-        val info = JsonObject()
-        info.addProperty("title", context.parameters.info.title)
-        info.addProperty("version", context.parameters.info.version)
-        openApi.add("info", info)
-
-        // fill paths
-        val paths = JsonObject()
-        openApi.add("paths", paths)
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = context.parameters.info.title, version = context.parameters.info.version)
 
         for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
                 continue
             }
 
-            val path = paths.computeIfAbsent(routeAnnotation.getFormattedPath()) { JsonObject() }
+            val pathBuilder = schema.path(routeAnnotation.getFormattedPath())
 
             // https://swagger.io/specification/#paths-object
             for (method in routeAnnotation.methods.sortedBy { it.name }) {
-                val operation = JsonObject()
+                pathBuilder.operation(method.name.lowercase()) {
+                    // General
+                    tags(routeAnnotation.tags.toList())
+                    summary(routeAnnotation.summary.takeIf { it != NULL_STRING })
+                    description(routeAnnotation.description.takeIf { it != NULL_STRING })
 
-                // General
-                operation.add("tags", routeAnnotation.tags.toJsonArray())
-                operation.addString("summary", routeAnnotation.summary)
-                operation.addString("description", routeAnnotation.description)
+                    // ExternalDocs
+                    // ~ https://swagger.io/specification/#external-documentation-object
+                    // UNSUPPORTED
 
-                // ExternalDocs
-                // ~ https://swagger.io/specification/#external-documentation-object
-                // operation.addProperty("externalDocs", ); UNSUPPORTED
+                    // OperationId
+                    operationId(generateOperationId(method, routeAnnotation).takeIf { it != NULL_STRING })
 
-                // OperationId
-                operation.addString("operationId", generateOperationId(method, routeAnnotation))
+                    // Parameters
+                    // ~ https://swagger.io/specification/#parameter-object
+                    buildParameters(routeAnnotation)
 
-                // Parameters
-                // ~ https://swagger.io/specification/#parameter-object
-                val parameters = JsonArray()
+                    // RequestBody
+                    // ~ https://swagger.io/specification/#request-body-object
+                    buildRequestBody(openApiElement, routeAnnotation.requestBody)
 
-                val parameterAnnotations = linkedMapOf(
-                    COOKIE to routeAnnotation.cookies,
-                    FORM_DATA to routeAnnotation.formParams,
-                    HEADER to routeAnnotation.headers,
-                    PATH to routeAnnotation.pathParams,
-                    QUERY to routeAnnotation.queryParams
-                )
+                    // Responses
+                    // ~ https://swagger.io/specification/#responses-object
+                    buildResponses(openApiElement, routeAnnotation.responses)
 
-                parameterAnnotations.forEach { (parameterType, annotations) ->
-                    annotations.forEach { parameterAnnotation ->
-                        parameters.add(fromParameter(parameterType, parameterAnnotation, explicit = true))
+                    // Callbacks
+                    // ~ https://swagger.io/specification/#callback-object
+                    buildCallbacks(openApiElement, routeAnnotation.callbacks)
+
+                    // Deprecated
+                    deprecated(routeAnnotation.deprecated)
+
+                    // Security
+                    // ~ https://swagger.io/specification/#security-requirement-object
+                    security {
+                        for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
+                            securityRequirement(securityAnnotation.name, *securityAnnotation.scopes)
+                        }
                     }
                 }
-
-                operation.add("parameters", parameters)
-
-                // RequestBody
-                // ~ https://swagger.io/specification/#request-body-object
-                operation.addRequestBody(openApiElement, routeAnnotation.requestBody)
-
-                // Responses
-                // ~ https://swagger.io/specification/#responses-object
-                operation.addResponses(openApiElement, routeAnnotation.responses)
-
-                // Callbacks
-                // ~ https://swagger.io/specification/#callback-object
-                if (routeAnnotation.callbacks.isNotEmpty()) {
-                    val callbacks = JsonObject()
-
-                    routeAnnotation.callbacks.forEach { callback ->
-                        val eventObject = JsonObject()
-                        callbacks.add(callback.name, eventObject)
-
-                        val urlObject = JsonObject()
-                        eventObject.add(callback.url, urlObject)
-
-                        val methodObject = JsonObject()
-                        urlObject.add(callback.method.name.lowercase(), methodObject)
-
-                        methodObject.addString("summary", callback.summary)
-                        methodObject.addString("description", callback.description)
-                        methodObject.addRequestBody(openApiElement, callback.requestBody)
-                        methodObject.addResponses(openApiElement, callback.responses)
-                    }
-
-                    operation.add("callbacks", callbacks)
-                }
-
-                // Deprecated
-                operation.addProperty("deprecated", routeAnnotation.deprecated)
-
-                // Security
-                // ~ https://swagger.io/specification/#security-requirement-object
-                val security = JsonArray()
-
-                for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
-                    val securityEntry = JsonObject()
-                    val scopes = JsonArray()
-
-                    for (scopeAnnotation in securityAnnotation.scopes) {
-                        scopes.add(scopeAnnotation)
-                    }
-
-                    securityEntry.add(securityAnnotation.name, scopes)
-                    security.add(securityEntry)
-                }
-
-                operation.add("security", security)
-
-                // servers
-                path.add(method.name.lowercase(), operation)
             }
         }
 
-        val components = JsonObject()
-        val schemas = JsonObject()
+        resolveComponentReferences(schema)
+        return schema.toJson()
+    }
+
+    private fun OperationBuilder.buildParameters(routeAnnotation: OpenApi) {
+        parameters {
+            val parameterAnnotations = linkedMapOf(
+                COOKIE to routeAnnotation.cookies,
+                FORM_DATA to routeAnnotation.formParams,
+                HEADER to routeAnnotation.headers,
+                PATH to routeAnnotation.pathParams,
+                QUERY to routeAnnotation.queryParams
+            )
+
+            parameterAnnotations.forEach { (parameterType, annotations) ->
+                annotations.forEach { parameterAnnotation ->
+                    val paramSchema = createTypeDescriptionWithReferences(parameterAnnotation.getTypeMirror { type })
+                    parameter(
+                        name = parameterAnnotation.name,
+                        location = parameterType.identifier,
+                        schema = paramSchema,
+                        description = parameterAnnotation.description.takeIf { it != NULL_STRING },
+                        required = parameterAnnotation.required,
+                        deprecated = parameterAnnotation.deprecated,
+                        allowEmptyValue = parameterAnnotation.allowEmptyValue,
+                        example = parameterAnnotation.example.takeIf { it.isNotEmpty() },
+                    )
+                }
+            }
+        }
+    }
+
+    private fun OperationBuilder.buildRequestBody(element: Element, annotation: OpenApiRequestBody) {
+        requestBody {
+            description(annotation.description.takeIf { it != NULL_STRING })
+            content { addResolvedContent(element, annotation.content) }
+            required(annotation.required)
+        }
+    }
+
+    private fun OperationBuilder.buildResponses(element: Element, responseAnnotations: Array<OpenApiResponse>) {
+        responses {
+            for (responseAnnotation in responseAnnotations.sortedBy { it.status }) {
+                response(responseAnnotation.status) {
+                    val desc = responseAnnotation.description
+                        .takeIf { it != NULL_STRING }
+                        ?: responseAnnotation
+                            .status
+                            .toIntOrNull()
+                            ?.let { HttpStatus.forStatus(it) }
+                            ?.message
+
+                    description(desc)
+                    content { addResolvedContent(element, responseAnnotation.content) }
+                    headers {
+                        responseAnnotation.headers.forEach { headerParam ->
+                            val headerSchema = createTypeDescriptionWithReferences(headerParam.getTypeMirror { type })
+                            header(
+                                name = headerParam.name,
+                                schema = headerSchema,
+                                description = headerParam.description.takeIf { it != NULL_STRING },
+                                required = headerParam.required,
+                                deprecated = headerParam.deprecated,
+                                allowEmptyValue = headerParam.allowEmptyValue,
+                                example = headerParam.example.takeIf { it.isNotEmpty() },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun OperationBuilder.buildCallbacks(element: Element, callbackAnnotations: Array<OpenApiCallback>) {
+        if (callbackAnnotations.isEmpty()) {
+            return
+        }
+
+        callbacks {
+            callbackAnnotations.forEach { callbackAnnotation ->
+                callback(
+                    name = callbackAnnotation.name,
+                    url = callbackAnnotation.url,
+                    method = callbackAnnotation.method.name.lowercase()
+                ) {
+                    summary(callbackAnnotation.summary.takeIf { it != NULL_STRING })
+                    description(callbackAnnotation.description.takeIf { it != NULL_STRING })
+                    requestBody {
+                        description(callbackAnnotation.requestBody.description.takeIf { it != NULL_STRING })
+                        content { addResolvedContent(element, callbackAnnotation.requestBody.content) }
+                        required(callbackAnnotation.requestBody.required)
+                    }
+                    responses {
+                        for (responseAnnotation in callbackAnnotation.responses.sortedBy { it.status }) {
+                            response(responseAnnotation.status) {
+                                val desc = responseAnnotation.description
+                                    .takeIf { it != NULL_STRING }
+                                    ?: responseAnnotation
+                                        .status
+                                        .toIntOrNull()
+                                        ?.let { HttpStatus.forStatus(it) }
+                                        ?.message
+
+                                description(desc)
+                                content { addResolvedContent(element, responseAnnotation.content) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun ContentBuilder.addResolvedContent(element: Element, contentAnnotations: Array<OpenApiContent>) {
+        val resolvedEntries = TreeMap<String, MediaTypeBuilder.() -> Unit>()
+
+        for (contentAnnotation in contentAnnotations) {
+            val resolved = resolveMediaType(element, contentAnnotation) ?: continue
+            resolvedEntries[resolved.first] = resolved.second
+        }
+
+        resolvedEntries.forEach { (mimeType, configure) -> mediaType(mimeType, configure) }
+    }
+
+    private fun resolveComponentReferences(schema: OpenApiSchemaBuilder) {
         val generatedComponents = TreeMap<String, Pair<ClassDefinition, JsonObject>?> { a, b -> a.compareTo(b) }
 
         while (generatedComponents.size < componentReferences.size) {
@@ -218,9 +279,9 @@ internal class OpenApiGenerator {
                     continue
                 }
 
-                val (schema, references) = context.typeSchemaGenerator.createTypeSchema(componentReference, false)
+                val (json, references) = context.typeSchemaGenerator.createTypeSchema(componentReference, false)
                 componentReferences.putAll(references.associateBy { it.fullName })
-                generatedComponents[name] = componentReference to schema
+                generatedComponents[name] = componentReference to json
             }
         }
 
@@ -229,7 +290,7 @@ internal class OpenApiGenerator {
         generatedComponents
             .mapNotNull { it.value }
             .filter { (type, _) ->
-                val alreadyExists = schemas.has(type.simpleName)
+                val alreadyExists = schema.hasComponentSchema(type.simpleName)
 
                 context.inDebug {
                     if (alreadyExists) {
@@ -239,48 +300,9 @@ internal class OpenApiGenerator {
 
                 !alreadyExists
             }
-            .forEach { (type, schema) ->
-                schemas.add(type.simpleName, schema)
+            .forEach { (type, json) ->
+                schema.addComponentSchema(type.simpleName, json)
             }
-
-        components.add("schemas", schemas)
-        openApi.add("components", components)
-
-        return openApi.toPrettyString()
-    }
-
-    private fun JsonObject.addRequestBody(openApiElement: Element, requestBodyAnnotation: OpenApiRequestBody) {
-        val requestBody = JsonObject()
-        requestBody.addString("description", requestBodyAnnotation.description)
-        requestBody.addContent(openApiElement, requestBodyAnnotation.content)
-        addIfNotEmpty("requestBody", requestBody)
-        requestBody.addProperty("required", requestBodyAnnotation.required)
-    }
-
-    private fun JsonObject.addResponses(openApiElement: Element, responseAnnotations: Array<OpenApiResponse>) {
-        val responses = JsonObject()
-
-        for (responseAnnotation in responseAnnotations.sortedBy { it.status }) {
-            val response = JsonObject()
-
-            val description = responseAnnotation.description
-                .takeIf { it != NULL_STRING }
-                ?: responseAnnotation
-                    .status
-                    .toIntOrNull()
-                    ?.let { HttpStatus.forStatus(it) }
-                    ?.message
-
-            response.addString("description", description)
-            response.addContent(openApiElement, responseAnnotation.content)
-            responses.add(responseAnnotation.status, response)
-
-            val headers = JsonObject()
-            responseAnnotation.headers.forEach { headers.add(it.name, fromParameter(HEADER, it, explicit = false)) }
-            response.addIfNotEmpty("headers", headers)
-        }
-
-        add("responses", responses)
     }
 
     enum class In(val identifier: String) {
@@ -289,40 +311,6 @@ internal class OpenApiGenerator {
         PATH("path"),
         COOKIE("cookie"),
         FORM_DATA("formData")
-    }
-
-    // Parameter
-    // https://swagger.io/specification/#parameter-object
-    private fun fromParameter(`in`: In, parameterInstance: OpenApiParam, explicit: Boolean): JsonObject {
-        val parameter = JsonObject()
-
-        if (explicit) {
-            parameter.addString("name", parameterInstance.name)
-            parameter.addString("in", `in`.identifier)
-        }
-
-        parameter.addString("description", parameterInstance.description)
-
-        if (explicit || parameterInstance.required) {
-            parameter.addProperty("required", parameterInstance.required)
-        }
-
-        if (explicit || parameterInstance.deprecated) {
-            parameter.addProperty("deprecated", parameterInstance.deprecated)
-        }
-
-        if (explicit || parameterInstance.allowEmptyValue) {
-            parameter.addProperty("allowEmptyValue", parameterInstance.allowEmptyValue)
-        }
-
-        val schema = createTypeDescriptionWithReferences(parameterInstance.getTypeMirror { type })
-
-        if (parameterInstance.example.isNotEmpty()) {
-            schema.addProperty("example", parameterInstance.example)
-        }
-
-        parameter.add("schema", schema)
-        return parameter
     }
 
     /**
@@ -370,33 +358,9 @@ internal class OpenApiGenerator {
         it.titlecase(Locale.getDefault())
     }
 
-    private fun JsonObject.addContent(element: Element, contentAnnotations: Array<OpenApiContent>) =
+    private fun resolveMediaType(element: Element, source: OpenApiContent): Pair<String, MediaTypeBuilder.() -> Unit>? =
         context.inContext {
-            val requestBodyContent = JsonObject()
-            val requestBodySchemes = TreeMap<String, JsonObject>()
-
-            for (contentAnnotation in contentAnnotations) {
-                val (mimeType, mediaTypeSchema) =
-                    contentAnnotation
-                        .toData()
-                        .toMimeTypeSchema(element, contentAnnotation)
-                        ?: continue
-
-                requestBodySchemes[mimeType] = mediaTypeSchema
-            }
-
-            requestBodySchemes.forEach { (mimeType, scheme) ->
-                requestBodyContent.add(mimeType, scheme)
-            }
-
-            if (requestBodyContent.size() > 0) {
-                add("content", requestBodyContent)
-            }
-        }
-
-    private fun OpenApiContentData.toMimeTypeSchema(element: Element, source: Annotation): Pair<String, JsonObject>? =
-        context.inContext {
-            var contentData = this@toMimeTypeSchema
+            var contentData = source.toData()
             val from = source.getTypeMirror { contentData.from() }
 
             if (contentData.mimeType == null) {
@@ -404,7 +368,7 @@ internal class OpenApiGenerator {
                     when (NULL_CLASS::class.qualifiedName) {
                         // Use 'type` as `mimeType` if there's no other mime-type declaration in @OpenApiContent annotation
                         // ~ https://github.com/javalin/javalin-openapi/issues/88
-                        from.getFullName() -> contentData.copy(mimeType = type, type = null)
+                        from.getFullName() -> contentData.copy(mimeType = contentData.type, type = null)
                         else -> contentData.copy(mimeType = detectContentType(from))
                     }
             }
@@ -421,9 +385,9 @@ internal class OpenApiGenerator {
                         WARNING,
                         """
                         OpenApi generator cannot find matching mime type defined.
-                        Source: 
+                        Source:
                             Annotation in ${compilationUnit.lineMap.getLineNumber(startPosition)} at ${compilationUnit.sourceFile.name} line
-                        Annotation: 
+                        Annotation:
                             $source
                         """.trimIndent()
                     )
@@ -432,95 +396,82 @@ internal class OpenApiGenerator {
                 return@inContext null
             }
 
-            val mediaType = JsonObject()
-            val mediaTypeSchema = contentData.toTypeSchema(source)
+            val resolvedContentData = contentData
+            val fromMirror = source.getTypeMirror { resolvedContentData.from() }
 
-            if (mediaTypeSchema.size() > 0) {
-                mediaType.add("schema", mediaTypeSchema)
+            val configure: MediaTypeBuilder.() -> Unit = {
+                when (resolvedContentData.properties) {
+                    null if resolvedContentData.additionalProperties == null && fromMirror.getFullName() != NULL_CLASS::class.java.name ->
+                        schema(createTypeDescriptionWithReferences(fromMirror))
+
+                    null if resolvedContentData.additionalProperties == null ->
+                        simpleSchema(resolvedContentData.type, resolvedContentData.format)
+
+                    else -> objectSchema {
+                        resolvedContentData.properties?.let { buildProperties(it) }
+                        resolvedContentData.additionalProperties?.let { buildAdditionalProperties(it) }
+                    }
+                }
+
+                applyExample(resolvedContentData)
             }
-            mediaType.addContentExample(contentData)
 
-            return@inContext contentData.mimeType!! to mediaType
+            return@inContext resolvedContentData.mimeType!! to configure
         }
 
-    private fun JsonObject.addContentExample(contentData: OpenApiContentData) {
+    private fun ExampleHolder.applyExample(contentData: OpenApiContentData) {
         if (contentData.example != null) {
-            addProperty("example", contentData.example)
+            example(contentData.example!!)
         }
 
         if (contentData.exampleObjects != null) {
-            val generatorResult = ExampleGenerator.generateFromExamples(contentData.exampleObjects!!)
+            val generatorResult = ExampleGenerator.generateFromExamples(contentData.exampleObjects!!.map { it.toExampleProperty() })
 
             when {
-                generatorResult.simpleValue != null -> addProperty("example", generatorResult.simpleValue)
-                generatorResult.jsonElement != null -> add("example", generatorResult.jsonElement)
-            }
-        }
-
-    }
-
-    private fun OpenApiContentData.toTypeSchema(source: Annotation): JsonObject = context.inContext {
-        val from = source.getTypeMirror { from() }
-
-        when {
-            properties == null && additionalProperties == null && from.getFullName() != NULL_CLASS::class.java.name ->
-                createTypeDescriptionWithReferences(from)
-            properties == null && additionalProperties == null -> {
-                val schema = JsonObject()
-                type?.also { schema.addProperty("type", it) }
-                format?.also { schema.addProperty("format", it) }
-                schema
-            }
-            else -> {
-                val schema = JsonObject()
-                schema.addProperty("type", "object")
-
-                if (properties != null) {
-                    schema.add("properties", properties!!.toTypeSchema())
-                }
-
-                additionalProperties?.let {
-                    val additionalPropertiesData = it.toData()
-                    schema.add("additionalProperties", additionalPropertiesData.toTypeSchema(it))
-                    schema.addContentExample(additionalPropertiesData)
-                }
-                schema
+                generatorResult.simpleValue != null -> example(generatorResult.simpleValue!!)
+                generatorResult.jsonElement != null -> exampleJson(generatorResult.jsonElement!!)
             }
         }
     }
 
-    private fun Collection<OpenApiContentProperty>.toTypeSchema(): JsonObject =
+    private fun ObjectSchemaBuilder.buildProperties(properties: List<OpenApiContentProperty>) {
         context.inContext {
-            val propertiesSchema = JsonObject()
-
-            for (contentProperty in this@toTypeSchema) {
+            for (contentProperty in properties) {
                 val propertyFormat = contentProperty.format.takeIf { it != NULL_STRING }
-
                 val contentPropertyFrom = contentProperty.getTypeMirror { contentProperty.from }
-                val propertyScheme = if (contentPropertyFrom.getFullName() != NULL_CLASS::class.java.name) {
-                    createTypeDescriptionWithReferences(contentPropertyFrom)
+                val isResolved = contentPropertyFrom.getFullName() != NULL_CLASS::class.java.name
+
+                if (contentProperty.isArray) {
+                    if (isResolved) {
+                        arrayProperty(contentProperty.name, createTypeDescriptionWithReferences(contentPropertyFrom))
+                    } else {
+                        arrayProperty(contentProperty.name, contentProperty.type, propertyFormat)
+                    }
                 } else {
-                    JsonObject().apply {
-                        addProperty("type", contentProperty.type)
-                        propertyFormat?.let { addProperty("format", it) }
+                    if (isResolved) {
+                        property(contentProperty.name, createTypeDescriptionWithReferences(contentPropertyFrom))
+                    } else {
+                        property(contentProperty.name, contentProperty.type, propertyFormat)
                     }
                 }
+            }
+        }
+    }
 
-                propertiesSchema.add(contentProperty.name,
-                    if (contentProperty.isArray) {
-                        // wrap into OpenAPI array object
-                        JsonObject().apply {
-                            addProperty("type", "array")
-                            add("items", propertyScheme)
-                        }
-                    } else {
-                        propertyScheme
-                    }
-                )
+    private fun ObjectSchemaBuilder.buildAdditionalProperties(annotation: OpenApiAdditionalContent) {
+        context.inContext {
+            val additionalData = annotation.toData()
+            val from = annotation.getTypeMirror { additionalData.from() }
+
+            if (from.getFullName() != NULL_CLASS::class.java.name) {
+                additionalProperties(createTypeDescriptionWithReferences(from))
+            } else {
+                additionalProperties(additionalData.type, additionalData.format)
             }
 
-            propertiesSchema
+            applyExample(additionalData)
         }
+    }
 
     private fun detectContentType(typeMirror: TypeMirror): String =
         context.inContext {

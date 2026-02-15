@@ -27,7 +27,6 @@ import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.MessagerWriter
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import io.javalin.openapi.experimental.processor.shared.hasAnnotation

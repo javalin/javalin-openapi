@@ -7,22 +7,22 @@ import com.google.gson.JsonObject
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OpenApiExampleProperty
 
-object ExampleGenerator {
+data class ExampleProperty(
+    val name: String?,
+    val value: String?,
+    val raw: String?,
+    val objects: List<ExampleProperty>?
+)
 
-    data class ExampleProperty(
-        val name: String?,
-        val value: String?,
-        val raw: String?,
-        val objects: List<ExampleProperty>?
+fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
+    ExampleProperty(
+        name = this.name.takeIf { it != NULL_STRING },
+        value = this.value.takeIf { it != NULL_STRING },
+        raw = this.raw.takeIf { it != NULL_STRING },
+        objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
     )
 
-    fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
-        ExampleProperty(
-            name = this.name.takeIf { it != NULL_STRING },
-            value = this.value.takeIf { it != NULL_STRING },
-            raw = this.raw.takeIf { it != NULL_STRING },
-            objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
-        )
+object ExampleGenerator {
 
     data class GeneratorResult(val simpleValue: String?, val jsonElement: JsonElement?) {
         init {
@@ -52,7 +52,7 @@ object ExampleGenerator {
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
             this.value != null -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true -> generateFromExamples(objects)
+            this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects!!)
             this.raw != null -> GeneratorResult(null, Gson().fromJson(this.raw, JsonElement::class.java))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
