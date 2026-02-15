@@ -167,7 +167,8 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = DtoWithFieldsAndMethods.class, mimeType = "app/dto-fields-and-methods"), // map fields and methods
                 @OpenApiContent(from = EnumEntity.class, mimeType = "app/enum"), // enum,
                 @OpenApiContent(from = CustomNameEntity.class, mimeType = "app/custom-name-entity"), // custom name
-                @OpenApiContent(from = SnakeCaseEntity.class, mimeType = "app/snake-case") // naming strategy
+                @OpenApiContent(from = SnakeCaseEntity.class, mimeType = "app/snake-case"), // naming strategy
+                @OpenApiContent(from = IntegerEnumEntity.class, mimeType = "app/integer-enum") // integer enum
             }
         ),
         responses = {
@@ -534,6 +535,14 @@ public final class JavalinTest implements Handler {
             return name;
         }
 
+    }
+
+    @OpenApiPropertyType(definedBy = Integer.class)
+    @OpenApiDescription("Request type:\n * 1 - Type A\n * 2 - Type B\n * 3 - Type C")
+    enum IntegerEnumEntity {
+        @OpenApiName("1") TYPE_A,
+        @OpenApiName("2") TYPE_B,
+        @OpenApiName("3") TYPE_C
     }
 
     @JsonSchema(requireNonNulls = false)

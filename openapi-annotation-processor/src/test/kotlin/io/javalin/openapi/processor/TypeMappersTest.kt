@@ -350,6 +350,66 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .isEqualTo("string-example")
     }
 
+    @OpenApiPropertyType(definedBy = Int::class)
+    @OpenApiDescription("Sort order:\n * 1 - Request type 1\n * 2 - Request type 2")
+    private enum class IntegerEnum {
+        @OpenApiName("1") REQUEST_TYPE_1,
+        @OpenApiName("2") REQUEST_TYPE_2
+    }
+
+    @OpenApi(
+        path = "integer-enum",
+        versions = ["should_support_integer_enum"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = IntegerEnum::class)])]
+    )
+    @Test
+    fun should_support_integer_enum() = withOpenApi("should_support_integer_enum") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.IntegerEnum")
+            .isObject
+            .isEqualTo(json(
+                // language=json
+                """
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "enum": [1, 2],
+                  "description": "Sort order:\n * 1 - Request type 1\n * 2 - Request type 2"
+                }
+                """
+            ))
+    }
+
+    @OpenApiDescription("A regular string enum with description")
+    private enum class DescribedStringEnum {
+        ALPHA,
+        BETA
+    }
+
+    @OpenApi(
+        path = "described-enum",
+        versions = ["should_support_description_on_string_enum"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = DescribedStringEnum::class)])]
+    )
+    @Test
+    fun should_support_description_on_string_enum() = withOpenApi("should_support_description_on_string_enum") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.DescribedStringEnum")
+            .isObject
+            .isEqualTo(json(
+                // language=json
+                """
+                {
+                  "type": "string",
+                  "enum": ["ALPHA", "BETA"],
+                  "description": "A regular string enum with description"
+                }
+                """
+            ))
+    }
+
     private class Loop(
         val self: Loop?,
     )

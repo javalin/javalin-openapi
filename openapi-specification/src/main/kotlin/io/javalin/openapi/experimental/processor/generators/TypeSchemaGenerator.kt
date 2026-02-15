@@ -65,7 +65,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
         val source = type.source
         val definedBy = source.getAnnotation(OpenApiPropertyType::class.java)?.getClassDefinition { definedBy }
 
-        if (definedBy != null) {
+        if (definedBy != null && source.kind != ENUM) {
             return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
         }
 
@@ -78,6 +78,9 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                 schema.createComposition(context, type, composition, references, inlineRefs, requireNonNullsByDefault)
             }
             source.kind == ENUM -> {
+                val enumType = definedBy
+                    ?.let { context.configuration.simpleTypeMappings[it.fullName] }
+
                 val namingStrategy = source.getAnnotation(OpenApiNaming::class.java)?.value
                 val values = JsonArray()
 
@@ -93,10 +96,20 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                             else -> element.toSimpleName()
                         }
                     }
-                    .forEach { values.add(it) }
+                    .forEach { name ->
+                        if (enumType != null && enumType.type != "string") {
+                            values.add(Gson().fromJson(name, JsonElement::class.java))
+                        } else {
+                            values.add(name)
+                        }
+                    }
 
-                schema.addProperty("type", "string")
+                schema.addProperty("type", enumType?.type ?: "string")
+                enumType?.format?.also { schema.addProperty("format", it) }
                 schema.add("enum", values)
+
+                val extra = source.findExtra(context)
+                schema.addExtra(extra)
             }
             else -> {
                 schema.addProperty("type", "object")
@@ -154,7 +167,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
     ): ResultScheme = context.inContext {
         val definedBy = type.source.getAnnotation(OpenApiPropertyType::class.java)?.getClassDefinition { definedBy }
 
-        if (definedBy != null) {
+        if (definedBy != null && type.source.kind != ENUM) {
             return@inContext createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra)
         }
 
