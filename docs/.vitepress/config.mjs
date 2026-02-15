@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Javalin OpenAPI',
   description: 'Compile-time OpenAPI integration for Javalin',
+  base: '/javalin-openapi/',
   appearance: 'dark',
   themeConfig: {
     siteTitle: 'Javalin OpenAPI',
