@@ -515,10 +515,13 @@ public final class JavalinTest implements Handler {
         }
     }
 
+    @OpenApiNaming(OpenApiNamingStrategy.DEFAULT)
     enum EnumEntity {
 
         ONE("A"),
-        TWO("B");
+        TWO("B"),
+        @OpenApiName("custom-three")
+        THREE("C");
 
         private final String name;
 

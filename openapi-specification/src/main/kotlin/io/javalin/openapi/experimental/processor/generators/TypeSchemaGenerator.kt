@@ -77,12 +77,21 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                 schema.createComposition(context, type, composition, references, inlineRefs, requireNonNullsByDefault)
             }
             source.kind == ENUM -> {
+                val namingStrategy = source.getAnnotation(OpenApiNaming::class.java)?.value
                 val values = JsonArray()
+
                 source.enclosedElements
                     .filterIsInstance<VariableElement>()
                     .filter { it.modifiers.contains(Modifier.STATIC) }
                     .filter { context.isAssignable(it.asType(), type.mirror) }
-                    .map { it.toSimpleName() }
+                    .map { element ->
+                        val customName = element.getAnnotation(OpenApiName::class.java)
+                        when {
+                            customName != null -> customName.value
+                            namingStrategy != null -> translatePropertyName(namingStrategy, element.toSimpleName())
+                            else -> element.toSimpleName()
+                        }
+                    }
                     .forEach { values.add(it) }
 
                 schema.addProperty("type", "string")
