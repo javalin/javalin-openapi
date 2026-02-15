@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Javalin-inspired color palette */
+  --vp-c-brand-1: #5dade2;
+  --vp-c-brand-2: #85c1e9;
+  --vp-c-brand-3: #3498db;
+  --vp-c-brand-soft: rgba(93, 173, 226, 0.14);
+
+  /* Typography */
+  --vp-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, 'Courier New', monospace;
+
+  /* Home hero */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #5dade2, #85c1e9);
+  --vp-home-hero-image-background-image: linear-gradient(135deg, rgba(93, 173, 226, 0.2), rgba(93, 173, 226, 0.05));
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-bg: #141d2b;
+  --vp-c-bg-alt: #1a2538;
+  --vp-c-bg-elv: #243044;
+  --vp-c-bg-soft: #243044;
+
+  --vp-nav-bg-color: #141d2b;
+  --vp-sidebar-bg-color: #1a2538;
+
+  --vp-c-text-1: #e0e6ed;
+  --vp-c-text-2: #a8b2c1;
+  --vp-c-text-3: #7a8599;
+
+  --vp-c-divider: rgba(93, 173, 226, 0.15);
+  --vp-c-gutter: rgba(93, 173, 226, 0.10);
+
+  --vp-code-block-bg: #1a2538;
+  --vp-code-tab-active-bar-color: #5dade2;
+}
+
+/* ===== Headings with Rajdhani font ===== */
+
+h1, h2, h3, h4, h5, h6,
+.vp-doc h1, .vp-doc h2, .vp-doc h3, .vp-doc h4,
+.VPHero .name, .VPHero .text,
+.VPFeature .title {
+  font-family: 'Rajdhani', var(--vp-font-family-base);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ===== Hero Section ===== */
+
+.VPHero .name {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.VPHero .text {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
+}
+
+.VPHero .tagline {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.VPHero .action .VPButton.brand {
+  background-color: #5dade2;
+  border-color: #5dade2;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.VPHero .action .VPButton.brand:hover {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.VPHero .action .VPButton.alt {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ===== Feature Cards (javalin-style with left border) ===== */
+
+.VPFeature {
+  border: 1px solid var(--vp-c-divider);
+  border-left: 4px solid #5dade2 !important;
+  border-radius: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.VPFeature:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.VPFeature .title {
+  font-size: 1.1rem;
+  color: var(--vp-c-brand-1);
+}
+
+.VPFeature .details {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ===== Navigation ===== */
+
+.VPNav .VPNavBarTitle .title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.VPNavBar .VPNavBarMenuLink,
+.VPNavBar .VPNavBarMenuGroup .text {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1.03rem;
+  letter-spacing: 0.02em;
+}
+
+/* Push search toward content area */
+.VPNavBar .VPNavBarSearch {
+  padding-left: 2rem;
+}
+
+/* ===== Sidebar ===== */
+
+.VPSidebar .VPSidebarItem .text {
+  font-size: 0.9rem;
+}
+
+.VPSidebar .VPSidebarItem.is-active > .item > .indicator {
+  background-color: #5dade2;
+}
+
+.VPSidebar .VPSidebarItem.is-active > .item > div > .text {
+  color: #5dade2;
+}
+
+/* ===== Content ===== */
+
+.vp-doc a {
+  color: #5dade2;
+  text-decoration: none;
+}
+
+.vp-doc a:hover {
+  color: #85c1e9;
+  text-decoration: underline;
+}
+
+.vp-doc h1 {
+  font-size: 2rem;
+  border-bottom: 2px solid #5dade2;
+  padding-bottom: 0.5rem;
+}
+
+.vp-doc h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding-bottom: 0.4rem;
+}
+
+/* ===== Code blocks ===== */
+
+.vp-doc div[class*='language-'] {
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 0.88rem;
+  letter-spacing: -0.3px;
+}
+
+/* Code group tabs */
+.vp-code-group .tabs label {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ===== Tables ===== */
+
+.vp-doc table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vp-doc th {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  background-color: var(--vp-c-bg-soft);
+}
+
+/* ===== Custom containers (tips, warnings) ===== */
+
+.vp-doc .custom-block.tip {
+  border-color: #5dade2;
+}
+
+.vp-doc .custom-block.tip .custom-block-title {
+  color: #5dade2;
+}
+
+/* ===== Footer ===== */
+
+.VPFooter {
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* ===== Scrollbar (dark mode) ===== */
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1a2538;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #243044;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5dade2;
+}
