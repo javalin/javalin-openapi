@@ -41,7 +41,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val short: Short,
         val shortObject: java.lang.Short,
         val int: Int,
-        val intObject: java.lang.Integer,
+        val intObject: Integer,
         val long: Long,
         val longObject: java.lang.Long,
         val float: Float,
@@ -311,6 +311,43 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                 }
                 """
             ))
+    }
+
+    private class RawExampleEntity(
+        @get:OpenApiExample(raw = "1234")
+        val intField: Int,
+        @get:OpenApiExample(raw = "true")
+        val boolField: Boolean,
+        @get:OpenApiExample(raw = """[1, 2, 3]""")
+        val arrayField: List<Int>,
+        @get:OpenApiExample(value = "string-example")
+        val stringField: String
+    )
+
+    @OpenApi(
+        path = "raw-examples",
+        versions = ["should_support_raw_examples"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = RawExampleEntity::class)])]
+    )
+    @Test
+    fun should_support_raw_examples() = withOpenApi("should_support_raw_examples") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.RawExampleEntity.properties.intField.example")
+            .isEqualTo(1234)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.RawExampleEntity.properties.boolField.example")
+            .isEqualTo(true)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.RawExampleEntity.properties.arrayField.example")
+            .isEqualTo(json("[1, 2, 3]"))
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.RawExampleEntity.properties.stringField.example")
+            .isEqualTo("string-example")
     }
 
     private class Loop(

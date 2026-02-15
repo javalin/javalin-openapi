@@ -1,5 +1,6 @@
 package io.javalin.openapi.experimental.processor.generators
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -355,6 +356,9 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
         when {
             example.value != NULL_STRING -> {
                 extra["example"] = example.value
+            }
+            example.raw != NULL_STRING -> {
+                extra["example"] = Gson().fromJson(example.raw, JsonElement::class.java)
             }
             example.objects.isNotEmpty() -> {
                 val result = ExampleGenerator.generateFromExamples(example.objects.map { it.toExampleProperty() })

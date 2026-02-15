@@ -242,6 +242,8 @@ annotation class OpenApiNaming(
 @Retention(RUNTIME)
 annotation class OpenApiExample(
     val value: String = NULL_STRING,
+    /** For more complex examples, you can use the `raw` field to provide a JSON string that will be parsed as an example. */
+    val raw: String = NULL_STRING,
     val objects: Array<OpenApiExampleProperty> = []
 )
 
@@ -250,6 +252,7 @@ annotation class OpenApiExample(
 annotation class OpenApiExampleProperty(
     val name: String = NULL_STRING,
     val value: String = NULL_STRING,
+    /** For more complex examples, you can use the `raw` field to provide a JSON string that will be parsed as an example. */
     val raw: String = NULL_STRING,
     val objects: Array<OpenApiExampleProperty> = []
 )
