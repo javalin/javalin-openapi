@@ -29,7 +29,7 @@ the API looks quite the same despite some minor changes.
 
 | Module                         | Description                                                                                |
 |:-------------------------------|:-------------------------------------------------------------------------------------------|
-| `openapi-annotation-processor` | Compile-time annotation processor, should generate `/openapi-plugin/openapi-default/<version>.json` resources |
+| `openapi-annotation-processor` | Compile-time annotation processor, should generate `/openapi-plugin/openapi-{default/<version>}.json` resources |
 | `openapi-specification`        | Annotations & classes used to describe OpenAPI specification                               |
 | `examples`                 | Example Javalin application that uses OpenApi plugin in Gradle & Maven                     |
 
@@ -37,7 +37,7 @@ the API looks quite the same despite some minor changes.
 
 | Plugin                   | Description                                                                    |
 |:-------------------------|:-------------------------------------------------------------------------------|
-| `javalin-openapi-plugin` | Loads `/openapi-plugin/openapi-default/<version>.json` resources and serves main OpenApi endpoint |
+| `javalin-openapi-plugin` | Loads `/openapi-plugin/openapi-{default/<version>}.json` resources and serves main OpenApi endpoint |
 | `javalin-swagger-plugin` | Serves Swagger UI                                                              |
 | `javalin-redoc-plugin`   | Serves ReDoc UI                                                                |
 
