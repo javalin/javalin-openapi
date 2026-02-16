@@ -37,7 +37,7 @@ the API looks quite the same despite some minor changes.
 
 | Plugin                   | Description                                                                    |
 |:-------------------------|:-------------------------------------------------------------------------------|
-| `javalin-openapi-plugin` | Loads `/openapi-plugin/openapi.json` resource and serves main OpenApi endpoint |
+| `javalin-openapi-plugin` | Loads `/openapi-plugin/openapi-default/<version>.json` resources and serves main OpenApi endpoint |
 | `javalin-swagger-plugin` | Serves Swagger UI                                                              |
 | `javalin-redoc-plugin`   | Serves ReDoc UI                                                                |
 
