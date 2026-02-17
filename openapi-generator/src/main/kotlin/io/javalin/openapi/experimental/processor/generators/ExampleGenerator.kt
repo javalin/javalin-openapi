@@ -24,7 +24,10 @@ fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
 
 object ExampleGenerator {
 
-    data class GeneratorResult(val simpleValue: String?, val jsonElement: JsonElement?) {
+    data class GeneratorResult(
+        val simpleValue: String?,
+        val jsonElement: JsonElement?,
+    ) {
         init {
             when {
                 simpleValue != null && jsonElement != null -> throw IllegalArgumentException("rawList and jsonElement cannot be both non-null")
@@ -52,7 +55,7 @@ object ExampleGenerator {
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
             this.value != null -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects!!)
+            this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects)
             this.raw != null -> GeneratorResult(null, Gson().fromJson(this.raw, JsonElement::class.java))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
