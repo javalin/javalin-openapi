@@ -182,7 +182,7 @@ class OpenApiSchemaGenerator(
             AUTO_GENERATE -> {
                 httpMethod.name.lowercase() + openApi.path.split('/')
                     .map { pathPart ->
-                        if (pathPart.startsWith('{') or pathPart.startsWith('<')) {
+                        if (pathPart.startsWith('{') || pathPart.startsWith('<')) {
                             val pathParam = pathPart
                                 .drop(1)
                                 .dropLast(1)

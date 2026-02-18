@@ -10,7 +10,7 @@ class JsonSchemaGenerator {
 
     fun generate(roundEnvironment: RoundEnvironment) =
         roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
-            .filter { it.getAnnotation(JsonSchema::class.java).generateResource }
+            .filter { it.getAnnotation(JsonSchema::class.java)!!.generateResource }
             .onEach { context.env.filer.saveResource(context, "json-schemes/${it}", generate(it)) }
             .run { context.env.filer.saveResource(context, "json-schemes/index", joinToString(separator = "\n")) }
 
