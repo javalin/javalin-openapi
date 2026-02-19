@@ -2,7 +2,7 @@ package io.javalin.openapi.experimental.defaults
 
 import io.javalin.openapi.experimental.SimpleType
 
-internal fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> = mutableMapOf(
+fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> = mutableMapOf(
     "boolean" to SimpleType("boolean"),
     "java.lang.Boolean" to SimpleType("boolean"),
 

@@ -1,5 +1,6 @@
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.ClassDefinitionHandleKt
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
@@ -25,11 +26,11 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
             TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
             TypeElement specificRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecordBase')
 
-            if (ctx.isAssignable(type.mirror, specificRecord.asType()) && ctx.hasElement(specificRecord, property)) {
+            if (ctx.isAssignable(ClassDefinitionHandleKt.getMirror(type), specificRecord.asType()) && ctx.hasElement(specificRecord, property)) {
                 return false // exclude
             }
 
-            if (ctx.isAssignable(type.mirror, specificRecordBase.asType()) && ctx.hasElement(specificRecordBase, property)) {
+            if (ctx.isAssignable(ClassDefinitionHandleKt.getMirror(type), specificRecordBase.asType()) && ctx.hasElement(specificRecordBase, property)) {
                 return false // exclude
             }
 

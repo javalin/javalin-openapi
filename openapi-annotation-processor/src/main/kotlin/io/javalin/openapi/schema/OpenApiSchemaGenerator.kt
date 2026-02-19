@@ -4,6 +4,7 @@ import io.javalin.openapi.*
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.mirror
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import java.util.Locale
@@ -17,29 +18,64 @@ class OpenApiSchemaGenerator(
     private val defaultStatusDescription: (String) -> String? = { null },
 ) {
 
+    /**
+     * Based on https://swagger.io/specification/
+     *
+     * @param openApiAnnotations annotation instances to map
+     * @return OpenApi JSON response
+     */
     fun generateSchema(openApiAnnotations: Collection<Pair<Element, OpenApi>>): String {
-        val schema = OpenApiSchemaBuilder()
-            .openApiVersion("3.0.3")
-            .info(title = context.parameters.info.title, version = context.parameters.info.version)
+        val schema =
+            OpenApiSchemaBuilder()
+                .openApiVersion("3.0.3")
+                .info(
+                    title = context.parameters.info.title,
+                    version = context.parameters.info.version,
+                )
 
         for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
                 continue
             }
 
+            // https://swagger.io/specification/#paths-object
             val pathBuilder = schema.path(routeAnnotation.getFormattedPath())
 
             for (method in routeAnnotation.methods.sortedBy { it.name }) {
                 pathBuilder.operation(method.name.lowercase()) {
+                    // General
                     tags(routeAnnotation.tags.toList())
                     summary(routeAnnotation.summary.takeIf { it != NULL_STRING })
                     description(routeAnnotation.description.takeIf { it != NULL_STRING })
+
+                    // ExternalDocs
+                    // ~ https://swagger.io/specification/#external-documentation-object
+                    // UNSUPPORTED
+
+                    // OperationId
                     operationId(generateOperationId(method, routeAnnotation).takeIf { it != NULL_STRING })
+
+                    // Parameters
+                    // ~ https://swagger.io/specification/#parameter-object
                     buildParameters(routeAnnotation)
+
+                    // RequestBody
+                    // ~ https://swagger.io/specification/#request-body-object
                     buildRequestBody(openApiElement, routeAnnotation.requestBody)
+
+                    // Responses
+                    // ~ https://swagger.io/specification/#responses-object
                     buildResponses(openApiElement, routeAnnotation.responses)
+
+                    // Callbacks
+                    // ~ https://swagger.io/specification/#callback-object
                     buildCallbacks(openApiElement, routeAnnotation.callbacks)
+
+                    // Deprecated
                     deprecated(routeAnnotation.deprecated)
+
+                    // Security
+                    // ~ https://swagger.io/specification/#security-requirement-object
                     security {
                         for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
                             securityRequirement(securityAnnotation.name, *securityAnnotation.scopes)
@@ -49,7 +85,7 @@ class OpenApiSchemaGenerator(
             }
         }
 
-        schema.resolveComponentReferences(context)
+        schema.resolveComponentReferences { type -> context.typeSchemaGenerator.createTypeSchema(type, false) }
         return schema.toJson()
     }
 

@@ -1,16 +1,23 @@
 package io.javalin.openapi.schema
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import io.javalin.openapi.BasicAuth
+import io.javalin.openapi.BearerAuth
+import io.javalin.openapi.OpenApiInfo
+import io.javalin.openapi.OpenApiServer
+import io.javalin.openapi.Security
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
+import io.javalin.openapi.experimental.processor.shared.createArrayNode
+import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 
 internal class OpenApiSchemaBuilderTest {
 
-    private fun resultScheme(configure: JsonObject.() -> Unit = {}): ResultScheme =
-        ResultScheme(JsonObject().apply(configure), emptySet())
+    private fun resultScheme(configure: ObjectNode.() -> Unit = {}): ResultScheme =
+        ResultScheme(createObjectNode().apply(configure), emptySet())
 
     @Test
     fun `should build minimal document`() {
@@ -97,7 +104,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build parameters`() {
-        val intSchema = resultScheme { addProperty("type", "integer") }
+        val intSchema = resultScheme { put("type", "integer") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -138,7 +145,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build parameter with example`() {
-        val stringSchema = resultScheme { addProperty("type", "string") }
+        val stringSchema = resultScheme { put("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -167,7 +174,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build request body with content`() {
-        val userSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
+        val userSchema = resultScheme { put("\$ref", "#/components/schemas/User") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -221,8 +228,8 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build responses with content and headers`() {
-        val userSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
-        val headerSchema = resultScheme { addProperty("type", "string") }
+        val userSchema = resultScheme { put("\$ref", "#/components/schemas/User") }
+        val headerSchema = resultScheme { put("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -269,7 +276,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build callbacks`() {
-        val stringSchema = resultScheme { addProperty("type", "string") }
+        val stringSchema = resultScheme { put("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -343,11 +350,11 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should add component schemas`() {
-        val userSchema = ResultScheme(JsonObject().apply {
-            addProperty("type", "object")
-            val props = JsonObject()
-            props.add("name", JsonObject().apply { addProperty("type", "string") })
-            add("properties", props)
+        val userSchema = ResultScheme(createObjectNode().apply {
+            put("type", "object")
+            val props = createObjectNode()
+            props.set<JsonNode>("name", createObjectNode().apply { put("type", "string") })
+            set<JsonNode>("properties", props)
         }, emptySet())
 
         val schema = OpenApiSchemaBuilder()
@@ -375,7 +382,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build content with example`() {
-        val stringSchema = resultScheme { addProperty("type", "string") }
+        val stringSchema = resultScheme { put("type", "string") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -456,7 +463,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build media type via lambda with resolved schema`() {
-        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/User") }
+        val refSchema = resultScheme { put("\$ref", "#/components/schemas/User") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -548,7 +555,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build media type via lambda with json example`() {
-        val exampleJson = JsonArray().apply { add("item1"); add("item2") }
+        val exampleJson = createArrayNode().apply { add("item1"); add("item2") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -619,7 +626,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with resolved property`() {
-        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Address") }
+        val refSchema = resultScheme { put("\$ref", "#/components/schemas/Address") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -650,7 +657,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with array properties`() {
-        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Tag") }
+        val refSchema = resultScheme { put("\$ref", "#/components/schemas/Tag") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -730,7 +737,7 @@ internal class OpenApiSchemaBuilderTest {
 
     @Test
     fun `should build object schema with resolved additional properties`() {
-        val refSchema = resultScheme { addProperty("\$ref", "#/components/schemas/Value") }
+        val refSchema = resultScheme { put("\$ref", "#/components/schemas/Value") }
 
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
@@ -816,6 +823,196 @@ internal class OpenApiSchemaBuilderTest {
             .isObject
             .doesNotContainKey("schema")
             .containsEntry("example", "test")
+    }
+
+    @Test
+    fun `should round-trip fromJson`() {
+        val original = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "My API", version = "1.0")
+
+        original.path("/users").operation("get") {
+            summary("List users")
+            deprecated(false)
+        }
+
+        val json = original.toJson()
+        val rebuilt = OpenApiSchemaBuilder.fromJson(json)
+        val roundTripped = rebuilt.toJson()
+
+        assertThatJson(roundTripped)
+            .isObject
+            .containsEntry("openapi", "3.0.3")
+
+        assertThatJson(roundTripped)
+            .inPath("$.info")
+            .isObject
+            .containsEntry("title", "My API")
+            .containsEntry("version", "1.0")
+
+        assertThatJson(roundTripped)
+            .inPath("$.paths['/users'].get.summary")
+            .isEqualTo("List users")
+    }
+
+    @Test
+    fun `should merge info with OpenApiInfo object`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "Original Title", version = "1.0")
+            .info(OpenApiInfo().apply {
+                title = "Updated Title"
+                description = "API Description"
+            })
+
+        val json = schema.toJson()
+
+        assertThatJson(json)
+            .inPath("$.info")
+            .isObject
+            .containsEntry("title", "Updated Title")
+            .containsEntry("version", "1.0")
+            .containsEntry("description", "API Description")
+    }
+
+    @Test
+    fun `should add servers`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "", version = "")
+            .servers(listOf(
+                OpenApiServer().apply {
+                    url = "https://api.example.com"
+                    description = "Production"
+                },
+                OpenApiServer().apply {
+                    url = "https://staging.example.com"
+                }
+            ))
+
+        val json = schema.toJson()
+
+        assertThatJson(json)
+            .inPath("$.servers")
+            .isArray
+            .hasSize(2)
+
+        assertThatJson(json)
+            .inPath("$.servers[0]")
+            .isObject
+            .containsEntry("url", "https://api.example.com")
+            .containsEntry("description", "Production")
+    }
+
+    @Test
+    fun `should add security schemes`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "", version = "")
+            .securitySchemes(mapOf(
+                "BasicAuth" to BasicAuth(),
+                "BearerAuth" to BearerAuth()
+            ))
+
+        val json = schema.toJson()
+
+        assertThatJson(json)
+            .inPath("$.components.securitySchemes.BasicAuth")
+            .isObject
+            .containsEntry("type", "http")
+            .containsEntry("scheme", "basic")
+
+        assertThatJson(json)
+            .inPath("$.components.securitySchemes.BearerAuth")
+            .isObject
+            .containsEntry("type", "http")
+            .containsEntry("scheme", "bearer")
+    }
+
+    @Test
+    fun `should add global security`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "", version = "")
+            .globalSecurity(listOf(
+                Security("BearerAuth"),
+                Security("OAuth2", mutableListOf("read", "write"))
+            ))
+
+        val json = schema.toJson()
+
+        assertThatJson(json)
+            .inPath("$.security")
+            .isArray
+            .hasSize(2)
+
+        assertThatJson(json)
+            .inPath("$.security[0]")
+            .isObject
+            .containsEntry("BearerAuth", json("[]"))
+
+        assertThatJson(json)
+            .inPath("$.security[1]")
+            .isObject
+            .containsEntry("OAuth2", json("""["read", "write"]"""))
+    }
+
+    @Test
+    fun `should produce compact json`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "API", version = "1.0")
+
+        val compact = schema.toCompactJson()
+
+        // Compact JSON should not contain newlines
+        assert(!compact.contains("\n"))
+        assertThatJson(compact)
+            .isObject
+            .containsEntry("openapi", "3.0.3")
+    }
+
+    @Test
+    fun `should modify schema after fromJson`() {
+        val original = """{"openapi":"3.0.3","info":{"title":"API","version":"1.0"},"paths":{},"components":{"schemas":{}}}"""
+        val builder = OpenApiSchemaBuilder.fromJson(original)
+
+        builder.path("/new").operation("get") {
+            summary("New endpoint")
+            deprecated(false)
+        }
+
+        val json = builder.toJson()
+
+        assertThatJson(json)
+            .inPath("$.paths['/new'].get.summary")
+            .isEqualTo("New endpoint")
+
+        assertThatJson(json)
+            .inPath("$.openapi")
+            .isEqualTo("3.0.3")
+    }
+
+    @Test
+    fun `should preserve non-schema components in toJson`() {
+        val schema = OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info(title = "", version = "")
+            .securitySchemes(mapOf("BasicAuth" to BasicAuth()))
+
+        schema.addComponentSchema("User", resultScheme { put("type", "object") })
+
+        val json = schema.toJson()
+
+        assertThatJson(json)
+            .inPath("$.components.securitySchemes.BasicAuth")
+            .isObject
+            .containsEntry("type", "http")
+
+        assertThatJson(json)
+            .inPath("$.components.schemas.User")
+            .isObject
+            .containsEntry("type", "object")
     }
 
     @Test

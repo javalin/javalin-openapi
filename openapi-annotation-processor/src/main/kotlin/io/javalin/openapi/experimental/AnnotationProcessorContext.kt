@@ -37,7 +37,7 @@ class AnnotationProcessorContext(
     }
 
     fun getClassDefinition(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition =
-        ClassDefinition.classDefinitionFrom(this, mirror, generics, type)
+        classDefinitionFrom(this, mirror, generics, type)
 
     fun getClassDefinitions(mirrors: Set<TypeMirror>): Set<ClassDefinition> =
         mirrors.map { getClassDefinition(it) }.toSet()
@@ -90,4 +90,3 @@ class AnnotationProcessorContext(
         getTypeMirror(supplier).toClassDefinition()
 
 }
-

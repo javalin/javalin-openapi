@@ -1,58 +1,56 @@
 package io.javalin.openapi.experimental.processor.shared
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.NULL_STRING
 
-private val gson: Gson = GsonBuilder()
-    .setPrettyPrinting()
-    .create()
+val jsonMapper: ObjectMapper = ObjectMapper()
+    .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
+fun createObjectNode(): ObjectNode = jsonMapper.createObjectNode()
+fun createArrayNode(): ArrayNode = jsonMapper.createArrayNode()
 
-fun JsonObject.toPrettyString(): String =
-    gson.toJson(this)
-
-fun Map<String, String>.toJsonObject(): JsonObject {
-    val jsonObject = JsonObject()
-    forEach { (key, value) -> jsonObject.addProperty(key, value) }
+fun Map<String, String>.toJsonObject(): ObjectNode {
+    val jsonObject = createObjectNode()
+    forEach { (key, value) -> jsonObject.put(key, value) }
     return jsonObject
 }
 
-fun <T> List<T>.toJsonArray(accumulator: JsonArray.(T) -> Unit): JsonArray {
-    val jsonArray = JsonArray(size)
+fun <T> List<T>.toJsonArray(accumulator: ArrayNode.(T) -> Unit): ArrayNode {
+    val jsonArray = createArrayNode()
     forEach { accumulator(jsonArray, it) }
     return jsonArray
 }
 
-fun <T> Array<T>.toJsonArray(mapper: (T) -> String = { it.toString() }): JsonArray {
-    val jsonArray = JsonArray(size)
+fun <T> Array<T>.toJsonArray(mapper: (T) -> String = { it.toString() }): ArrayNode {
+    val jsonArray = createArrayNode()
     map(mapper).forEach { jsonArray.add(it) }
     return jsonArray
 }
 
-fun JsonObject.computeIfAbsent(key: String, value: () -> JsonObject): JsonObject {
+fun ObjectNode.computeIfAbsent(key: String, value: () -> ObjectNode): ObjectNode {
     if (!has(key)) {
-        add(key, value())
+        set<ObjectNode>(key, value())
     }
 
-    return getAsJsonObject(key)
+    return get(key) as ObjectNode
 }
 
-fun JsonObject.addString(key: String, value: String?): JsonObject = also {
+fun ObjectNode.addString(key: String, value: String?): ObjectNode = also {
     if (NULL_STRING != value) {
-        addProperty(key, value)
+        put(key, value)
     }
 }
 
-fun JsonObject.addIfNotEmpty(key: String, value: JsonObject): JsonObject = also {
+fun ObjectNode.addIfNotEmpty(key: String, value: ObjectNode): ObjectNode = also {
     if (value.size() > 0) {
-        add(key, value)
+        set<ObjectNode>(key, value)
     }
 }
 
-fun createJsonObjectOf(key: String, value: String): JsonObject {
-    val jsonObject = JsonObject()
-    jsonObject.addProperty(key, value)
+fun createJsonObjectOf(key: String, value: String): ObjectNode {
+    val jsonObject = createObjectNode()
+    jsonObject.put(key, value)
     return jsonObject
 }

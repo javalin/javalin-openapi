@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":openapi-specification"))
+    api(project(":openapi-generator"))
 
     kaptTest(project(":openapi-annotation-processor"))
 }

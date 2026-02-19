@@ -1,11 +1,12 @@
 package io.javalin.openapi.experimental.processor.generators
 
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OpenApiExampleProperty
+import io.javalin.openapi.experimental.processor.shared.createArrayNode
+import io.javalin.openapi.experimental.processor.shared.createObjectNode
+import io.javalin.openapi.experimental.processor.shared.jsonMapper
 
 data class ExampleProperty(
     val name: String?,
@@ -26,25 +27,25 @@ object ExampleGenerator {
 
     data class GeneratorResult(
         val simpleValue: String?,
-        val jsonElement: JsonElement?,
+        val jsonElement: JsonNode?,
     ) {
         init {
             when {
-                simpleValue != null && jsonElement != null -> throw IllegalArgumentException("rawList and jsonElement cannot be both non-null")
-                simpleValue == null && jsonElement == null -> throw IllegalArgumentException("rawList and jsonElement cannot be both null")
+                simpleValue != null && jsonElement != null -> throw IllegalArgumentException("simpleValue and jsonElement cannot be both non-null")
+                simpleValue == null && jsonElement == null -> throw IllegalArgumentException("simpleValue and jsonElement cannot be both null")
             }
         }
     }
 
     fun generateFromExamples(examples: List<ExampleProperty>): GeneratorResult {
         if (examples.isRawList()) {
-            val jsonArray = JsonArray()
+            val jsonArray = createArrayNode()
             examples.forEach { jsonArray.add(it.value) }
             return GeneratorResult(null, jsonArray)
         }
 
         if (examples.isObjectList()) {
-            val jsonArray = JsonArray()
+            val jsonArray = createArrayNode()
             examples.forEach { jsonArray.add(it.toSimpleExampleValue().jsonElement!!) }
             return GeneratorResult(null, jsonArray)
         }
@@ -56,20 +57,20 @@ object ExampleGenerator {
         when {
             this.value != null -> GeneratorResult(this.value, null)
             this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects)
-            this.raw != null -> GeneratorResult(null, Gson().fromJson(this.raw, JsonElement::class.java))
+            this.raw != null -> GeneratorResult(null, jsonMapper.readTree(this.raw))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
 
-    private fun List<ExampleProperty>.toJsonObject(): JsonObject {
-        val jsonObject = JsonObject()
+    private fun List<ExampleProperty>.toJsonObject(): ObjectNode {
+        val jsonObject = createObjectNode()
         this.forEach {
             val result = it.toSimpleExampleValue()
             if (it.name == null) {
                 throw IllegalArgumentException("Example object must have a name ($it)")
             }
             when {
-                result.simpleValue != null -> jsonObject.addProperty(it.name, result.simpleValue)
-                result.jsonElement != null -> jsonObject.add(it.name, result.jsonElement)
+                result.simpleValue != null -> jsonObject.put(it.name, result.simpleValue)
+                result.jsonElement != null -> jsonObject.set<JsonNode>(it.name, result.jsonElement)
             }
         }
         return jsonObject

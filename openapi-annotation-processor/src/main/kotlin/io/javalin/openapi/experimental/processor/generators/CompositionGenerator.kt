@@ -1,9 +1,9 @@
 package io.javalin.openapi.experimental.processor.generators
 
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
-import io.javalin.openapi.Composition
 import io.javalin.openapi.Composition.ALL_OF
 import io.javalin.openapi.Composition.ANY_OF
 import io.javalin.openapi.Composition.ONE_OF
@@ -14,17 +14,13 @@ import io.javalin.openapi.OneOf
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.CustomProperty
+import io.javalin.openapi.experimental.mirror
 import io.javalin.openapi.experimental.processor.shared.createJsonObjectOf
+import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toJsonObject
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
-
-data class PropertyComposition(
-    val type: Composition,
-    val references: Set<ClassDefinition>,
-    val discriminator: Discriminator
-)
 
 fun findCompositionInElement(context: AnnotationProcessorContext, element: Element): PropertyComposition? =
     with (context) {
@@ -33,7 +29,7 @@ fun findCompositionInElement(context: AnnotationProcessorContext, element: Eleme
             ?: element.getAnnotation(AllOf::class.java)?.let { PropertyComposition(ALL_OF, it.getClassDefinitions { value }, it.discriminator) }
     }
 
-fun JsonObject.createComposition(
+fun ObjectNode.createComposition(
     context: AnnotationProcessorContext,
     classDefinition: ClassDefinition,
     propertyComposition: PropertyComposition,
@@ -60,24 +56,24 @@ fun JsonObject.createComposition(
                     .onEach { (_, refs) -> references.addAll(refs) }
                     .map { (scheme, _) -> scheme }
                     .toJsonArray { add(it) }
-                    .let { add(propertyComposition.type.propertyName, it) }
+                    .let { set<JsonNode>(propertyComposition.type.propertyName, it) }
 
             false ->
                 refs
                     .onEach { references.add(it) }
-                    .map { createJsonObjectOf($$"$ref", "#/components/schemas/${it.simpleName}") }
+                    .map { createJsonObjectOf("\$ref", "#/components/schemas/${it.simpleName}") }
                     .toJsonArray { add(it) }
-                    .let { add(propertyComposition.type.propertyName, it) }
+                    .let { set<JsonNode>(propertyComposition.type.propertyName, it) }
         }
 
         propertyComposition.discriminator
             .takeIf { it.property.name != NULL_STRING }
             ?.also { discriminator ->
-                val discriminatorObject = JsonObject()
-                add("discriminator", discriminatorObject)
+                val discriminatorObject = createObjectNode()
+                set<JsonNode>("discriminator", discriminatorObject)
 
                 val discriminatorProperty = discriminator.property
-                discriminatorObject.addProperty("propertyName", discriminatorProperty.name)
+                discriminatorObject.put("propertyName", discriminatorProperty.name)
 
                 val mapping = discriminator.mapping
                     .map { it.name to it.getClassDefinition { value } }
@@ -98,7 +94,7 @@ fun JsonObject.createComposition(
                     .onEach { (_, mappedClass) -> references.add(mappedClass) }
                     .associate { (name, mappedClass) -> name to "#/components/schemas/${mappedClass.simpleName}" }
                     .takeIf { it.isNotEmpty() }
-                    ?.also { discriminatorObject.add("mapping", it.toJsonObject()) }
+                    ?.also { discriminatorObject.set<JsonNode>("mapping", it.toJsonObject()) }
             }
     }
 }
