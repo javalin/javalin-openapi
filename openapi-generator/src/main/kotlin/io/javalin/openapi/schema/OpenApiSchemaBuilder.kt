@@ -5,9 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.javalin.openapi.ApiKeyAuth
+import io.javalin.openapi.BasicAuth
+import io.javalin.openapi.BearerAuth
+import io.javalin.openapi.CookieAuth
+import io.javalin.openapi.OAuth2
 import io.javalin.openapi.OpenApiExampleProperty
 import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiServer
+import io.javalin.openapi.OpenID
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
 import io.javalin.openapi.experimental.ClassDefinition
@@ -50,11 +56,12 @@ class OpenApiSchemaBuilder {
     fun info(openApiInfo: OpenApiInfo): OpenApiSchemaBuilder = apply {
         val infoJson = nonNullMapper.convertValue(openApiInfo, JsonNode::class.java)
         val existingInfo = root.get("info")
-        val updatedInfo = if (existingInfo != null) {
-            nonNullMapper.readerForUpdating(existingInfo).readValue<JsonNode>(infoJson)
-        } else {
-            infoJson
-        }
+        val updatedInfo: JsonNode =
+            if (existingInfo != null) {
+                nonNullMapper.readerForUpdating(existingInfo).readValue(infoJson)
+            } else {
+                infoJson
+            }
         root.set<JsonNode>("info", updatedInfo)
     }
 
@@ -89,6 +96,58 @@ class OpenApiSchemaBuilder {
         }
         root.set<JsonNode>("security", securityArray)
     }
+
+    /** Add a named security scheme */
+    fun withSecurityScheme(name: String, scheme: SecurityScheme): OpenApiSchemaBuilder = apply {
+        val components = root.get("components") as? ObjectNode ?: createObjectNode().also { root.set<JsonNode>("components", it) }
+        val schemes = components.get("securitySchemes") as? ObjectNode ?: createObjectNode().also { components.set<JsonNode>("securitySchemes", it) }
+        schemes.set<JsonNode>(name, nonNullMapper.convertValue(scheme, JsonNode::class.java))
+    }
+
+    /** Add HTTP Basic authentication scheme */
+    @JvmOverloads
+    fun withBasicAuth(name: String = "BasicAuth", configure: Consumer<BasicAuth> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, BasicAuth().also { configure.accept(it) })
+
+    /** Add HTTP Bearer authentication scheme */
+    @JvmOverloads
+    fun withBearerAuth(name: String = "BearerAuth", configure: Consumer<BearerAuth> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, BearerAuth().also { configure.accept(it) })
+
+    /** Add API Key authentication scheme */
+    @JvmOverloads
+    fun withApiKeyAuth(name: String = "ApiKeyAuth", apiKeyHeader: String = "X-Api-Key", configure: Consumer<ApiKeyAuth> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, ApiKeyAuth(name = apiKeyHeader).also { configure.accept(it) })
+
+    /** Add Cookie authentication scheme */
+    @JvmOverloads
+    fun withCookieAuth(name: String = "CookieAuth", sessionCookie: String = "JSESSIONID", configure: Consumer<CookieAuth> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, CookieAuth(name = sessionCookie).also { configure.accept(it) })
+
+    /** Add OpenID Connect authentication scheme */
+    @JvmOverloads
+    fun withOpenID(name: String, openIdConnectUrl: String, configure: Consumer<OpenID> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, OpenID(openIdConnectUrl = openIdConnectUrl).also { configure.accept(it) })
+
+    /** Add OAuth2 authentication scheme */
+    @JvmOverloads
+    fun withOAuth2(name: String, description: String, configure: Consumer<OAuth2> = Consumer {}): OpenApiSchemaBuilder =
+        withSecurityScheme(name, OAuth2(description = description).also { configure.accept(it) })
+
+    /** Add a global security requirement */
+    fun withGlobalSecurity(security: Security): OpenApiSchemaBuilder = apply {
+        val securityArray = root.get("security") as? ArrayNode ?: createArrayNode().also { root.set<JsonNode>("security", it) }
+        val entry = createObjectNode()
+        val scopesArray = createArrayNode()
+        security.scopes.forEach { scopesArray.add(it) }
+        entry.set<JsonNode>(security.name, scopesArray)
+        securityArray.add(entry)
+    }
+
+    /** Add a global security requirement by name with optional consumer configuration */
+    @JvmOverloads
+    fun withGlobalSecurity(name: String, configure: Consumer<Security> = Consumer {}): OpenApiSchemaBuilder =
+        withGlobalSecurity(Security(name = name).also { configure.accept(it) })
 
     fun path(path: String): PathItemBuilder {
         if (!paths.has(path)) {
@@ -195,6 +254,8 @@ class PathItemBuilder(
         builder.configure()
         pathItem.set<JsonNode>(method, builder.build())
     }
+
+    fun operation(method: String, configure: Consumer<OperationBuilder>) = operation(method) { configure.accept(this) }
 }
 
 class OperationBuilder(
@@ -270,6 +331,12 @@ class OperationBuilder(
         builder.configure()
         securityArray = builder.build()
     }
+
+    fun parameters(configure: Consumer<ParametersBuilder>) = parameters { configure.accept(this) }
+    fun requestBody(configure: Consumer<RequestBodyBuilder>) = requestBody { configure.accept(this) }
+    fun responses(configure: Consumer<ResponsesBuilder>) = responses { configure.accept(this) }
+    fun callbacks(configure: Consumer<CallbacksBuilder>) = callbacks { configure.accept(this) }
+    fun security(configure: Consumer<SecurityBuilder>) = security { configure.accept(this) }
 
     internal fun build(): ObjectNode {
         val result = createObjectNode()
@@ -358,6 +425,8 @@ class RequestBodyBuilder(
         }
     }
 
+    fun content(configure: Consumer<ContentBuilder>) = content { configure.accept(this) }
+
     internal fun build(): ObjectNode {
         val result = createObjectNode()
 
@@ -416,6 +485,8 @@ class ContentBuilder(
         content.set<JsonNode>(mimeType, builder.build())
     }
 
+    fun mediaType(mimeType: String, configure: Consumer<MediaTypeBuilder>) = mediaType(mimeType) { configure.accept(this) }
+
     internal fun build(): ObjectNode = content
 }
 
@@ -456,6 +527,8 @@ class MediaTypeBuilder(
         builder.configure()
         schemaObject = builder.build()
     }
+
+    fun objectSchema(configure: Consumer<ObjectSchemaBuilder>) = objectSchema { configure.accept(this) }
 
     override fun example(value: String) {
         mediaType.put("example", value)
@@ -574,6 +647,8 @@ class ResponsesBuilder(
         responses.set<JsonNode>(status, builder.build())
     }
 
+    fun response(status: String, configure: Consumer<ResponseBuilder>) = response(status) { configure.accept(this) }
+
     internal fun build(): ObjectNode = responses
 }
 
@@ -606,6 +681,9 @@ class ResponseBuilder(
             headersObject = built
         }
     }
+
+    fun content(configure: Consumer<ContentBuilder>) = content { configure.accept(this) }
+    fun headers(configure: Consumer<HeadersBuilder>) = headers { configure.accept(this) }
 
     internal fun build(): ObjectNode {
         val result = createObjectNode()
@@ -684,6 +762,8 @@ class CallbacksBuilder(
         urlObject.set<JsonNode>(method, builder.build())
     }
 
+    fun callback(name: String, url: String, method: String, configure: Consumer<CallbackOperationBuilder>) = callback(name, url, method) { configure.accept(this) }
+
     internal fun build(): ObjectNode = callbacks
 }
 
@@ -717,6 +797,9 @@ class CallbackOperationBuilder(
         builder.configure()
         responsesObject = builder.build()
     }
+
+    fun requestBody(configure: Consumer<RequestBodyBuilder>) = requestBody { configure.accept(this) }
+    fun responses(configure: Consumer<ResponsesBuilder>) = responses { configure.accept(this) }
 
     internal fun build(): ObjectNode {
         val result = createObjectNode()

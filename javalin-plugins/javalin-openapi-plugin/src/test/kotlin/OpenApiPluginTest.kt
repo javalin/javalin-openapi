@@ -20,8 +20,8 @@ class OpenApiPluginTest {
 
                 config.registerPlugin(
                     OpenApiPlugin { openApiConfig ->
-                        openApiConfig.withDefinitionConfiguration { _, def ->
-                            def.withInfo {
+                        openApiConfig.withDefinitionConfiguration { _, builder ->
+                            builder.info {
                                 it.title = "My API"
                             }
                         }

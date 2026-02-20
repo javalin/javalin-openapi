@@ -108,8 +108,8 @@ dependencies {
 ```kotlin
 Javalin.create { config ->
     config.registerPlugin(OpenApiPlugin { openapi ->
-        openapi.withDefinitionConfiguration { _, definition ->
-            definition.withInfo { info ->
+        openapi.withDefinitionConfiguration { _, builder ->
+            builder.info { info ->
                 info.title = "My API"
             }
         }
@@ -122,7 +122,7 @@ This serves the generated OpenAPI JSON at `/openapi`.
 ### API Info
 
 ```kotlin
-definition.withInfo { info ->
+builder.info { info ->
     info.title = "My API"
     info.description = "API description"
     info.termsOfService = "https://example.com/tos"
@@ -141,7 +141,7 @@ definition.withInfo { info ->
 ### Servers
 
 ```kotlin
-definition.withServer { server ->
+builder.server { server ->
     server.url = "https://api.example.com"
     server.description = "Production"
     server.addVariable(
@@ -156,33 +156,18 @@ definition.withServer { server ->
 ### Security Schemes
 
 ```kotlin
-definition.withSecurity { security ->
-    security.withBearerAuth(name = "BearerAuth")
-    security.withBasicAuth(name = "BasicAuth")
-    security.withApiKeyAuth(
-        name = "ApiKeyAuth",
-        header = "X-API-Key",
-        `in` = "header"
-    )
-    security.withCookieAuth(
-        name = "CookieAuth",
-        cookieName = "session_id"
-    )
-    security.withOpenIdConnectAuth(
-        name = "OpenID",
-        connectUrl = "https://example.com/.well-known/openid"
-    )
-    security.withOAuth2Auth(name = "OAuth2") { oauth ->
-        oauth.withImplicit { implicit ->
-            implicit.authorizationUrl =
-                "https://example.com/auth"
-            implicit.addFlow(
-                scope = "read:users",
-                description = "Read users"
-            )
+builder
+    .withBearerAuth("BearerAuth")
+    .withBasicAuth("BasicAuth")
+    .withApiKeyAuth("ApiKeyAuth", "X-API-Key")
+    .withCookieAuth("CookieAuth", "session_id")
+    .withOpenID("OpenID", "https://example.com/.well-known/openid")
+    .withOAuth2("OAuth2", "OAuth2 authentication") { oauth ->
+        oauth.withImplicitFlow("https://example.com/auth") { implicit ->
+            implicit.withScope("read:users", "Read users")
         }
     }
-}
+    .withGlobalSecurity("BearerAuth")
 ```
 
 ### Documentation Path & Access Control
@@ -190,8 +175,8 @@ definition.withSecurity { security ->
 ```kotlin
 config.registerPlugin(OpenApiPlugin { openapi ->
     openapi.withRoles(MyRoles.ADMIN)
-    openapi.withDefinitionConfiguration { version, definition ->
-        definition.withInfo { info ->
+    openapi.withDefinitionConfiguration { version, builder ->
+        builder.info { info ->
             info.title = "My API - $version"
         }
     }
@@ -203,9 +188,9 @@ config.registerPlugin(OpenApiPlugin { openapi ->
 Post-process the generated OpenAPI JSON before serving:
 
 ```kotlin
-definition.withDefinitionProcessor { json ->
-    // Modify the JSON string
-    json
+openapi.withDefinitionProcessor { json ->
+    // Modify the ObjectNode
+    json.toPrettyString()
 }
 ```
 
@@ -214,9 +199,9 @@ definition.withDefinitionProcessor { json ->
 Each version generates a separate OpenAPI specification. Configure them in `@OpenApi(versions = ...)` on your handlers and handle them in the plugin:
 
 ```kotlin
-openapi.withDefinitionConfiguration { version, definition ->
+openapi.withDefinitionConfiguration { version, builder ->
     if (version == "v1") {
-        definition.withInfo { it.title = "API v1" }
+        builder.info { it.title = "API v1" }
     }
 }
 ```
