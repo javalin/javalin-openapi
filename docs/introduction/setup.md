@@ -110,7 +110,7 @@ Javalin.create { config ->
     config.registerPlugin(OpenApiPlugin { openapi ->
         openapi.withDefinitionConfiguration { _, builder ->
             builder.info { info ->
-                info.title = "My API"
+                info.title("My API")
             }
         }
     })
@@ -123,17 +123,17 @@ This serves the generated OpenAPI JSON at `/openapi`.
 
 ```kotlin
 builder.info { info ->
-    info.title = "My API"
-    info.description = "API description"
-    info.termsOfService = "https://example.com/tos"
-    info.setContact { contact ->
-        contact.name = "API Support"
-        contact.url = "https://example.com/support"
-        contact.email = "support@example.com"
+    info.title("My API")
+    info.description("API description")
+    info.termsOfService("https://example.com/tos")
+    info.withContact { contact ->
+        contact.name("API Support")
+        contact.url("https://example.com/support")
+        contact.email("support@example.com")
     }
-    info.setLicense { license ->
-        license.name = "Apache 2.0"
-        license.identifier = "Apache-2.0"
+    info.withLicense { license ->
+        license.name("Apache 2.0")
+        license.identifier("Apache-2.0")
     }
 }
 ```
@@ -142,13 +142,13 @@ builder.info { info ->
 
 ```kotlin
 builder.server { server ->
-    server.url = "https://api.example.com"
-    server.description = "Production"
-    server.addVariable(
-        name = "version",
+    server.url("https://api.example.com")
+    server.description("Production")
+    server.variable(
+        key = "version",
+        description = "API version",
         defaultValue = "v1",
-        enumValues = arrayOf("v1", "v2"),
-        description = "API version"
+        "v1", "v2"
     )
 }
 ```
@@ -177,7 +177,7 @@ config.registerPlugin(OpenApiPlugin { openapi ->
     openapi.withRoles(MyRoles.ADMIN)
     openapi.withDefinitionConfiguration { version, builder ->
         builder.info { info ->
-            info.title = "My API - $version"
+            info.title("My API - $version")
         }
     }
 })
@@ -189,7 +189,7 @@ Post-process the generated OpenAPI JSON before serving:
 
 ```kotlin
 openapi.withDefinitionProcessor { json ->
-    // Modify the ObjectNode
+    json.put("x-custom", "value")
     json.toPrettyString()
 }
 ```
@@ -201,7 +201,7 @@ Each version generates a separate OpenAPI specification. Configure them in `@Ope
 ```kotlin
 openapi.withDefinitionConfiguration { version, builder ->
     if (version == "v1") {
-        builder.info { it.title = "API v1" }
+        builder.info { it.title("API v1") }
     }
 }
 ```

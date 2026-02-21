@@ -46,10 +46,14 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
                 "summary" to "Test summary",
                 "description" to "Test description",
                 "operationId" to "Test operation id",
-                "parameters" to json("[]"),
                 "deprecated" to true,
-                "security" to json("[]")
             ))
+
+        assertThatJson(it)
+            .inPath("$.paths['/basic'].get")
+            .isObject
+            .doesNotContainKey("parameters")
+            .doesNotContainKey("security")
     }
 
     @OpenApi(

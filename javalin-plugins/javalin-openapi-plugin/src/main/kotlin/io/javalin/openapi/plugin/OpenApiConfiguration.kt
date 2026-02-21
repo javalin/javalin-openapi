@@ -7,6 +7,11 @@ import io.javalin.openapi.schema.OpenApiSchemaBuilder
 import io.javalin.security.RouteRole
 import java.util.function.BiConsumer
 
+/** Modify OpenApi documentation represented by ObjectNode */
+fun interface DefinitionProcessor {
+    fun process(content: ObjectNode): String
+}
+
 /** Configure OpenApi plugin */
 class OpenApiPluginConfiguration @JvmOverloads constructor(
     @JvmField var documentationPath: String = "/openapi",
@@ -26,7 +31,7 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
         this.roles = roles.toList()
     }
 
-    /** Path to host documentation as JSON */
+    /** Pretty print JSON output */
     @JvmOverloads
     fun withPrettyOutput(enabled: Boolean = true): OpenApiPluginConfiguration = also {
         this.prettyOutputEnabled = enabled
@@ -37,14 +42,9 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
         this.definitionConfiguration = definitionConfigurationConfigurer
     }
 
-    /** Modify OpenApi documentation represented by [ObjectNode] in JSON format */
+    /** Global definition processor applied to all versions without their own processor */
     fun withDefinitionProcessor(definitionProcessor: DefinitionProcessor): OpenApiPluginConfiguration = also {
         this.definitionProcessor = definitionProcessor
     }
 
-}
-
-/** Modify OpenApi documentation represented by [ObjectNode] in JSON format */
-fun interface DefinitionProcessor {
-    fun process(content: ObjectNode): String
 }

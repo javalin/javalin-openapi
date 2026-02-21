@@ -22,7 +22,7 @@ class OpenApiPluginTest {
                     OpenApiPlugin { openApiConfig ->
                         openApiConfig.withDefinitionConfiguration { _, builder ->
                             builder.info {
-                                it.title = "My API"
+                                it.title("My API")
                             }
                         }
                     }

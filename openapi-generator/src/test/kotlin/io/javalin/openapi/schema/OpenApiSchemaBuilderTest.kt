@@ -74,9 +74,9 @@ internal class OpenApiSchemaBuilderTest {
             .containsEntry("description", "Returns a list of users")
             .containsEntry("operationId", "getUsers")
             .containsEntry("deprecated", false)
-            .containsEntry("parameters", json("[]"))
             .containsEntry("responses", json("{}"))
-            .containsEntry("security", json("[]"))
+            .doesNotContainKey("parameters")
+            .doesNotContainKey("security")
     }
 
     @Test
@@ -454,11 +454,11 @@ internal class OpenApiSchemaBuilderTest {
 
         val json = schema.toJson()
 
-        // Verify field order: tags, summary, description, operationId, parameters, responses, deprecated, security
+        // Verify field order: tags, summary, description, operationId, responses, deprecated, security
         assertThatJson(json)
             .inPath("$.paths['/test'].get")
             .isObject
-            .containsKeys("tags", "summary", "description", "operationId", "parameters", "responses", "deprecated", "security")
+            .containsKeys("tags", "summary", "description", "operationId", "responses", "deprecated", "security")
     }
 
     @Test
@@ -860,10 +860,10 @@ internal class OpenApiSchemaBuilderTest {
         val schema = OpenApiSchemaBuilder()
             .openApiVersion("3.0.3")
             .info(title = "Original Title", version = "1.0")
-            .info(OpenApiInfo().apply {
-                title = "Updated Title"
-                description = "API Description"
-            })
+            .info(OpenApiInfo()
+                .title("Updated Title")
+                .description("API Description")
+            )
 
         val json = schema.toJson()
 
@@ -881,13 +881,11 @@ internal class OpenApiSchemaBuilderTest {
             .openApiVersion("3.0.3")
             .info(title = "", version = "")
             .servers(listOf(
-                OpenApiServer().apply {
-                    url = "https://api.example.com"
-                    description = "Production"
-                },
-                OpenApiServer().apply {
-                    url = "https://staging.example.com"
-                }
+                OpenApiServer()
+                    .url("https://api.example.com")
+                    .description("Production"),
+                OpenApiServer()
+                    .url("https://staging.example.com")
             ))
 
         val json = schema.toJson()

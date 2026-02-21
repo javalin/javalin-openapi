@@ -351,12 +351,6 @@ object ContentType {
     const val AUTODETECT = "AUTODETECT - Will be replaced later"
 }
 
-enum class ComposedType {
-    NULL,
-    ANY_OF,
-    ONE_OF;
-}
-
 enum class HttpMethod {
     POST,
     GET,
