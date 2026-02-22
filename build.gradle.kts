@@ -109,7 +109,7 @@ subprojects {
     }
 
     dependencies {
-        val javalin = "7.0.0-beta.1"
+        val javalin = "7.0.0"
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 

@@ -28,6 +28,12 @@ class ClassDefinition(
         return result
     }
 
+    override fun toString(): String =
+        when {
+            generics.isEmpty() -> fullName
+            else -> "$fullName<${generics.joinToString(", ")}>"
+        }
+
 }
 
 enum class StructureType {

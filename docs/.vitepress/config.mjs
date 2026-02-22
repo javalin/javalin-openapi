@@ -70,8 +70,7 @@ export default defineConfig({
       provider: 'local',
     },
     footer: {
-      message: 'Released under the Apache 2.0 License.',
-      copyright: 'Part of the Javalin ecosystem',
+      copyright: 'Created by <a href="https://github.com/dzikoysk">dzikoysk</a> ❤️ · Part of the Javalin ecosystem',
     },
     editLink: {
       pattern: 'https://github.com/javalin/javalin-openapi/edit/main/docs/:path',
