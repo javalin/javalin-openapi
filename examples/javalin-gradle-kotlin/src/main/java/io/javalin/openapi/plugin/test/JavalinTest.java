@@ -371,9 +371,9 @@ public final class JavalinTest implements Handler {
         @OpenApiExample("5050")
         @OpenApiNumberValidation(
                 minimum = "5000",
-                exclusiveMinimum = true,
+                exclusiveMinimum = "5000",
                 maximum = "6000",
-                exclusiveMaximum = true,
+                exclusiveMaximum = "6000",
                 multipleOf = "50"
         )
         @OpenApiStringValidation(

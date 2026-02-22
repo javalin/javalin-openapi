@@ -1,7 +1,6 @@
 package io.javalin.openapi.schema
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
@@ -13,7 +12,9 @@ import org.junit.jupiter.api.Test
 internal class OpenApiSchemaBuilderTest {
 
     private fun builder(): OpenApiSchemaBuilder =
-        OpenApiSchemaBuilder().openApiVersion("3.0.3").info { it.title("").version("") }
+        OpenApiSchemaBuilder()
+            .openApiVersion("3.0.3")
+            .info { it.title("").version("") }
 
     @Nested
     inner class DocumentStructure {
@@ -278,9 +279,11 @@ internal class OpenApiSchemaBuilderTest {
                 }
             }
 
+            assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.parameters[0]").isObject
+                .containsEntry("example", "test-value")
             assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.parameters[0].schema").isObject
                 .containsEntry("type", "string")
-                .containsEntry("example", "test-value")
+                .doesNotContainKey("example")
         }
 
         @Test
@@ -389,6 +392,40 @@ internal class OpenApiSchemaBuilderTest {
 
             assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.responses['200'].content['text/plain'].schema").isObject
                 .containsEntry("type", "string")
+        }
+
+        @Test
+        fun `should build via lambda with type and format`() {
+            val schema = builder()
+            schema.path("/test").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content { mediaType("application/json") { schema { type("integer"); format("int32") } } }
+                    }
+                }
+            }
+
+            assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.responses['200'].content['application/json'].schema").isObject
+                .containsEntry("type", "integer")
+                .containsEntry("format", "int32")
+        }
+
+        @Test
+        fun `should build via lambda with ref`() {
+            val schema = builder()
+            schema.path("/test").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content { mediaType("application/json") { schema { ref("#/components/schemas/User") } } }
+                    }
+                }
+            }
+
+            assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.responses['200'].content['application/json'].schema").isObject
+                .containsEntry("\$ref", "#/components/schemas/User")
+                .doesNotContainKey("type")
         }
 
         @Test

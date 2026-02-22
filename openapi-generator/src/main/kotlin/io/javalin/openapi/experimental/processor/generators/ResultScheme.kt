@@ -23,6 +23,7 @@ data class Property(
     val type: ClassDefinition,
     val composition: PropertyComposition? = null,
     val required: Boolean = true,
+    val nullable: Boolean = false,
     val extra: Map<String, Any?> = emptyMap()
 )
 

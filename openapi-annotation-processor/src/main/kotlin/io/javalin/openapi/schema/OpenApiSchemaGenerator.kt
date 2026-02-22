@@ -27,7 +27,7 @@ class OpenApiSchemaGenerator(
     fun generateSchema(openApiAnnotations: Collection<Pair<Element, OpenApi>>): String {
         val schema =
             OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title(context.parameters.info.title ?: "").version(context.parameters.info.version ?: "") }
 
         for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
@@ -94,7 +94,6 @@ class OpenApiSchemaGenerator(
         parameters {
             val parameterAnnotations = linkedMapOf(
                 In.COOKIE to routeAnnotation.cookies,
-                In.FORM_DATA to routeAnnotation.formParams,
                 In.HEADER to routeAnnotation.headers,
                 In.PATH to routeAnnotation.pathParams,
                 In.QUERY to routeAnnotation.queryParams
@@ -207,7 +206,6 @@ class OpenApiSchemaGenerator(
         HEADER("header"),
         PATH("path"),
         COOKIE("cookie"),
-        FORM_DATA("formData")
     }
 
     private fun generateOperationId(

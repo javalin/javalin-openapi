@@ -204,6 +204,10 @@ class OpenApiSchemaBuilder {
     }
 }
 
+@DslMarker
+annotation class OpenApiSchemaDsl
+
+@OpenApiSchemaDsl
 class SchemaBuilder {
     private val schema = createObjectNode()
 
@@ -359,6 +363,7 @@ class OperationBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class ParametersBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ArrayNode? = null,
@@ -385,10 +390,10 @@ class ParametersBuilder(
         if (required) param.put("required", true)
         if (deprecated) param.put("deprecated", true)
         if (allowEmptyValue) param.put("allowEmptyValue", true)
-        if (example != null) {
-            schemaJson.put("example", example)
-        }
         param.set<JsonNode>("schema", schemaJson)
+        if (example != null) {
+            param.put("example", example)
+        }
 
         // Replace existing parameter with same name+in, or append
         val existingIndex = (0 until parameters.size()).firstOrNull { i ->
@@ -514,6 +519,7 @@ interface ExampleHolder {
     }
 }
 
+@OpenApiSchemaDsl
 class MediaTypeBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -566,6 +572,7 @@ class MediaTypeBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class ObjectSchemaBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
 ) : ExampleHolder {
@@ -730,6 +737,7 @@ class ResponseBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class HeadersBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -759,10 +767,10 @@ class HeadersBuilder(
         if (allowEmptyValue) {
             header.put("allowEmptyValue", true)
         }
-        if (example != null) {
-            schemaJson.put("example", example)
-        }
         header.set<JsonNode>("schema", schemaJson)
+        if (example != null) {
+            header.put("example", example)
+        }
         headers.set<JsonNode>(name, header)
     }
 

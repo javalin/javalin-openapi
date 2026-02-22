@@ -15,6 +15,7 @@ import io.javalin.openapi.OpenApiExample
 import io.javalin.openapi.OpenApiIgnore
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.OpenApiNaming
+import io.javalin.openapi.OpenApiNullable
 import io.javalin.openapi.OpenApiNamingStrategy
 import io.javalin.openapi.OpenApiNumberValidation
 import io.javalin.openapi.OpenApiObjectValidation
@@ -136,7 +137,8 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                                     inlineRefs = inlineRefs,
                                     requiresNonNulls = requireNonNulls,
                                     composition = property.composition,
-                                    extra = property.extra
+                                    extra = property.extra,
+                                    nullable = property.nullable,
                                 ).also {
                                     processedProperties[property] = it
                                 }
@@ -161,12 +163,13 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
         inlineRefs: Boolean = false,
         requiresNonNulls: Boolean = true,
         composition: PropertyComposition? = null,
-        extra: Map<String, Any?> = emptyMap()
+        extra: Map<String, Any?> = emptyMap(),
+        nullable: Boolean = false,
     ): ResultScheme = context.inContext {
         val definedBy = type.source.getAnnotation(OpenApiPropertyType::class.java)?.getClassDefinition { definedBy }
 
         if (definedBy != null && type.source.kind != ENUM) {
-            return@inContext createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra)
+            return@inContext createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra, nullable)
         }
 
         val scheme = createObjectNode()
@@ -190,6 +193,25 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
             ?: addType(scheme, type, inlineRefs, references, requiresNonNulls)
 
         scheme.addExtra(extra)
+
+        if (nullable) {
+            val currentType = scheme.get("type")?.asText()
+            val currentRef = scheme.get("\$ref")?.asText()
+            when {
+                currentType != null -> {
+                    scheme.remove("type")
+                    scheme.set<JsonNode>("type", createArrayNode().add(currentType).add("null"))
+                }
+                currentRef != null -> {
+                    scheme.remove("\$ref")
+                    val anyOf = createArrayNode()
+                    anyOf.add(createObjectNode().put("\$ref", currentRef))
+                    anyOf.add(createObjectNode().put("type", "null"))
+                    scheme.set<JsonNode>("anyOf", anyOf)
+                }
+            }
+        }
+
         ResultScheme(scheme, references)
     }
 
@@ -312,16 +334,13 @@ internal fun AnnotationProcessorContext.findAllProperties(type: ClassDefinition,
                 else -> requireNonNulls && isNotNull
             }
 
-            val extra = mutableMapOf<String, Any?>()
+            val openApiNullable = property.getAnnotation(OpenApiNullable::class.java)
 
             val isExplicitlyNullable = when {
+                openApiNullable != null -> openApiNullable.nullable
                 customType?.nullability == Nullability.NULLABLE -> true
                 property.hasAnnotation("Nullable") -> true
                 else -> false
-            }
-
-            if (isExplicitlyNullable) {
-                extra["nullable"] = true
             }
 
             properties.add(
@@ -330,7 +349,8 @@ internal fun AnnotationProcessorContext.findAllProperties(type: ClassDefinition,
                     type = propertyType.toClassDefinition(),
                     composition = findCompositionInElement(this@findAllProperties, property),
                     required = required,
-                    extra = extra + property.findExtra(this@findAllProperties)
+                    nullable = isExplicitlyNullable,
+                    extra = property.findExtra(this@findAllProperties)
                 )
             )
         }
@@ -374,8 +394,8 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
     getAnnotationsByType(OpenApiNumberValidation::class.java).forEach { validation ->
         extra["minimum"] = validation.minimum.takeIf { it != NULL_STRING }
         extra["maximum"] = validation.maximum.takeIf { it != NULL_STRING }
-        extra["exclusiveMinimum"] = validation.exclusiveMinimum.takeIf { it }
-        extra["exclusiveMaximum"] = validation.exclusiveMaximum.takeIf { it }
+        extra["exclusiveMinimum"] = validation.exclusiveMinimum.takeIf { it != NULL_STRING }
+        extra["exclusiveMaximum"] = validation.exclusiveMaximum.takeIf { it != NULL_STRING }
         extra["multipleOf"] = validation.multipleOf.takeIf { it != NULL_STRING }
     }
 

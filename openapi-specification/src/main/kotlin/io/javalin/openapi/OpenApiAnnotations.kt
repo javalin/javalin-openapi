@@ -61,8 +61,6 @@ annotation class OpenApi(
     val pathParams: Array<OpenApiParam> = [],
     /** Describes applicable query parameters */
     val queryParams: Array<OpenApiParam> = [],
-    /** Describes applicable form parameters */
-    val formParams: Array<OpenApiParam> = [],
     /**
      * The request body applicable for this operation.
      * The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined semantics for request bodies.
@@ -257,7 +255,6 @@ annotation class OpenApiExampleProperty(
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
-@CustomAnnotation
 annotation class OpenApiNullable(
     val nullable: Boolean = true
 )
@@ -278,9 +275,9 @@ enum class Nullability {
 @Retention(RUNTIME)
 annotation class OpenApiNumberValidation(
     val minimum: String = NULL_STRING,
-    val exclusiveMinimum: Boolean = false,
+    val exclusiveMinimum: String = NULL_STRING,
     val maximum: String = NULL_STRING,
-    val exclusiveMaximum: Boolean = false,
+    val exclusiveMaximum: String = NULL_STRING,
     val multipleOf: String = NULL_STRING
 )
 

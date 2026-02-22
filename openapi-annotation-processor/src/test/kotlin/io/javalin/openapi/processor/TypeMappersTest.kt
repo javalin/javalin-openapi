@@ -422,8 +422,18 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     @Test
     fun should_map_recursive_type() = withOpenApi("should_map_recursive_type") {
         assertThatJson(it)
-            .inPath("$.components.schemas.Loop.properties.self")
+            .inPath("$.components.schemas.Loop.properties.self.anyOf")
+            .isArray
+            .hasSize(2)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.Loop.properties.self.anyOf[0]")
             .isObject
             .containsEntry($$"$ref", "#/components/schemas/Loop")
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.Loop.properties.self.anyOf[1]")
+            .isObject
+            .containsEntry("type", "null")
     }
 }

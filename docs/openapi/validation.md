@@ -8,8 +8,8 @@ Add OpenAPI schema validation constraints to properties using validation annotat
 @OpenApiNumberValidation(
     minimum = "0",
     maximum = "10000",
-    exclusiveMinimum = false,
-    exclusiveMaximum = true,
+    exclusiveMinimum = "0",
+    exclusiveMaximum = "10000",
     multipleOf = "0.01"
 )
 val price: Double = 0.0
@@ -19,8 +19,8 @@ val price: Double = 0.0
 |----------|-------------|
 | `minimum` | Minimum value (inclusive) |
 | `maximum` | Maximum value (inclusive) |
-| `exclusiveMinimum` | Make minimum exclusive |
-| `exclusiveMaximum` | Make maximum exclusive |
+| `exclusiveMinimum` | Exclusive minimum value (OAS 3.1.0 numeric) |
+| `exclusiveMaximum` | Exclusive maximum value (OAS 3.1.0 numeric) |
 | `multipleOf` | Must be a multiple of this |
 
 ## String Validation
