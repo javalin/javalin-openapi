@@ -16,7 +16,7 @@ You only need the annotation processor and the specification module — no Javal
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     annotationProcessor(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -29,7 +29,7 @@ dependencies {
 
 ```kotlin [Gradle (Kotlin) with Kapt]
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     kapt(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -45,7 +45,7 @@ dependencies {
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>openapi-specification</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
 </dependencies>
 
@@ -59,7 +59,7 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.0.0-beta.3</version>
+                        <version>7.0.0</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>

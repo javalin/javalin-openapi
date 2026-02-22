@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     annotationProcessor(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -44,7 +44,7 @@ plugins {
 }
 
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     kapt(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -66,19 +66,19 @@ dependencies {
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-openapi-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
     <!-- Optional: Swagger UI -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-swagger-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
     <!-- Optional: ReDoc -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-redoc-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
 </dependencies>
 
@@ -92,7 +92,7 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.0.0-beta.3</version>
+                        <version>7.0.0</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
