@@ -7,9 +7,7 @@ the API looks quite the same despite some minor changes.
 
 ### How to use
 
-* [Wiki / Installation](https://github.com/javalin/javalin-openapi/wiki/1.-Installation)
-* [Wiki / Setup](https://github.com/javalin/javalin-openapi/wiki/2.-Setup)
-* [Wiki / Features](https://github.com/javalin/javalin-openapi/wiki/3.-Features)
+See https://javalin.github.io/javalin-openapi.
 
 ### Notes
 * Reflection free
