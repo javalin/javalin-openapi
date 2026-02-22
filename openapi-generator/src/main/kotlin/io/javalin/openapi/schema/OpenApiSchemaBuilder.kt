@@ -156,11 +156,22 @@ class OpenApiSchemaBuilder {
 
         componentReferences.clear()
 
+        val simpleNameToFullName = mutableMapOf<String, String>()
+
         generatedComponents
             .mapNotNull { it.value }
-            .filter { (type, _) -> !hasComponentSchema(type.simpleName) }
             .forEach { (type, json) ->
-                componentSchemas.set<JsonNode>(type.simpleName, json)
+                val existing = simpleNameToFullName[type.simpleName]
+                if (existing != null && existing != type.fullName) {
+                    throw IllegalStateException(
+                        "Component schema name collision: '${type.simpleName}' maps to both '$existing' and '${type.fullName}'. " +
+                        "Use @OpenApiName to provide a unique name for one of the conflicting types."
+                    )
+                }
+                simpleNameToFullName[type.simpleName] = type.fullName
+                if (!hasComponentSchema(type.simpleName)) {
+                    componentSchemas.set<JsonNode>(type.simpleName, json)
+                }
             }
     }
 
@@ -228,6 +239,7 @@ class SchemaBuilder {
     internal fun build(): ObjectNode = schema
 }
 
+@OpenApiSchemaDsl
 class PathItemBuilder(
     private val pathItem: ObjectNode,
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
@@ -243,6 +255,7 @@ class PathItemBuilder(
     fun operation(method: String, configure: Consumer<OperationBuilder>) = operation(method) { configure.accept(this) }
 }
 
+@OpenApiSchemaDsl
 class OperationBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -363,7 +376,7 @@ class OperationBuilder(
 
         callbacksObject?.let { result.set<JsonNode>("callbacks", it) }
 
-        deprecatedValue?.let { result.put("deprecated", it) }
+        if (deprecatedValue == true) { result.put("deprecated", true) }
 
         if (securityArray.size() > 0) {
             result.set<JsonNode>("security", securityArray)
@@ -453,6 +466,7 @@ class ParametersBuilder(
     internal fun build(): ArrayNode = parameters
 }
 
+@OpenApiSchemaDsl
 class RequestBodyBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -508,6 +522,7 @@ class RequestBodyBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class ContentBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -533,10 +548,8 @@ interface ExampleHolder {
 
     fun applyExamples(exampleObjects: List<OpenApiExampleProperty>) {
         val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects.map { it.toExampleProperty() })
-        when {
-            generatorResult.simpleValue != null -> example(generatorResult.simpleValue!!)
-            generatorResult.jsonElement != null -> exampleJson(generatorResult.jsonElement!!)
-        }
+        generatorResult.simpleValue?.let { example(it) }
+            ?: generatorResult.jsonElement?.let { exampleJson(it) }
     }
 }
 
@@ -697,6 +710,7 @@ class ObjectSchemaBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class ResponsesBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -716,6 +730,7 @@ class ResponsesBuilder(
     internal fun build(): ObjectNode = responses
 }
 
+@OpenApiSchemaDsl
 class ResponseBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -836,6 +851,7 @@ class HeadersBuilder(
     internal fun build(): ObjectNode = headers
 }
 
+@OpenApiSchemaDsl
 class CallbacksBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -867,6 +883,7 @@ class CallbacksBuilder(
     internal fun build(): ObjectNode = callbacks
 }
 
+@OpenApiSchemaDsl
 class CallbackOperationBuilder(
     private val refCollector: (Set<ClassDefinition>) -> Unit = {},
     existing: ObjectNode? = null,
@@ -924,6 +941,7 @@ class CallbackOperationBuilder(
     }
 }
 
+@OpenApiSchemaDsl
 class SecurityBuilder(existing: ArrayNode? = null) {
 
     private val security = existing ?: createArrayNode()

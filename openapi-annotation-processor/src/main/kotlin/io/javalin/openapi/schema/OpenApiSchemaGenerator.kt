@@ -171,7 +171,7 @@ class OpenApiSchemaGenerator(
                     requestBody {
                         description(callbackAnnotation.requestBody.description.takeIf { it != NULL_STRING })
                         content { addResolvedContent(element, callbackAnnotation.requestBody.content) }
-                        required(callbackAnnotation.requestBody.required)
+                        if (callbackAnnotation.requestBody.required) { required(true) }
                     }
                     responses {
                         for (responseAnnotation in callbackAnnotation.responses.sortedBy { it.status }) {

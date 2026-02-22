@@ -23,7 +23,9 @@ internal class NamingStrategyTest : OpenApiAnnotationProcessorSpecification() {
         assertThat(splitCamelCase("firstName")).containsExactly("first", "Name")
         assertThat(splitCamelCase("homeAddress")).containsExactly("home", "Address")
         assertThat(splitCamelCase("simple")).containsExactly("simple")
-        assertThat(splitCamelCase("myURLParser")).containsExactly("my", "U", "R", "L", "Parser")
+        assertThat(splitCamelCase("myURLParser")).containsExactly("my", "URL", "Parser")
+        assertThat(splitCamelCase("userID")).containsExactly("user", "ID")
+        assertThat(splitCamelCase("HTMLElement")).containsExactly("HTML", "Element")
         assertThat(splitCamelCase("")).isEmpty()
     }
 

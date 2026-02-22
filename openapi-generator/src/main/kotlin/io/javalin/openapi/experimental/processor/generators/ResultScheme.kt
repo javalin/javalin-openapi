@@ -31,10 +31,13 @@ data class Property(
 fun splitCamelCase(name: String): List<String> {
     val words = mutableListOf<String>()
     val current = StringBuilder()
-    for (char in name) {
+    for ((i, char) in name.withIndex()) {
         if (char.isUpperCase() && current.isNotEmpty()) {
-            words.add(current.toString())
-            current.clear()
+            val nextIsLower = i + 1 < name.length && name[i + 1].isLowerCase()
+            if (!current.last().isUpperCase() || nextIsLower) {
+                words.add(current.toString())
+                current.clear()
+            }
         }
         current.append(char)
     }

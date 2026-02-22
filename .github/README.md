@@ -30,6 +30,7 @@ the API looks quite the same despite some minor changes.
 | Module                         | Description                                                                                |
 |:-------------------------------|:-------------------------------------------------------------------------------------------|
 | `openapi-annotation-processor` | Compile-time annotation processor, should generate `/openapi-plugin/openapi-{default/<version>}.json` resources |
+| `openapi-generator`            | Shared schema generation logic: type mappings, runtime builder DSL, example generation     |
 | `openapi-specification`        | Annotations & classes used to describe OpenAPI specification                               |
 | `examples`                 | Example Javalin application that uses OpenApi plugin in Gradle & Maven                     |
 

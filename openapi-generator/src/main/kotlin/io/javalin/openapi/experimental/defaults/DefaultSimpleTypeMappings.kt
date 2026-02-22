@@ -23,7 +23,8 @@ fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> = mutableM
     "char" to SimpleType("string"),
     "java.lang.Character" to SimpleType("string"),
     "java.lang.String" to SimpleType("string"),
-    "java.math.BigDecimal" to SimpleType("string", "decimal"),
+    "java.math.BigDecimal" to SimpleType("string"),
+    "java.math.BigInteger" to SimpleType("integer"),
     "java.util.UUID" to SimpleType("string", "uuid"),
     "org.bson.types.ObjectId" to SimpleType("string"),
 
@@ -36,7 +37,13 @@ fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> = mutableM
 
     "java.time.LocalDateTime" to SimpleType("string", "date-time"),
     "java.time.ZonedDateTime" to SimpleType("string", "date-time"),
+    "java.time.OffsetDateTime" to SimpleType("string", "date-time"),
     "java.time.Instant" to SimpleType("string", "date-time"),
+    "java.time.LocalTime" to SimpleType("string", "time"),
+    "java.time.Duration" to SimpleType("string", "duration"),
+
+    "java.net.URI" to SimpleType("string", "uri"),
+    "java.net.URL" to SimpleType("string", "uri"),
 
     "java.lang.Object" to SimpleType("object"),
     "java.util.Map" to SimpleType("object"),

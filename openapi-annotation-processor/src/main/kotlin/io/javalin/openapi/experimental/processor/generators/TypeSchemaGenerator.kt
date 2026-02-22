@@ -194,7 +194,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
         scheme.addExtra(extra)
 
         if (nullable) {
-            val currentType = scheme.get("type")?.asText()
+            val currentType = scheme.get("type")?.takeIf { it.isTextual }?.asText()
             val currentRef = scheme.get("\$ref")?.asText()
             val compositionKey = listOf("oneOf", "anyOf", "allOf").firstOrNull { scheme.has(it) }
             when {

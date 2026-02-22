@@ -158,8 +158,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                     "type": "string"
                   },
                   "bigDecimal": {
-                    "type": "string",
-                    "format": "decimal"
+                    "type": "string"
                   },
                   "uuid": {
                     "type": "string",

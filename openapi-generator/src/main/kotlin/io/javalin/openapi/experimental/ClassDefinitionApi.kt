@@ -14,11 +14,19 @@ class ClassDefinition(
     override fun equals(other: Any?): Boolean =
         when {
             this === other -> true
-            other is ClassDefinition -> this.fullName == other.fullName
+            other is ClassDefinition ->
+                this.fullName == other.fullName
+                    && this.generics == other.generics
+                    && this.structureType == other.structureType
             else -> false
         }
 
-    override fun hashCode(): Int = fullName.hashCode()
+    override fun hashCode(): Int {
+        var result = fullName.hashCode()
+        result = 31 * result + generics.hashCode()
+        result = 31 * result + structureType.hashCode()
+        return result
+    }
 
 }
 

@@ -2,6 +2,7 @@
 
 package io.javalin.openapi.processor
 
+import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Custom
 import io.javalin.openapi.Discriminator
@@ -165,6 +166,57 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                           "required": [
                             "type"
                           ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                    ]
+                }
+            """))
+    }
+
+    @JsonSchema
+    class NullableAllOfConfig(
+        @get:OpenApiNullable
+        @get:AllOf(FileSystemStorage::class, S3Storage::class)
+        val storage: Storage? = null
+    )
+
+    @Test
+    fun should_generate_nullable_allOf_property() = withJsonScheme(NullableAllOfConfig::class.java.canonicalName) {
+        assertThatJson(it)
+            .inPath("properties.storage")
+            .isObject
+            .isEqualTo(json("""
+                {
+                    "anyOf": [
+                        {
+                            "allOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "fs"
+                                    }
+                                  },
+                                  "required": [
+                                    "type"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "s3"
+                                    }
+                                  },
+                                  "required": [
+                                    "type"
+                                  ]
+                                }
+                            ]
                         },
                         {
                           "type": "null"

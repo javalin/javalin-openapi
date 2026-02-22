@@ -95,8 +95,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
                                             "type": "string"
                                         }
                                     }
-                                },
-                                required: false
+                                }
                             },
                             "responses": {
                                 "200": {

@@ -182,7 +182,6 @@ internal class OpenApiSchemaBuilderTest {
                 summary("Get all users")
                 description("Returns a list of users")
                 operationId("getUsers")
-                deprecated(false)
             }
 
             val json = schema.toJson()
@@ -192,8 +191,8 @@ internal class OpenApiSchemaBuilderTest {
                 .containsEntry("summary", "Get all users")
                 .containsEntry("description", "Returns a list of users")
                 .containsEntry("operationId", "getUsers")
-                .containsEntry("deprecated", false)
                 .containsEntry("responses", json("{}"))
+                .doesNotContainKey("deprecated")
                 .doesNotContainKey("parameters")
                 .doesNotContainKey("security")
         }

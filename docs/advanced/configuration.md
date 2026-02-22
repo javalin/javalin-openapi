@@ -23,45 +23,43 @@ class OpenApiConfiguration
 }
 ```
 
-=== "Gradle (Kotlin)"
+::: code-group
 
-    ```kotlin
-    kapt {
-        arguments {
-            arg(
-                "openapi.groovy.path",
-                "$projectDir/src/main/compile/openapi.groovy"
-            )
-        }
+```kotlin [Gradle (Kotlin)]
+kapt {
+    arguments {
+        arg(
+            "openapi.groovy.path",
+            "$projectDir/src/main/compile/openapi.groovy"
+        )
     }
-    ```
+}
+```
 
-=== "Gradle (Groovy)"
-
-    ```groovy
-    kapt {
-        arguments {
-            arg(
-                'openapi.groovy.path',
-                "$projectDir/src/main/compile/openapi.groovy"
-            )
-        }
+```groovy [Gradle (Groovy)]
+kapt {
+    arguments {
+        arg(
+            'openapi.groovy.path',
+            "$projectDir/src/main/compile/openapi.groovy"
+        )
     }
-    ```
+}
+```
 
-=== "Maven"
+```xml [Maven]
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <compilerArgs>
+            <arg>-Aopenapi.groovy.path=${project.basedir}/src/main/compile/openapi.groovy</arg>
+        </compilerArgs>
+    </configuration>
+</plugin>
+```
 
-    ```xml
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <compilerArgs>
-                <arg>-Aopenapi.groovy.path=${project.basedir}/src/main/compile/openapi.groovy</arg>
-            </compilerArgs>
-        </configuration>
-    </plugin>
-    ```
+:::
 
 ## Annotation Processor Options
 
@@ -73,31 +71,31 @@ The following options can be passed to the annotation processor:
 | `openapi.info.version`  | Set the `info.version` field in the generated specification |
 | `openapi.groovy.path`   | Path to the Groovy configuration script                   |
 
-=== "Gradle (Kapt)"
+::: code-group
 
-    ```kotlin
-    kapt {
-        arguments {
-            arg("openapi.info.title", "My API")
-            arg("openapi.info.version", "1.0.0")
-        }
+```kotlin [Gradle (Kapt)]
+kapt {
+    arguments {
+        arg("openapi.info.title", "My API")
+        arg("openapi.info.version", "1.0.0")
     }
-    ```
+}
+```
 
-=== "Maven"
+```xml [Maven]
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <compilerArgs>
+            <arg>-Aopenapi.info.title=My API</arg>
+            <arg>-Aopenapi.info.version=1.0.0</arg>
+        </compilerArgs>
+    </configuration>
+</plugin>
+```
 
-    ```xml
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <compilerArgs>
-                <arg>-Aopenapi.info.title=My API</arg>
-                <arg>-Aopenapi.info.version=1.0.0</arg>
-            </compilerArgs>
-        </configuration>
-    </plugin>
-    ```
+:::
 
 ## Custom Type Mappings
 
@@ -137,17 +135,19 @@ Insert custom logic for handling specific types (e.g., unwrapping `Optional<T>`)
 ```groovy
 configuration.insertEmbeddedTypeProcessor({
     EmbeddedTypeProcessorContext context ->
-        def typeName = context.type.fullName
-
-        if (typeName.startsWith("java.util.Optional")) {
-            def innerType = context.type.generics[0]
-            return context.createEmbeddedTypeDescription(
-                innerType,
-                context.inlineRefs
+        if (context.type.simpleName == 'Optional'
+            && context.type.generics.size() == 1) {
+            context.parentContext.typeSchemaGenerator.addType(
+                context.scheme,
+                context.type.generics[0],
+                context.inlineRefs,
+                context.references,
+                false
             )
+            return true // handled
         }
 
-        return null // use default processing
+        return false // use default processing
 })
 ```
 
