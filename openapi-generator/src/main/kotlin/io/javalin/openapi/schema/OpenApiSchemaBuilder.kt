@@ -42,15 +42,8 @@ class OpenApiSchemaBuilder {
         root.put("openapi", version)
     }
 
-    fun info(title: String?, version: String?): OpenApiSchemaBuilder = apply {
-        val info = createObjectNode()
-        info.put("title", title ?: "")
-        info.put("version", version ?: "")
-        root.set<JsonNode>("info", info)
-    }
-
-    fun info(openApiInfo: OpenApiInfo): OpenApiSchemaBuilder = apply {
-        val infoJson = jsonMapper.convertValue(openApiInfo, JsonNode::class.java)
+    fun info(configure: Consumer<OpenApiInfo>): OpenApiSchemaBuilder = apply {
+        val infoJson = jsonMapper.convertValue(OpenApiInfo().also { configure.accept(it) }, JsonNode::class.java)
         val existingInfo = root.get("info")
         val updatedInfo: JsonNode =
             if (existingInfo != null) {
@@ -61,45 +54,10 @@ class OpenApiSchemaBuilder {
         root.set<JsonNode>("info", updatedInfo)
     }
 
-    fun info(configure: Consumer<OpenApiInfo>): OpenApiSchemaBuilder = apply {
-        info(OpenApiInfo().also { configure.accept(it) })
-    }
-
-    fun servers(servers: List<OpenApiServer>): OpenApiSchemaBuilder = apply {
+    fun server(configure: Consumer<OpenApiServer>): OpenApiSchemaBuilder = apply {
         val serversArray = root.get("servers") as? ArrayNode ?: createArrayNode()
-        servers.forEach { server ->
-            serversArray.add(jsonMapper.convertValue(server, JsonNode::class.java))
-        }
+        serversArray.add(jsonMapper.convertValue(OpenApiServer().also { configure.accept(it) }, JsonNode::class.java))
         root.set<JsonNode>("servers", serversArray)
-    }
-
-    fun server(server: OpenApiServer): OpenApiSchemaBuilder = apply {
-        val serversArray = root.get("servers") as? ArrayNode ?: createArrayNode()
-        serversArray.add(jsonMapper.convertValue(server, JsonNode::class.java))
-        root.set<JsonNode>("servers", serversArray)
-    }
-
-    fun server(configure: Consumer<OpenApiServer>): OpenApiSchemaBuilder =
-        server(OpenApiServer().also { configure.accept(it) })
-
-    fun securitySchemes(schemes: Map<String, SecurityScheme>): OpenApiSchemaBuilder = apply {
-        val components = root.get("components") as? ObjectNode ?: createObjectNode().also { root.set<JsonNode>("components", it) }
-        val existingSchemes = components.get("securitySchemes") as? ObjectNode ?: createObjectNode()
-        val newSchemes = jsonMapper.convertValue(schemes, ObjectNode::class.java) as ObjectNode
-        newSchemes.properties().forEach { (key, value) -> existingSchemes.set<JsonNode>(key, value) }
-        components.set<JsonNode>("securitySchemes", existingSchemes)
-    }
-
-    fun globalSecurity(security: List<Security>): OpenApiSchemaBuilder = apply {
-        val securityArray = root.get("security") as? ArrayNode ?: createArrayNode()
-        security.forEach { sec ->
-            val entry = createObjectNode()
-            val scopesArray = createArrayNode()
-            sec.scopes.forEach { scopesArray.add(it) }
-            entry.set<JsonNode>(sec.name, scopesArray)
-            securityArray.add(entry)
-        }
-        root.set<JsonNode>("security", securityArray)
     }
 
     /** Add a named security scheme */
@@ -140,7 +98,9 @@ class OpenApiSchemaBuilder {
         withSecurityScheme(name, OAuth2(description = description).also { configure.accept(it) })
 
     /** Add a global security requirement */
-    fun withGlobalSecurity(security: Security): OpenApiSchemaBuilder = apply {
+    @JvmOverloads
+    fun withGlobalSecurity(name: String, configure: Consumer<Security> = Consumer {}): OpenApiSchemaBuilder = apply {
+        val security = Security(name = name).also { configure.accept(it) }
         val securityArray = root.get("security") as? ArrayNode ?: createArrayNode().also { root.set<JsonNode>("security", it) }
         val entry = createObjectNode()
         val scopesArray = createArrayNode()
@@ -148,11 +108,6 @@ class OpenApiSchemaBuilder {
         entry.set<JsonNode>(security.name, scopesArray)
         securityArray.add(entry)
     }
-
-    /** Add a global security requirement by name with optional consumer configuration */
-    @JvmOverloads
-    fun withGlobalSecurity(name: String, configure: Consumer<Security> = Consumer {}): OpenApiSchemaBuilder =
-        withGlobalSecurity(Security(name = name).also { configure.accept(it) })
 
     fun path(path: String): PathItemBuilder {
         if (!paths.has(path)) {
@@ -222,14 +177,14 @@ class OpenApiSchemaBuilder {
                     "paths" -> {
                         val pathsNode = value as? ObjectNode ?: return@forEach
                         pathsNode.properties().forEach { (pathKey, pathValue) ->
-                            builder.paths.set<JsonNode>(pathKey, pathValue)
+                            builder.paths.set<JsonNode>(pathKey, pathValue.deepCopy())
                         }
                     }
                     "components" -> {
                         val componentsNode = value as? ObjectNode ?: return@forEach
                         val schemas = componentsNode.get("schemas") as? ObjectNode
                         schemas?.properties()?.forEach { (schemaName, schemaValue) ->
-                            builder.componentSchemas.set<JsonNode>(schemaName, schemaValue)
+                            builder.componentSchemas.set<JsonNode>(schemaName, schemaValue.deepCopy())
                         }
                         // Preserve non-schema component entries (securitySchemes, etc.)
                         componentsNode.properties()
@@ -237,16 +192,26 @@ class OpenApiSchemaBuilder {
                             .forEach { (compKey, compValue) ->
                                 val rootComponents = builder.root.get("components") as? ObjectNode
                                     ?: createObjectNode().also { builder.root.set<JsonNode>("components", it) }
-                                rootComponents.set<JsonNode>(compKey, compValue)
+                                rootComponents.set<JsonNode>(compKey, compValue.deepCopy())
                             }
                     }
-                    else -> builder.root.set<JsonNode>(key, value)
+                    else -> builder.root.set<JsonNode>(key, value.deepCopy())
                 }
             }
 
             return builder
         }
     }
+}
+
+class SchemaBuilder {
+    private val schema = createObjectNode()
+
+    fun type(type: String): SchemaBuilder = apply { schema.put("type", type) }
+    fun format(format: String): SchemaBuilder = apply { schema.put("format", format) }
+    fun ref(ref: String): SchemaBuilder = apply { schema.put("\$ref", ref) }
+
+    internal fun build(): ObjectNode = schema
 }
 
 class PathItemBuilder(
@@ -280,9 +245,10 @@ class OperationBuilder(
     private var callbacksObject = (existing?.get("callbacks") as? ObjectNode)?.deepCopy()
     private var securityArray = (existing?.get("security") as? ArrayNode)?.deepCopy() ?: createArrayNode()
     private var requestBodyObject = (existing?.get("requestBody") as? ObjectNode)?.deepCopy()
+    private var deprecatedValue = existing?.get("deprecated")?.asBoolean()
 
     companion object {
-        private val MANAGED_FIELDS = setOf("tags", "parameters", "requestBody", "responses", "callbacks", "security")
+        private val MANAGED_FIELDS = setOf("tags", "parameters", "requestBody", "responses", "callbacks", "security", "deprecated")
     }
 
     fun tags(vararg tags: String) {
@@ -308,7 +274,15 @@ class OperationBuilder(
     }
 
     fun deprecated(value: Boolean) {
-        operation.put("deprecated", value)
+        deprecatedValue = value
+    }
+
+    fun addTag(tag: String) {
+        tagsArray.add(tag)
+    }
+
+    fun addTags(tags: Collection<String>) {
+        tags.forEach { tagsArray.add(it) }
     }
 
     fun parameters(configure: ParametersBuilder.() -> Unit) {
@@ -362,9 +336,7 @@ class OperationBuilder(
 
         // Copy properties set directly on operation (summary, description, operationId)
         for (entry in operation.properties()) {
-            if (entry.key != "deprecated") {
-                result.set<JsonNode>(entry.key, entry.value)
-            }
+            result.set<JsonNode>(entry.key, entry.value)
         }
 
         if (parametersArray.size() > 0) {
@@ -377,7 +349,7 @@ class OperationBuilder(
 
         callbacksObject?.let { result.set<JsonNode>("callbacks", it) }
 
-        operation.get("deprecated")?.let { result.set<JsonNode>("deprecated", it) }
+        deprecatedValue?.let { result.put("deprecated", it) }
 
         if (securityArray.size() > 0) {
             result.set<JsonNode>("security", securityArray)
@@ -410,14 +382,46 @@ class ParametersBuilder(
         param.put("name", name)
         param.put("in", location)
         description?.let { param.put("description", it) }
-        param.put("required", required)
-        param.put("deprecated", deprecated)
-        param.put("allowEmptyValue", allowEmptyValue)
+        if (required) param.put("required", true)
+        if (deprecated) param.put("deprecated", true)
+        if (allowEmptyValue) param.put("allowEmptyValue", true)
         if (example != null) {
             schemaJson.put("example", example)
         }
         param.set<JsonNode>("schema", schemaJson)
-        parameters.add(param)
+
+        // Replace existing parameter with same name+in, or append
+        val existingIndex = (0 until parameters.size()).firstOrNull { i ->
+            val existing = parameters.get(i) as? ObjectNode
+            existing?.get("name")?.asText() == name && existing?.get("in")?.asText() == location
+        }
+        if (existingIndex != null) {
+            parameters.set(existingIndex, param)
+        } else {
+            parameters.add(param)
+        }
+    }
+
+    fun parameter(
+        name: String,
+        location: String,
+        description: String? = null,
+        required: Boolean = false,
+        deprecated: Boolean = false,
+        allowEmptyValue: Boolean = false,
+        example: String? = null,
+        schema: SchemaBuilder.() -> Unit,
+    ) {
+        parameter(
+            name = name,
+            location = location,
+            schema = ResultScheme(SchemaBuilder().apply(schema).build(), emptySet()),
+            description = description,
+            required = required,
+            deprecated = deprecated,
+            allowEmptyValue = allowEmptyValue,
+            example = example,
+        )
     }
 
     internal fun build(): ArrayNode = parameters
@@ -485,27 +489,6 @@ class ContentBuilder(
 
     private val content = existing ?: createObjectNode()
 
-    fun mediaType(
-        mimeType: String,
-        schema: ResultScheme? = null,
-        example: String? = null,
-        exampleJson: JsonNode? = null,
-    ) {
-        schema?.let { refCollector(it.references) }
-        val mediaType = createObjectNode()
-
-        if (schema != null && schema.json.size() > 0) {
-            mediaType.set<JsonNode>("schema", schema.json)
-        }
-
-        when {
-            example != null -> mediaType.put("example", example)
-            exampleJson != null -> mediaType.set<JsonNode>("example", exampleJson)
-        }
-
-        content.set<JsonNode>(mimeType, mediaType)
-    }
-
     fun mediaType(mimeType: String, configure: MediaTypeBuilder.() -> Unit) {
         val existingMediaType = content.get(mimeType) as? ObjectNode
         val builder = MediaTypeBuilder(refCollector, existingMediaType)
@@ -546,11 +529,8 @@ class MediaTypeBuilder(
         schemaObject = resolved.json
     }
 
-    fun simpleSchema(type: String?, format: String?) {
-        val schema = createObjectNode()
-        type?.let { schema.put("type", it) }
-        format?.let { schema.put("format", it) }
-        schemaObject = schema
+    fun schema(configure: SchemaBuilder.() -> Unit) {
+        schemaObject = SchemaBuilder().apply(configure).build()
     }
 
     fun objectSchema(configure: ObjectSchemaBuilder.() -> Unit) {
@@ -600,6 +580,10 @@ class ObjectSchemaBuilder(
         properties.set<JsonNode>(name, schema.json)
     }
 
+    fun property(name: String, schema: SchemaBuilder.() -> Unit) {
+        properties.set<JsonNode>(name, SchemaBuilder().apply(schema).build())
+    }
+
     fun property(name: String, type: String, format: String?) {
         val schema = createObjectNode()
         schema.put("type", type)
@@ -612,6 +596,13 @@ class ObjectSchemaBuilder(
         val schema = createObjectNode()
         schema.put("type", "array")
         schema.set<JsonNode>("items", itemSchema.json)
+        properties.set<JsonNode>(name, schema)
+    }
+
+    fun arrayProperty(name: String, items: SchemaBuilder.() -> Unit) {
+        val schema = createObjectNode()
+        schema.put("type", "array")
+        schema.set<JsonNode>("items", SchemaBuilder().apply(items).build())
         properties.set<JsonNode>(name, schema)
     }
 
@@ -628,6 +619,10 @@ class ObjectSchemaBuilder(
     fun additionalProperties(schema: ResultScheme) {
         refCollector(schema.references)
         additionalPropertiesObject = schema.json
+    }
+
+    fun additionalProperties(schema: SchemaBuilder.() -> Unit) {
+        additionalPropertiesObject = SchemaBuilder().apply(schema).build()
     }
 
     fun additionalProperties(type: String?, format: String?) {
@@ -771,6 +766,26 @@ class HeadersBuilder(
         headers.set<JsonNode>(name, header)
     }
 
+    fun header(
+        name: String,
+        description: String? = null,
+        required: Boolean = false,
+        deprecated: Boolean = false,
+        allowEmptyValue: Boolean = false,
+        example: String? = null,
+        schema: SchemaBuilder.() -> Unit,
+    ) {
+        header(
+            name = name,
+            schema = ResultScheme(SchemaBuilder().apply(schema).build(), emptySet()),
+            description = description,
+            required = required,
+            deprecated = deprecated,
+            allowEmptyValue = allowEmptyValue,
+            example = example,
+        )
+    }
+
     internal fun build(): ObjectNode = headers
 }
 
@@ -812,11 +827,15 @@ class CallbackOperationBuilder(
 
     private val operation = createObjectNode().also { op ->
         existing?.properties()?.forEach { (key, value) ->
-            if (key !in setOf("requestBody", "responses")) op.set<JsonNode>(key, value.deepCopy())
+            if (key !in MANAGED_FIELDS) op.set<JsonNode>(key, value.deepCopy())
         }
     }
     private var requestBodyObject = (existing?.get("requestBody") as? ObjectNode)?.deepCopy()
     private var responsesObject = (existing?.get("responses") as? ObjectNode)?.deepCopy()
+
+    companion object {
+        private val MANAGED_FIELDS = setOf("requestBody", "responses")
+    }
 
     fun summary(value: String?) {
         value?.let { operation.put("summary", it) }

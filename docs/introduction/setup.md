@@ -213,3 +213,4 @@ openapi.withDefinitionConfiguration { version, builder ->
 - [Javalin Swagger UI](./swagger) — interactive API explorer
 - [Javalin ReDoc](./redoc) — clean API reference
 - [OpenAPI Getting Started](../openapi/getting-started) — annotate your first endpoint
+- [Runtime Builder DSL](../advanced/runtime-builder) — build or extend specs programmatically at runtime

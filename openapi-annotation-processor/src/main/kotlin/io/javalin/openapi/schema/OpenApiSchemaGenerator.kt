@@ -28,10 +28,7 @@ class OpenApiSchemaGenerator(
         val schema =
             OpenApiSchemaBuilder()
                 .openApiVersion("3.0.3")
-                .info(
-                    title = context.parameters.info.title,
-                    version = context.parameters.info.version,
-                )
+                .info { it.title(context.parameters.info.title ?: "").version(context.parameters.info.version ?: "") }
 
         for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
@@ -72,13 +69,17 @@ class OpenApiSchemaGenerator(
                     buildCallbacks(openApiElement, routeAnnotation.callbacks)
 
                     // Deprecated
-                    deprecated(routeAnnotation.deprecated)
+                    if (routeAnnotation.deprecated) {
+                        deprecated(true)
+                    }
 
                     // Security
                     // ~ https://swagger.io/specification/#security-requirement-object
-                    security {
-                        for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
-                            securityRequirement(securityAnnotation.name, *securityAnnotation.scopes)
+                    if (routeAnnotation.security.isNotEmpty()) {
+                        security {
+                            for (securityAnnotation in routeAnnotation.security.sortedBy { it.name }) {
+                                securityRequirement(securityAnnotation.name, *securityAnnotation.scopes)
+                            }
                         }
                     }
                 }
@@ -286,7 +287,10 @@ class OpenApiSchemaGenerator(
                         schema(createTypeDescriptionWithReferences(fromMirror))
 
                     null if resolvedContentData.additionalProperties == null ->
-                        simpleSchema(resolvedContentData.type, resolvedContentData.format)
+                        schema {
+                            resolvedContentData.type?.let { type(it) }
+                            resolvedContentData.format?.let { format(it) }
+                        }
 
                     else -> objectSchema {
                         resolvedContentData.properties?.let { buildProperties(it) }

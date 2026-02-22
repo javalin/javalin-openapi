@@ -56,6 +56,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: 'Compile-time Configuration', link: '/advanced/configuration' },
+          { text: 'Runtime Builder DSL', link: '/advanced/runtime-builder' },
         ],
       },
     ],
