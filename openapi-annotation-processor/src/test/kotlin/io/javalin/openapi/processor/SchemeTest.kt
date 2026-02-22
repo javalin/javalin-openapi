@@ -14,18 +14,18 @@ internal class SchemeTest : OpenApiAnnotationProcessorSpecification() {
 
     private open class BaseType {
         val baseProperty: String = "Test"
-        val baseNested: BaseType.NestedClass = NestedClass()
+        val baseNested: BaseType.BaseNestedClass = BaseNestedClass()
 
-        private inner class NestedClass {
+        private inner class BaseNestedClass {
             val nestedProperty: String = "Test"
         }
     }
 
     private class FinalClass : BaseType(), Serializable {
         val finalProperty: String = "Test"
-        val finalNested: FinalClass.NestedClass = NestedClass()
+        val finalNested: FinalClass.FinalNestedClass = FinalNestedClass()
 
-        private inner class NestedClass {
+        private inner class FinalNestedClass {
             val nestedProperty: String = "Test"
         }
     }
@@ -48,13 +48,13 @@ internal class SchemeTest : OpenApiAnnotationProcessorSpecification() {
                     "type": "string"
                   },
                   "baseNested": {
-                    "${'$'}ref": "#/components/schemas/NestedClass"
+                    "${'$'}ref": "#/components/schemas/BaseNestedClass"
                   },
                   "finalProperty": {
                     "type": "string"
                   },
                   "finalNested": {
-                    "${'$'}ref": "#/components/schemas/NestedClass"
+                    "${'$'}ref": "#/components/schemas/FinalNestedClass"
                   }
                 }
             """))

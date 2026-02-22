@@ -1,6 +1,6 @@
 # Parameters
 
-Use `@OpenApiParam` to describe path, query, header, cookie, and form parameters.
+Use `@OpenApiParam` to describe path, query, header, and cookie parameters.
 
 ## Path Parameters
 
@@ -73,25 +73,6 @@ Use `@OpenApiParam` to describe path, query, header, cookie, and form parameters
     cookies = [
         OpenApiParam(
             name = "session_id",
-            required = true
-        )
-    ]
-)
-```
-
-## Form Parameters
-
-```kotlin
-@OpenApi(
-    path = "/login",
-    methods = [HttpMethod.POST],
-    formParams = [
-        OpenApiParam(
-            name = "username",
-            required = true
-        ),
-        OpenApiParam(
-            name = "password",
             required = true
         )
     ]

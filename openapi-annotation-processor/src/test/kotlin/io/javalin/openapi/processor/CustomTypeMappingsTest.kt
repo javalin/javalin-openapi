@@ -10,20 +10,59 @@ import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicReference
 
 internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification() {
 
+    class EntityWithAtomicReference(
+        val value: AtomicReference<String>,
+        val required: String,
+    )
+
+    @OpenApi(
+        path = "/atomic-reference",
+        versions = ["should_unwrap_atomic_reference_via_custom_processor"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = EntityWithAtomicReference::class)])]
+    )
+    @Test
+    fun should_unwrap_atomic_reference_via_custom_processor() = withOpenApi("should_unwrap_atomic_reference_via_custom_processor") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.EntityWithAtomicReference")
+            .isObject
+            .isEqualTo(json("""
+                {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "string"
+                      },
+                      "required": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "required"
+                    ]
+                  }
+                }
+            """))
+    }
+
     class EntityWithOptional(
-        val text: Optional<String>  // it will be mapped by `compile/openapi.groovy` script
+        val text: Optional<String>,
+        val required: String,
     )
 
     @OpenApi(
         path = "/optional",
-        versions = ["should_map_optional_using_custom_mapping"],
+        versions = ["should_unwrap_optional_as_nullable"],
         responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = EntityWithOptional::class)])]
     )
     @Test
-    fun should_map_optional_using_custom_mapping() = withOpenApi("should_map_optional_using_custom_mapping") {
+    fun should_unwrap_optional_as_nullable() = withOpenApi("should_unwrap_optional_as_nullable") {
         println(it)
 
         assertThatJson(it)
@@ -32,14 +71,17 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                       "text": {
+                        "type": ["string", "null"]
+                      },
+                      "required": {
                         "type": "string"
                       }
                     },
                     "required": [
-                      "text"
+                      "text",
+                      "required"
                     ]
                   }
                 }

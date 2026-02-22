@@ -25,7 +25,7 @@ All available options:
 | `documentationPath` | `/openapi` | Path to the OpenAPI JSON endpoint |
 | `uiPath` | `/redoc` | Route where ReDoc is served |
 | `title` | `"OpenApi documentation"` | HTML page title |
-| `version` | `"2.1.4"` | ReDoc bundle version |
+| `version` | `"2.5.0"` | ReDoc bundle version |
 | `basePath` | `""` | Base path prefix for reverse proxy setups |
 | `roles` | `[]` | Access control roles |
 | `webJarPath` | `/webjars/redoc` | WebJar serving location |

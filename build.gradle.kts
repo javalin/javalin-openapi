@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     `java-library`
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm") version "2.3.10"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -17,7 +17,7 @@ allprojects {
     apply(plugin = "maven-publish")
 
     group = "io.javalin.community.openapi"
-    version = "7.0.0-beta.3"
+    version = "7.0.0"
 
     repositories {
         mavenCentral()
@@ -109,21 +109,21 @@ subprojects {
     }
 
     dependencies {
-        val javalin = "7.0.0-beta.1"
+        val javalin = "7.0.0"
         compileOnly("io.javalin:javalin:$javalin")
         testImplementation("io.javalin:javalin:$javalin")
 
-        val junit = "5.9.3"
+        val junit = "5.14.2"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-        testImplementation("org.assertj:assertj-core:3.24.2")
-        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.38.0")
-        testImplementation("com.konghq:unirest-java:3.14.2")
+        testImplementation("org.assertj:assertj-core:3.27.6")
+        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
+        testImplementation("com.konghq:unirest-java:3.14.5")
 
-        testImplementation("ch.qos.logback:logback-classic:1.4.14")
+        testImplementation("ch.qos.logback:logback-classic:1.5.32")
     }
 
     tasks.withType<Test> {

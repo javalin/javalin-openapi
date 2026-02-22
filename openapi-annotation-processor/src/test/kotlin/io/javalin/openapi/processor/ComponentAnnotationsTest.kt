@@ -63,11 +63,9 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                         "testProperty": {
-                            "type": "number",
-                            "nullable": true,
+                            "type": ["number", "null"],
                             "format": "double"
                         }
                     }
@@ -92,14 +90,12 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
         println(it)
 
         assertThatJson(it)
-            .inPath("$.components.schemas.ClassWithNullableProperties.properties.testProperty")
-            .isObject
-            .containsEntry("nullable", true)
+            .inPath("$.components.schemas.ClassWithNullableProperties.properties.testProperty.type")
+            .isEqualTo(json("""["string", "null"]"""))
 
         assertThatJson(it)
-            .inPath("$.components.schemas.ClassWithNullableProperties.properties.optionalProperty")
-            .isObject
-            .containsEntry("nullable", false)
+            .inPath("$.components.schemas.ClassWithNullableProperties.properties.optionalProperty.type")
+            .isEqualTo("string")
     }
 
 }

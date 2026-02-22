@@ -11,9 +11,15 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
+import java.math.BigInteger
+import java.net.URI
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
 import java.util.Date
 import java.util.UUID
 
@@ -52,6 +58,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val charObject: java.lang.Character,
         val string: String,
         val bigDecimal: BigDecimal,
+        val bigInteger: BigInteger,
         val uuid: UUID,
         val objectId: ObjectId,
         val byteArray: ByteArray,
@@ -60,7 +67,12 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val date: Date,
         val localDate: LocalDate,
         val localDateTime: LocalDateTime,
+        val zonedDateTime: ZonedDateTime,
+        val offsetDateTime: OffsetDateTime,
         val instant: Instant,
+        val localTime: LocalTime,
+        val duration: Duration,
+        val uri: URI,
         val obj: Object,
         val map: Map<*, *>,
         val mapWithList: Map<*, List<*>>,
@@ -160,8 +172,12 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                   "bigDecimal": {
                     "type": "string"
                   },
+                  "bigInteger": {
+                    "type": "integer"
+                  },
                   "uuid": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "objectId": {
                     "type": "string"
@@ -190,9 +206,29 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
                     "type": "string",
                     "format": "date-time"
                   },
+                  "zonedDateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "offsetDateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
                   "instant": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "localTime": {
+                    "type": "string",
+                    "format": "time"
+                  },
+                  "duration": {
+                    "type": "string",
+                    "format": "duration"
+                  },
+                  "uri": {
+                    "type": "string",
+                    "format": "uri"
                   },
                   "obj": {
                     "type": "object"
@@ -422,8 +458,18 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     @Test
     fun should_map_recursive_type() = withOpenApi("should_map_recursive_type") {
         assertThatJson(it)
-            .inPath("$.components.schemas.Loop.properties.self")
+            .inPath("$.components.schemas.Loop.properties.self.anyOf")
+            .isArray
+            .hasSize(2)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.Loop.properties.self.anyOf[0]")
             .isObject
             .containsEntry($$"$ref", "#/components/schemas/Loop")
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.Loop.properties.self.anyOf[1]")
+            .isObject
+            .containsEntry("type", "null")
     }
 }

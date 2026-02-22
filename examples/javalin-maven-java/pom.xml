@@ -11,8 +11,8 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <javalin.version>7.0.0-beta.1</javalin.version>
-        <javalin.openapi.version>7.0.0-beta.1</javalin.openapi.version>
+        <javalin.version>7.0.0</javalin.version>
+        <javalin.openapi.version>7.0.0</javalin.openapi.version>
     </properties>
 
     <repositories>

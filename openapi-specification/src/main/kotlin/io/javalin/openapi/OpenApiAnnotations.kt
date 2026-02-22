@@ -7,8 +7,6 @@ package io.javalin.openapi
 
 import io.javalin.openapi.HttpMethod.GET
 import io.javalin.openapi.Visibility.PUBLIC
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator.toExampleProperty
 import java.lang.annotation.Repeatable
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
@@ -63,8 +61,6 @@ annotation class OpenApi(
     val pathParams: Array<OpenApiParam> = [],
     /** Describes applicable query parameters */
     val queryParams: Array<OpenApiParam> = [],
-    /** Describes applicable form parameters */
-    val formParams: Array<OpenApiParam> = [],
     /**
      * The request body applicable for this operation.
      * The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined semantics for request bodies.
@@ -142,7 +138,7 @@ data class OpenApiContentData(
     val properties: List<OpenApiContentProperty>?,
     val additionalProperties: OpenApiAdditionalContent?,
     val example: String?,
-    val exampleObjects: List<ExampleGenerator.ExampleProperty>?,
+    val exampleObjects: List<OpenApiExampleProperty>?,
 )
 
 @Target()
@@ -167,7 +163,7 @@ fun OpenApiContent.toData(): OpenApiContentData =
         properties = properties.takeIf { it.isNotEmpty() }?.toList(),
         additionalProperties = additionalProperties.takeIf { !it._ignored },
         example = example.takeIf { it != NULL_STRING },
-        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.toList(),
     )
 
 @Target()
@@ -192,7 +188,7 @@ fun OpenApiAdditionalContent.toData(): OpenApiContentData =
         properties = properties.takeIf { it.isNotEmpty() }?.toList(),
         additionalProperties = null,
         example = example.takeIf { it != NULL_STRING },
-        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.map { it.toExampleProperty() },
+        exampleObjects = exampleObjects.takeIf { it.isNotEmpty() }?.toList(),
     )
 
 @Target()
@@ -259,7 +255,6 @@ annotation class OpenApiExampleProperty(
 
 @Target(FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, FIELD)
 @Retention(RUNTIME)
-@CustomAnnotation
 annotation class OpenApiNullable(
     val nullable: Boolean = true
 )
@@ -280,9 +275,9 @@ enum class Nullability {
 @Retention(RUNTIME)
 annotation class OpenApiNumberValidation(
     val minimum: String = NULL_STRING,
-    val exclusiveMinimum: Boolean = false,
+    val exclusiveMinimum: String = NULL_STRING,
     val maximum: String = NULL_STRING,
-    val exclusiveMaximum: Boolean = false,
+    val exclusiveMaximum: String = NULL_STRING,
     val multipleOf: String = NULL_STRING
 )
 
@@ -351,12 +346,6 @@ object ContentType {
     const val FORM_DATA_URL_ENCODED = "application/x-www-form-urlencoded"
     const val FORM_DATA_MULTIPART = "multipart/form-data"
     const val AUTODETECT = "AUTODETECT - Will be replaced later"
-}
-
-enum class ComposedType {
-    NULL,
-    ANY_OF,
-    ONE_OF;
 }
 
 enum class HttpMethod {

@@ -2,8 +2,8 @@
 
 The annotation processor works without Javalin or any web framework:
 
-- Generates **OpenAPI 3.0.3** specifications via `@OpenApi`
-- Generates standalone **[JSON Schema Draft-7](https://json-schema.org/draft-07)** documents via `@JsonSchema`
+- Generates **OpenAPI 3.1.0** specifications via `@OpenApi`
+- Generates standalone **[JSON Schema 2020-12](https://json-schema.org/draft/2020-12)** documents via `@JsonSchema`
 - All generated files are bundled as **classpath resources** in your JAR
 
 You can serve them with any HTTP server, use them for validation, feed them to code generators, or process them however you like.
@@ -16,7 +16,7 @@ You only need the annotation processor and the specification module — no Javal
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     annotationProcessor(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -29,7 +29,7 @@ dependencies {
 
 ```kotlin [Gradle (Kotlin) with Kapt]
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     kapt(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -45,7 +45,7 @@ dependencies {
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>openapi-specification</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
 </dependencies>
 
@@ -59,7 +59,7 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.0.0-beta.3</version>
+                        <version>7.0.0</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -87,9 +87,8 @@ At compile time, this generates a `/json-schemes/com.example.UserConfig` resourc
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "name": { "type": "string" },
     "port": {
@@ -109,7 +108,7 @@ At compile time, this generates a `/json-schemes/com.example.UserConfig` resourc
 
 | Aspect | OpenAPI | JSON Schema |
 |--------|---------|-------------|
-| Output format | OpenAPI 3.0.3 | JSON Schema Draft-7 |
+| Output format | OpenAPI 3.1.0 | JSON Schema 2020-12 |
 | Scope | Endpoint docs | Standalone type schemas |
 | References | `$ref` | All types inlined |
 | Trigger | `@OpenApi` | `@JsonSchema` |

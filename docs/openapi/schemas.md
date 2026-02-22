@@ -18,7 +18,8 @@ The annotation processor automatically generates OpenAPI component schemas from 
 | `char` / `Character` | `string` | — |
 | `String` | `string` | — |
 | `BigDecimal` | `string` | — |
-| `UUID` | `string` | — |
+| `BigInteger` | `integer` | — |
+| `UUID` | `string` | `uuid` |
 
 ### Date & Time Types
 
@@ -27,7 +28,18 @@ The annotation processor automatically generates OpenAPI component schemas from 
 | `java.util.Date` | `string` | `date` |
 | `LocalDate` | `string` | `date` |
 | `LocalDateTime` | `string` | `date-time` |
+| `ZonedDateTime` | `string` | `date-time` |
+| `OffsetDateTime` | `string` | `date-time` |
 | `Instant` | `string` | `date-time` |
+| `LocalTime` | `string` | `time` |
+| `Duration` | `string` | `duration` |
+
+### URI Types
+
+| Java Type | OpenAPI Type | Format |
+|-----------|-------------|--------|
+| `URI` | `string` | `uri` |
+| `URL` | `string` | `uri` |
 
 ### Binary Types
 
@@ -44,6 +56,10 @@ The annotation processor automatically generates OpenAPI component schemas from 
 | `List<T>` / `T[]` | `{ "type": "array", "items": { ... } }` |
 | `Map<K, V>` | `{ "type": "object", "additionalProperties": { ... } }` |
 | `Object` | `{ "type": "object" }` |
+
+### Optional
+
+`java.util.Optional<T>` is automatically unwrapped to a nullable `T` schema. For example, `Optional<String>` produces `"type": ["string", "null"]`.
 
 ## Property Resolution
 
@@ -119,11 +135,24 @@ val id: ObjectId = ObjectId()
 
 ### @OpenApiNullable
 
-Mark a property as nullable:
+Mark a property as nullable. In OAS 3.1.0, nullable types use a type array instead of `"nullable": true`:
 
 ```kotlin
 @OpenApiNullable
 val middleName: String? = null
+```
+
+For simple types, this produces `"type": ["string", "null"]`. For `$ref` types, nullable is expressed using `anyOf`:
+
+```json
+{
+  "field": {
+    "anyOf": [
+      { "$ref": "#/components/schemas/SomeType" },
+      { "type": "null" }
+    ]
+  }
+}
 ```
 
 ## Recursive Types

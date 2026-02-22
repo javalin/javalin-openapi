@@ -7,49 +7,80 @@ import io.javalin.plugin.Plugin
 import io.javalin.security.RouteRole
 import java.util.function.Consumer
 
-class SwaggerConfiguration {
+/** Configure Swagger UI plugin */
+@Suppress("MemberVisibilityCanBePrivate")
+class SwaggerConfiguration @JvmOverloads constructor(
     /** Location of OpenApi documentation */
-    var documentationPath = "/openapi"
-    /* Swagger UI route */
-    var uiPath = "/swagger"
+    @JvmField var documentationPath: String = "/openapi",
+    /** Swagger UI route */
+    @JvmField var uiPath: String = "/swagger",
     /** Roles eligible to connect to Swagger routes */
-    var roles: Array<RouteRole> = emptyArray()
+    @JvmField var roles: Array<RouteRole> = emptyArray(),
     /** Specify custom base path if Javalin is running behind reverse proxy */
-    var basePath: String? = null
-
-    // WebJar configuration
+    @JvmField var basePath: String? = null,
     /** Swagger UI Bundle version */
-    var version = "5.17.14"
-    /** Swagger UI Bundler webjar location */
-    var webJarPath = "/webjars/swagger-ui"
-
-    // Swagger UI bundle configuration
-    // ~ https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/ */
-    /** Page title **/
-    var title = "OpenApi documentation"
+    @JvmField var version: String = "5.31.2",
+    /** Swagger UI Bundle webjar location */
+    @JvmField var webJarPath: String = "/webjars/swagger-ui",
+    /** Page title */
+    @JvmField var title: String = "OpenApi documentation",
     /** Specification validator */
-    var validatorUrl: String? = "https://validator.swagger.io/validator"
+    @JvmField var validatorUrl: String? = "https://validator.swagger.io/validator",
     /** Tags sorter algorithm expression. */
-    var tagsSorter: String = "'alpha'"
+    @JvmField var tagsSorter: String = "'alpha'",
     /** Operations sorter algorithm expression. */
-    var operationsSorter: String = "'alpha'"
+    @JvmField var operationsSorter: String = "'alpha'",
     /** Custom version mappings */
-    var customVersions: MutableList<Pair<String, String>> = arrayListOf()
-    /**  Custom CSS files to be injected into Swagger HTML */
-    var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf()
-    /**  Custom JavaScript files to be injected into Swagger HTML */
-    var customJavaScriptFiles: MutableList<Pair<String, String>> = arrayListOf()
+    @JvmField var customVersions: MutableList<Pair<String, String>> = arrayListOf(),
+    /** Custom CSS files to be injected into Swagger HTML */
+    @JvmField var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf(),
+    /** Custom JavaScript files to be injected into Swagger HTML */
+    @JvmField var customJavaScriptFiles: MutableList<Pair<String, String>> = arrayListOf(),
+) {
 
+    /** Set the location of OpenApi documentation */
+    fun withDocumentationPath(path: String): SwaggerConfiguration = also { documentationPath = path }
+
+    /** Set the Swagger UI route */
+    fun withUiPath(path: String): SwaggerConfiguration = also { uiPath = path }
+
+    /** Set roles eligible to connect to Swagger routes */
+    fun withRoles(vararg roles: RouteRole): SwaggerConfiguration = also { this.roles = arrayOf(*roles) }
+
+    /** Set custom base path if Javalin is running behind reverse proxy */
+    fun withBasePath(path: String): SwaggerConfiguration = also { basePath = path }
+
+    /** Set Swagger UI Bundle version */
+    fun withVersion(version: String): SwaggerConfiguration = also { this.version = version }
+
+    /** Set Swagger UI Bundle webjar location */
+    fun withWebJarPath(path: String): SwaggerConfiguration = also { webJarPath = path }
+
+    /** Set page title */
+    fun withTitle(title: String): SwaggerConfiguration = also { this.title = title }
+
+    /** Set specification validator URL */
+    fun withValidatorUrl(url: String?): SwaggerConfiguration = also { validatorUrl = url }
+
+    /** Set tags sorter algorithm expression */
+    fun withTagsSorter(sorter: String): SwaggerConfiguration = also { tagsSorter = sorter }
+
+    /** Set operations sorter algorithm expression */
+    fun withOperationsSorter(sorter: String): SwaggerConfiguration = also { operationsSorter = sorter }
+
+    /** Inject custom CSS stylesheet into Swagger UI */
     @JvmOverloads
     fun injectStylesheet(path: String, media: String = "screen"): SwaggerConfiguration = also {
         customStylesheetFiles.add(path to media)
     }
 
+    /** Inject custom JavaScript file into Swagger UI */
     @JvmOverloads
-    fun injectJavaScript(path: String, type: String = "text/javascript"): SwaggerConfiguration = also  {
+    fun injectJavaScript(path: String, type: String = "text/javascript"): SwaggerConfiguration = also {
         customJavaScriptFiles.add(path to type)
     }
 
+    /** Add custom OpenAPI spec version with external URL */
     fun injectCustomVersion(name: String, url: String): SwaggerConfiguration = also {
         customVersions.add(name to url)
     }
@@ -64,21 +95,14 @@ open class SwaggerPlugin @JvmOverloads constructor(
     override fun onStart(state: JavalinState) {
         val openApiLoader = OpenApiLoader()
         val versions = openApiLoader.loadVersions().map {
-            SwaggerVersionMapping(
-                name = it,
-                type = SwaggerVersionMapping.SwaggerVersionType.OPENAPI_LOADER
-            )
+            SwaggerVersionMapping.OpenApiLoader(name = it)
         }
 
         val swaggerHandler = SwaggerHandler(
             title = pluginConfig.title,
             documentationPath = pluginConfig.documentationPath,
             versions = versions + pluginConfig.customVersions.map { (name, url) ->
-                SwaggerVersionMapping(
-                    name = name,
-                    url = url,
-                    type = SwaggerVersionMapping.SwaggerVersionType.CUSTOM
-                )
+                SwaggerVersionMapping.Custom(name = name, url = url)
             },
             swaggerVersion = pluginConfig.version,
             validatorUrl = pluginConfig.validatorUrl,

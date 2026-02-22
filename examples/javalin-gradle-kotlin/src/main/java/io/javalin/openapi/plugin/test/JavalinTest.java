@@ -14,7 +14,7 @@ import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
@@ -54,16 +54,16 @@ public final class JavalinTest implements Handler {
                     .withDocumentationPath(deprecatedDocsPath)
                     .withRoles(Rules.ANONYMOUS)
                     .withPrettyOutput()
-                    .withDefinitionConfiguration((version, openApiDefinition) ->
-                        openApiDefinition
-                            .withInfo(openApiInfo ->
+                    .withDefinitionConfiguration((version, builder) ->
+                        builder
+                            .info(openApiInfo ->
                                 openApiInfo
                                     .description("App description goes right here")
                                     .termsOfService("https://example.com/tos")
                                     .contact("API Support", "https://www.example.com/support", "support@example.com")
                                     .license("Apache 2.0", "https://www.apache.org/licenses/", "Apache-2.0")
                             )
-                            .withServer(openApiServer ->
+                            .server(openApiServer ->
                                 openApiServer
                                     .description("Server description goes here")
                                     .url("http://localhost:{port}{basePath}/" + version + "/")
@@ -71,42 +71,39 @@ public final class JavalinTest implements Handler {
                                     .variable("basePath", "Base path of the server", "", "", "/v1")
                             )
                             // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-                            .withSecurity(openApiSecurity ->
-                                openApiSecurity
-                                    .withBasicAuth()
-                                    .withBearerAuth()
-                                    .withApiKeyAuth("ApiKeyAuth", "X-Api-Key")
-                                    .withCookieAuth("CookieAuth", "JSESSIONID")
-                                    .withOpenID("OpenID", "https://example.com/.well-known/openid-configuration")
-                                    .withOAuth2("OAuth2", "This API uses OAuth 2 with the implicit grant flow.", oauth2 ->
-                                        oauth2
-                                            .withClientCredentials("https://api.example.com/credentials/authorize")
-                                            .withImplicitFlow("https://api.example.com/oauth2/authorize", flow ->
-                                                flow
-                                                    .withScope("read_pets", "read your pets")
-                                                    .withScope("write_pets", "modify pets in your account")
-                                            )
+                            .withBasicAuth()
+                            .withBearerAuth()
+                            .withApiKeyAuth("ApiKeyAuth", "X-Api-Key")
+                            .withCookieAuth("CookieAuth", "JSESSIONID")
+                            .withOpenID("OpenID", "https://example.com/.well-known/openid-configuration")
+                            .withOAuth2("OAuth2", "This API uses OAuth 2 with the implicit grant flow.", oauth2 ->
+                                oauth2
+                                    .withClientCredentials("https://api.example.com/credentials/authorize")
+                                    .withImplicitFlow("https://api.example.com/oauth2/authorize", flow ->
+                                        flow
+                                            .withScope("read_pets", "read your pets")
+                                            .withScope("write_pets", "modify pets in your account")
                                     )
-                                    .withGlobalSecurity("OAuth2", globalSecurity ->
-                                        globalSecurity
-                                            .withScope("write_pets")
-                                            .withScope("read_pets")
-                                    )
-                                    .withGlobalSecurity("BearerAuth")
                             )
-                            .withDefinitionProcessor(content -> { // you can add whatever you want to this document using your favourite json api
-                                content.set("test", new TextNode("Value"));
-                                return content.toPrettyString();
-                            })
-                    )));
+                            .withGlobalSecurity("OAuth2", globalSecurity ->
+                                globalSecurity
+                                    .withScope("write_pets")
+                                    .withScope("read_pets")
+                            )
+                            .withGlobalSecurity("BearerAuth")
+                    )
+                    .withDefinitionProcessor(content -> { // you can add whatever you want to this document using your favourite json api
+                        content.set("test", new TextNode("Value"));
+                        return content.toPrettyString();
+                    })));
 
-            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
-                swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-            }));
+            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration ->
+                swaggerConfiguration.withDocumentationPath(deprecatedDocsPath)
+            ));
 
-            config.registerPlugin(new ReDocPlugin(reDocConfiguration -> {
-                reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-            }));
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration ->
+                reDocConfiguration.withDocumentationPath(deprecatedDocsPath)
+            ));
 
             for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
                 System.out.println(generatedJsonSchema.getName());
@@ -374,9 +371,9 @@ public final class JavalinTest implements Handler {
         @OpenApiExample("5050")
         @OpenApiNumberValidation(
                 minimum = "5000",
-                exclusiveMinimum = true,
+                exclusiveMinimum = "5000",
                 maximum = "6000",
-                exclusiveMaximum = true,
+                exclusiveMaximum = "6000",
                 multipleOf = "50"
         )
         @OpenApiStringValidation(

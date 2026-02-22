@@ -1,6 +1,6 @@
 # Setup with Javalin
 
-Javalin OpenAPI is a compile-time annotation processor that generates OpenAPI 3.0.3 specifications and JSON Schema Draft-7 documents. It works with any Java/Kotlin project, but provides first-class integration with the [Javalin](https://javalin.io) web framework through plugins that serve the generated specification and host Swagger UI or ReDoc.
+Javalin OpenAPI is a compile-time annotation processor that generates OpenAPI 3.1.0 specifications and JSON Schema 2020-12 documents. It works with any Java/Kotlin project, but provides first-class integration with the [Javalin](https://javalin.io) web framework through plugins that serve the generated specification and host Swagger UI or ReDoc.
 
 This page covers the Javalin integration. If you're using a different framework or want standalone schema generation, see [Setup without Javalin](./json-schema-setup).
 
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     annotationProcessor(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -44,7 +44,7 @@ plugins {
 }
 
 dependencies {
-    val openapi = "7.0.0-beta.3"
+    val openapi = "7.0.0"
 
     kapt(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -66,19 +66,19 @@ dependencies {
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-openapi-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
     <!-- Optional: Swagger UI -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-swagger-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
     <!-- Optional: ReDoc -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-redoc-plugin</artifactId>
-        <version>7.0.0-beta.3</version>
+        <version>7.0.0</version>
     </dependency>
 </dependencies>
 
@@ -92,7 +92,7 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.0.0-beta.3</version>
+                        <version>7.0.0</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -108,9 +108,9 @@ dependencies {
 ```kotlin
 Javalin.create { config ->
     config.registerPlugin(OpenApiPlugin { openapi ->
-        openapi.withDefinitionConfiguration { _, definition ->
-            definition.withInfo { info ->
-                info.title = "My API"
+        openapi.withDefinitionConfiguration { _, builder ->
+            builder.info { info ->
+                info.title("My API")
             }
         }
     })
@@ -122,18 +122,18 @@ This serves the generated OpenAPI JSON at `/openapi`.
 ### API Info
 
 ```kotlin
-definition.withInfo { info ->
-    info.title = "My API"
-    info.description = "API description"
-    info.termsOfService = "https://example.com/tos"
-    info.setContact { contact ->
-        contact.name = "API Support"
-        contact.url = "https://example.com/support"
-        contact.email = "support@example.com"
+builder.info { info ->
+    info.title("My API")
+    info.description("API description")
+    info.termsOfService("https://example.com/tos")
+    info.withContact { contact ->
+        contact.name("API Support")
+        contact.url("https://example.com/support")
+        contact.email("support@example.com")
     }
-    info.setLicense { license ->
-        license.name = "Apache 2.0"
-        license.identifier = "Apache-2.0"
+    info.withLicense { license ->
+        license.name("Apache 2.0")
+        license.identifier("Apache-2.0")
     }
 }
 ```
@@ -141,14 +141,14 @@ definition.withInfo { info ->
 ### Servers
 
 ```kotlin
-definition.withServer { server ->
-    server.url = "https://api.example.com"
-    server.description = "Production"
-    server.addVariable(
-        name = "version",
+builder.server { server ->
+    server.url("https://api.example.com")
+    server.description("Production")
+    server.variable(
+        key = "version",
+        description = "API version",
         defaultValue = "v1",
-        enumValues = arrayOf("v1", "v2"),
-        description = "API version"
+        "v1", "v2"
     )
 }
 ```
@@ -156,33 +156,18 @@ definition.withServer { server ->
 ### Security Schemes
 
 ```kotlin
-definition.withSecurity { security ->
-    security.withBearerAuth(name = "BearerAuth")
-    security.withBasicAuth(name = "BasicAuth")
-    security.withApiKeyAuth(
-        name = "ApiKeyAuth",
-        header = "X-API-Key",
-        `in` = "header"
-    )
-    security.withCookieAuth(
-        name = "CookieAuth",
-        cookieName = "session_id"
-    )
-    security.withOpenIdConnectAuth(
-        name = "OpenID",
-        connectUrl = "https://example.com/.well-known/openid"
-    )
-    security.withOAuth2Auth(name = "OAuth2") { oauth ->
-        oauth.withImplicit { implicit ->
-            implicit.authorizationUrl =
-                "https://example.com/auth"
-            implicit.addFlow(
-                scope = "read:users",
-                description = "Read users"
-            )
+builder
+    .withBearerAuth("BearerAuth")
+    .withBasicAuth("BasicAuth")
+    .withApiKeyAuth("ApiKeyAuth", "X-API-Key")
+    .withCookieAuth("CookieAuth", "session_id")
+    .withOpenID("OpenID", "https://example.com/.well-known/openid")
+    .withOAuth2("OAuth2", "OAuth2 authentication") { oauth ->
+        oauth.withImplicitFlow("https://example.com/auth") { implicit ->
+            implicit.withScope("read:users", "Read users")
         }
     }
-}
+    .withGlobalSecurity("BearerAuth")
 ```
 
 ### Documentation Path & Access Control
@@ -190,9 +175,9 @@ definition.withSecurity { security ->
 ```kotlin
 config.registerPlugin(OpenApiPlugin { openapi ->
     openapi.withRoles(MyRoles.ADMIN)
-    openapi.withDefinitionConfiguration { version, definition ->
-        definition.withInfo { info ->
-            info.title = "My API - $version"
+    openapi.withDefinitionConfiguration { version, builder ->
+        builder.info { info ->
+            info.title("My API - $version")
         }
     }
 })
@@ -203,9 +188,9 @@ config.registerPlugin(OpenApiPlugin { openapi ->
 Post-process the generated OpenAPI JSON before serving:
 
 ```kotlin
-definition.withDefinitionProcessor { json ->
-    // Modify the JSON string
-    json
+openapi.withDefinitionProcessor { json ->
+    json.put("x-custom", "value")
+    json.toPrettyString()
 }
 ```
 
@@ -214,9 +199,9 @@ definition.withDefinitionProcessor { json ->
 Each version generates a separate OpenAPI specification. Configure them in `@OpenApi(versions = ...)` on your handlers and handle them in the plugin:
 
 ```kotlin
-openapi.withDefinitionConfiguration { version, definition ->
+openapi.withDefinitionConfiguration { version, builder ->
     if (version == "v1") {
-        definition.withInfo { it.title = "API v1" }
+        builder.info { it.title("API v1") }
     }
 }
 ```
@@ -228,3 +213,4 @@ openapi.withDefinitionConfiguration { version, definition ->
 - [Javalin Swagger UI](./swagger) — interactive API explorer
 - [Javalin ReDoc](./redoc) — clean API reference
 - [OpenAPI Getting Started](../openapi/getting-started) — annotate your first endpoint
+- [Runtime Builder DSL](../advanced/runtime-builder) — build or extend specs programmatically at runtime

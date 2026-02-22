@@ -4,37 +4,20 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.openapi.ApiKeyAuth;
-import io.javalin.openapi.BasicAuth;
-import io.javalin.openapi.BearerAuth;
-import io.javalin.openapi.CookieAuth;
 import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.ImplicitFlow;
-import io.javalin.openapi.OAuth2;
 import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiContact;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiContentProperty;
 import io.javalin.openapi.OpenApiExample;
 import io.javalin.openapi.OpenApiIgnore;
-import io.javalin.openapi.OpenApiInfo;
-import io.javalin.openapi.OpenApiLicense;
 import io.javalin.openapi.OpenApiName;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiPropertyType;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-import io.javalin.openapi.OpenApiServer;
-import io.javalin.openapi.OpenApiServerVariable;
-import io.javalin.openapi.OpenID;
-import io.javalin.openapi.Security;
-import io.javalin.openapi.plugin.OpenApiConfiguration;
 import io.javalin.openapi.plugin.OpenApiPlugin;
-import io.javalin.openapi.plugin.SecurityConfiguration;
-import io.javalin.openapi.plugin.redoc.ReDocConfiguration;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
-import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
@@ -44,12 +27,8 @@ import java.io.Serializable;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-
-import static java.util.Map.entry;
 
 /**
  * Starts Javalin server with OpenAPI plugin
@@ -65,90 +44,63 @@ public final class JavalinTest implements Handler {
         Javalin.create(config -> {
             String deprecatedDocsPath = "/swagger-docs";
 
-            OpenApiContact openApiContact = new OpenApiContact();
-            openApiContact.setName("API Support");
-            openApiContact.setUrl("https://www.example.com/support");
-            openApiContact.setEmail("support@example.com");
-
-            OpenApiLicense openApiLicense = new OpenApiLicense();
-            openApiLicense.setName("Apache 2.0");
-            openApiLicense.setIdentifier("Apache-2.0");
-
-            OpenApiInfo openApiInfo = new OpenApiInfo();
-            openApiInfo.setTitle("Awesome App");
-            openApiInfo.setSummary("App summary");
-            openApiInfo.setDescription("App description goes right here");
-            openApiInfo.setTermsOfService("https://example.com/tos");
-            openApiInfo.setContact(openApiContact);
-            openApiInfo.setLicense(openApiLicense);
-            openApiInfo.setVersion("1.0.0");
-
-            OpenApiServerVariable portServerVariable = new OpenApiServerVariable();
-            portServerVariable.setValues(new String[] { "7070", "8080" });
-            portServerVariable.setDefault("8080");
-            portServerVariable.setDescription("Port of the server");
-
-            OpenApiServerVariable basePathServerVariable = new OpenApiServerVariable();
-            basePathServerVariable.setValues(new String[] { "v1" });
-            basePathServerVariable.setDefault("v1");
-            basePathServerVariable.setDescription("Base path of the server");
-
-            OpenApiServer openApiServer = new OpenApiServer();
-            openApiServer.setUrl("https://example.com:{port}/{basePath}");
-            openApiServer.setDescription("Server description goes here");
-            openApiServer.addVariable("port", portServerVariable);
-            openApiServer.addVariable("basePath", basePathServerVariable);
-
-            OpenApiServer[] servers = new OpenApiServer[] { openApiServer };
-
-            OpenApiConfiguration openApiConfiguration = new OpenApiConfiguration();
-            openApiConfiguration.setInfo(openApiInfo);
-            openApiConfiguration.setServers(servers);
-            openApiConfiguration.setDocumentationPath(deprecatedDocsPath); // by default it's /openapi
-            // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
-            openApiConfiguration.setSecurity(new SecurityConfiguration(
-                Map.ofEntries(
-                    entry("BasicAuth", new BasicAuth()),
-                    entry("BearerAuth", new BearerAuth()),
-                    entry("ApiKeyAuth", new ApiKeyAuth()),
-                    entry("CookieAuth", new CookieAuth("JSESSIONID")),
-                    entry("OpenID", new OpenID("https://example.com/.well-known/openid-configuration")),
-                    entry("OAuth2", new OAuth2(
-                        "This API uses OAuth 2 with the implicit grant flow.",
-                        List.of(
-                            new ImplicitFlow(
-                                "https://api.example.com/oauth2/authorize",
-                                new HashMap<>() {{
-                                    put("read_pets", "read your pets");
-                                    put("write_pets", "modify pets in your account");
-                                }}
+            config.registerPlugin(new OpenApiPlugin(openApiConfig ->
+                openApiConfig
+                    .withDocumentationPath(deprecatedDocsPath)
+                    .withDefinitionConfiguration((version, builder) ->
+                        builder
+                            .info(info -> {
+                                info.title("Awesome App");
+                                info.summary("App summary");
+                                info.description("App description goes right here");
+                                info.termsOfService("https://example.com/tos");
+                                info.withContact(contact -> {
+                                    contact.name("API Support");
+                                    contact.url("https://www.example.com/support");
+                                    contact.email("support@example.com");
+                                });
+                                info.withLicense(license -> {
+                                    license.name("Apache 2.0");
+                                    license.identifier("Apache-2.0");
+                                });
+                                info.version("1.0.0");
+                            })
+                            .server(server -> {
+                                server.url("https://example.com:{port}/{basePath}");
+                                server.description("Server description goes here");
+                                server.variable("port", "Port of the server", "8080", "7070", "8080");
+                                server.variable("basePath", "Base path of the server", "v1", "v1");
+                            })
+                            // Based on official example: https://swagger.io/docs/specification/authentication/oauth2/
+                            .withBasicAuth()
+                            .withBearerAuth()
+                            .withApiKeyAuth()
+                            .withCookieAuth("CookieAuth", "JSESSIONID")
+                            .withOpenID("OpenID", "https://example.com/.well-known/openid-configuration")
+                            .withOAuth2("OAuth2", "This API uses OAuth 2 with the implicit grant flow.", oauth2 ->
+                                oauth2.withImplicitFlow("https://api.example.com/oauth2/authorize", flow -> {
+                                    flow.withScope("read_pets", "read your pets");
+                                    flow.withScope("write_pets", "modify pets in your account");
+                                })
                             )
-                        )
-                    ))
-                ),
-                List.of(
-                    new Security(
-                        "oauth2",
-                        List.of(
-                            "write_pets",
-                            "read_pets"
-                        )
+                            .withGlobalSecurity("OAuth2", security -> {
+                                security.withScope("write_pets");
+                                security.withScope("read_pets");
+                            })
                     )
-                )
+                    .withDefinitionProcessor(docs -> {
+                        docs.set("test", new TextNode("Value"));
+                        return docs.toPrettyString();
+                    })
             ));
-            openApiConfiguration.setDocumentProcessor(docs -> { // you can add whatever you want to this document using your favourite json api
-                docs.set("test", new TextNode("Value"));
-                return docs.toPrettyString();
-            });
-            config.plugins.register(new OpenApiPlugin(openApiConfiguration));
 
-            SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration();
-            swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.plugins.register(new SwaggerPlugin(swaggerConfiguration));
+            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration ->
+                swaggerConfiguration.setDocumentationPath(deprecatedDocsPath)
+            ));
 
-            ReDocConfiguration reDocConfiguration = new ReDocConfiguration();
-            reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-            config.plugins.register(new ReDocPlugin(reDocConfiguration));
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration ->
+                reDocConfiguration.setDocumentationPath(deprecatedDocsPath)
+            ));
         })
         .start(8080);
     }
@@ -175,7 +127,7 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                         @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data
-                        @OpenApiContentProperty(name = "reference", from = KotlinEntity.class) // reference to another object
+                        @OpenApiContentProperty(name = "reference", from = KotlinEntity.class), // reference to another object
                         @OpenApiContentProperty(name = "file-name", isArray = true, type = "string", format = "base64") // multi-file upload
                 })
             }

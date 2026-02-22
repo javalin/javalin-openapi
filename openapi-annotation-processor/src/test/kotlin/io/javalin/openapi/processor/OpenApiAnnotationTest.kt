@@ -23,7 +23,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
     fun should_generate_info() = withOpenApi("should_generate_info") {
         assertThatJson(it)
             .isObject
-            .containsEntry("openapi", "3.0.3")
+            .containsEntry("openapi", "3.1.0")
             .containsEntry("info", json("""{ "title":"", "version": "" }"""))
     }
 
@@ -46,10 +46,14 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
                 "summary" to "Test summary",
                 "description" to "Test description",
                 "operationId" to "Test operation id",
-                "parameters" to json("[]"),
                 "deprecated" to true,
-                "security" to json("[]")
             ))
+
+        assertThatJson(it)
+            .inPath("$.paths['/basic'].get")
+            .isObject
+            .doesNotContainKey("parameters")
+            .doesNotContainKey("security")
     }
 
     @OpenApi(
@@ -91,8 +95,7 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
                                             "type": "string"
                                         }
                                     }
-                                },
-                                required: false
+                                }
                             },
                             "responses": {
                                 "200": {

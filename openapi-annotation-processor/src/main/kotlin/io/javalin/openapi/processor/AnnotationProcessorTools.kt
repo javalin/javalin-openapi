@@ -6,9 +6,7 @@ import java.lang.reflect.Proxy
 import javax.annotation.processing.ProcessingEnvironment
 import javax.tools.Diagnostic.Kind.NOTE
 
-
 object AnnotationProcessorTools {
-
     /**
      * GH-141 Support IntelliJ's ProcessingEnvironment
      * ~ https://github.com/javalin/javalin-openapi/issues/141
@@ -43,5 +41,4 @@ object AnnotationProcessorTools {
             }
             else -> processingEnv
         }
-
 }

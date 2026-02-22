@@ -53,7 +53,6 @@ Build your project and visit `/openapi` to see the generated specification, or `
 | `headers` | `OpenApiParam[]` | Header parameters |
 | `pathParams` | `OpenApiParam[]` | Path parameters |
 | `queryParams` | `OpenApiParam[]` | Query parameters |
-| `formParams` | `OpenApiParam[]` | Form parameters |
 | `requestBody` | `OpenApiRequestBody` | Request body |
 | `responses` | `OpenApiResponse[]` | Response definitions |
 | `security` | `OpenApiSecurity[]` | Security requirements |

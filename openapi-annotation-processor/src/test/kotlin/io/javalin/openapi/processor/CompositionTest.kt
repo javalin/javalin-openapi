@@ -2,6 +2,8 @@
 
 package io.javalin.openapi.processor
 
+import io.javalin.openapi.AllOf
+import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Custom
 import io.javalin.openapi.Discriminator
 import io.javalin.openapi.DiscriminatorMappingName
@@ -11,6 +13,7 @@ import io.javalin.openapi.OneOf
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApiContent
 import io.javalin.openapi.OpenApiName
+import io.javalin.openapi.OpenApiNullable
 import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
@@ -47,7 +50,7 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                     "oneOf": [
                         {
                           "type": "object",
-                          "additionalProperties": false,
+
                           "properties": {
                             "type": {
                               "type": "string",
@@ -60,7 +63,7 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                         },
                         {
                           "type": "object",
-                          "additionalProperties": false,
+
                           "properties": {
                             "type": {
                               "type": "string",
@@ -75,6 +78,155 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                 }
             """))
     }
+
+    // Nullable composition types
+
+    @JsonSchema
+    class NullableOneOfConfig(
+        @get:OpenApiNullable
+        @get:OneOf(FileSystemStorage::class, S3Storage::class)
+        val storage: Storage? = null
+    )
+
+    @Test
+    fun should_generate_nullable_oneOf_property() = withJsonScheme(NullableOneOfConfig::class.java.canonicalName) {
+        assertThatJson(it)
+            .inPath("properties.storage")
+            .isObject
+            .isEqualTo(json("""
+                {
+                    "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "fs"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "s3"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                    ]
+                }
+            """))
+    }
+
+    @JsonSchema
+    class NullableAnyOfConfig(
+        @get:OpenApiNullable
+        @get:AnyOf(FileSystemStorage::class, S3Storage::class)
+        val storage: Storage? = null
+    )
+
+    @Test
+    fun should_generate_nullable_anyOf_property() = withJsonScheme(NullableAnyOfConfig::class.java.canonicalName) {
+        assertThatJson(it)
+            .inPath("properties.storage")
+            .isObject
+            .isEqualTo(json("""
+                {
+                    "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "fs"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "s3"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                    ]
+                }
+            """))
+    }
+
+    @JsonSchema
+    class NullableAllOfConfig(
+        @get:OpenApiNullable
+        @get:AllOf(FileSystemStorage::class, S3Storage::class)
+        val storage: Storage? = null
+    )
+
+    @Test
+    fun should_generate_nullable_allOf_property() = withJsonScheme(NullableAllOfConfig::class.java.canonicalName) {
+        assertThatJson(it)
+            .inPath("properties.storage")
+            .isObject
+            .isEqualTo(json("""
+                {
+                    "anyOf": [
+                        {
+                            "allOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "fs"
+                                    }
+                                  },
+                                  "required": [
+                                    "type"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "s3"
+                                    }
+                                  },
+                                  "required": [
+                                    "type"
+                                  ]
+                                }
+                            ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                    ]
+                }
+            """))
+    }
+
+    // Discriminator tests
 
     @OneOf(
         discriminator = Discriminator(
@@ -132,7 +284,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                       "a": {
                         "type": "integer",
@@ -155,7 +306,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                       "b": {
                         "type": "string"
