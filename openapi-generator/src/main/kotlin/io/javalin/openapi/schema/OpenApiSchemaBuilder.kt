@@ -769,10 +769,7 @@ class ResponseBuilder(
 
     internal fun build(): ObjectNode {
         val result = createObjectNode()
-
-        if (response.has("description")) {
-            result.set<JsonNode>("description", response.get("description"))
-        }
+        result.put("description", response.get("description")?.asText() ?: "")
 
         contentObject?.let { result.set<JsonNode>("content", it) }
         headersObject?.let { result.set<JsonNode>("headers", it) }
