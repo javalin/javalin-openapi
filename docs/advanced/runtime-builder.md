@@ -12,7 +12,7 @@ The `OpenApiSchemaBuilder` provides a Kotlin DSL for building and modifying Open
 
 ```kotlin
 val spec = OpenApiSchemaBuilder()
-    .openApiVersion("3.0.3")
+    .openApiVersion("3.1.0")
     .info { it.title("My API").version("1.0") }
 
 spec.path("/users").operation("get") {

@@ -1,6 +1,6 @@
 # Getting Started with JSON Schema
 
-The `@JsonSchema` annotation generates standalone [JSON Schema Draft-7](https://json-schema.org/draft-07) documents for individual types. Unlike OpenAPI schemas which use `$ref` references, JSON Schema output is fully self-contained with all nested types inlined.
+The `@JsonSchema` annotation generates standalone [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) documents for individual types. Unlike OpenAPI schemas which use `$ref` references, JSON Schema output is fully self-contained with all nested types inlined.
 
 ## Annotate a Type
 
@@ -20,9 +20,8 @@ At compile time, this produces a `/json-schemes/com.example.ServerConfig` resour
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "host": { "type": "string" },
     "port": { "type": "integer", "format": "int32" },

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.OpenApiNamingStrategy
 import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
+import java.math.BigDecimal
 
 data class ResultScheme(
     val json: ObjectNode,
@@ -12,7 +13,7 @@ data class ResultScheme(
 ) {
     fun toJsonSchemaString(): String {
         val scheme = createObjectNode()
-        scheme.put("\$schema", "http://json-schema.org/draft-07/schema#")
+        scheme.put("\$schema", "https://json-schema.org/draft/2020-12/schema")
         json.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
         return scheme.toPrettyString()
     }
@@ -56,6 +57,7 @@ fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode = also {
         .forEach { (key, value) ->
             when (value) {
                 is JsonNode -> set<JsonNode>(key, value)
+                is BigDecimal -> put(key, value)
                 is Boolean -> put(key, value)
                 is Int -> put(key, value)
                 is Long -> put(key, value)

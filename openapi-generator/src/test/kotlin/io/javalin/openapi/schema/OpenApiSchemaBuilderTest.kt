@@ -1,6 +1,7 @@
 package io.javalin.openapi.schema
 
 import com.fasterxml.jackson.databind.JsonNode
+import io.javalin.openapi.experimental.ClassDefinition
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
@@ -13,7 +14,7 @@ internal class OpenApiSchemaBuilderTest {
 
     private fun builder(): OpenApiSchemaBuilder =
         OpenApiSchemaBuilder()
-            .openApiVersion("3.0.3")
+            .openApiVersion("3.1.0")
             .info { it.title("").version("") }
 
     @Nested
@@ -22,13 +23,13 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should build minimal document`() {
             val json = OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title("My API").version("1.0") }
                 .toJson()
 
             assertThatJson(json)
                 .isObject
-                .containsEntry("openapi", "3.0.3")
+                .containsEntry("openapi", "3.1.0")
                 .containsEntry("info", json("""{ "title": "My API", "version": "1.0" }"""))
                 .containsEntry("paths", json("{}"))
                 .containsEntry("components", json("""{ "schemas": {} }"""))
@@ -37,7 +38,7 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should build info with partial fields`() {
             val json = OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title("API") }
                 .toJson()
 
@@ -48,7 +49,7 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should merge info across multiple calls`() {
             val json = OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title("Original Title").version("1.0") }
                 .info { it.title("Updated Title").description("API Description") }
                 .toJson()
@@ -75,12 +76,12 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should produce compact json`() {
             val compact = OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title("API").version("1.0") }
                 .toCompactJson()
 
             assert(!compact.contains("\n"))
-            assertThatJson(compact).isObject.containsEntry("openapi", "3.0.3")
+            assertThatJson(compact).isObject.containsEntry("openapi", "3.1.0")
         }
     }
 
@@ -708,6 +709,197 @@ internal class OpenApiSchemaBuilderTest {
         }
 
         @Test
+        fun `should resolve component references`() {
+            val schema = builder()
+
+            val addressDef = ClassDefinition(simpleName = "Address", fullName = "com.example.Address")
+            val addressSchema = ResultScheme(createObjectNode().apply {
+                put("type", "object")
+                set<JsonNode>("properties", createObjectNode().apply {
+                    set<JsonNode>("street", createObjectNode().apply { put("type", "string") })
+                })
+            }, emptySet())
+
+            // Add a path that references Address via $ref
+            schema.path("/users").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content {
+                            mediaType("application/json") {
+                                schema(ResultScheme(
+                                    createObjectNode().apply { put("\$ref", "#/components/schemas/Address") },
+                                    setOf(addressDef)
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+
+            schema.resolveComponentReferences { addressSchema }
+
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.Address").isObject
+                .containsEntry("type", "object")
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.Address.properties.street").isObject
+                .containsEntry("type", "string")
+        }
+
+        @Test
+        fun `should resolve transitive component references`() {
+            val schema = builder()
+
+            val userDef = ClassDefinition(simpleName = "User", fullName = "com.example.User")
+            val addressDef = ClassDefinition(simpleName = "Address", fullName = "com.example.Address")
+
+            // User references Address
+            val userSchema = ResultScheme(createObjectNode().apply {
+                put("type", "object")
+                set<JsonNode>("properties", createObjectNode().apply {
+                    set<JsonNode>("address", createObjectNode().apply { put("\$ref", "#/components/schemas/Address") })
+                })
+            }, setOf(addressDef))
+
+            val addressSchema = ResultScheme(createObjectNode().apply {
+                put("type", "object")
+                set<JsonNode>("properties", createObjectNode().apply {
+                    set<JsonNode>("city", createObjectNode().apply { put("type", "string") })
+                })
+            }, emptySet())
+
+            schema.path("/users").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content {
+                            mediaType("application/json") {
+                                schema(ResultScheme(
+                                    createObjectNode().apply { put("\$ref", "#/components/schemas/User") },
+                                    setOf(userDef)
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+
+            schema.resolveComponentReferences { type ->
+                when (type.fullName) {
+                    "com.example.User" -> userSchema
+                    "com.example.Address" -> addressSchema
+                    else -> ResultScheme(createObjectNode(), emptySet())
+                }
+            }
+
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.User").isObject.containsEntry("type", "object")
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.Address").isObject.containsEntry("type", "object")
+        }
+
+        @Test
+        fun `should skip java-lang-Object references`() {
+            val schema = builder()
+
+            val objectDef = ClassDefinition(simpleName = "Object", fullName = "java.lang.Object")
+
+            schema.path("/test").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content {
+                            mediaType("application/json") {
+                                schema(ResultScheme(
+                                    createObjectNode().apply { put("\$ref", "#/components/schemas/Object") },
+                                    setOf(objectDef)
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+
+            schema.resolveComponentReferences { ResultScheme(createObjectNode(), emptySet()) }
+
+            assertThatJson(schema.toJson()).inPath("$.components.schemas").isObject
+                .doesNotContainKey("Object")
+        }
+
+        @Test
+        fun `should resolve circular references between types`() {
+            val schema = builder()
+
+            val aDef = ClassDefinition(simpleName = "A", fullName = "com.example.A")
+            val bDef = ClassDefinition(simpleName = "B", fullName = "com.example.B")
+
+            schema.path("/test").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content {
+                            mediaType("application/json") {
+                                schema(ResultScheme(
+                                    createObjectNode().apply { put("\$ref", "#/components/schemas/A") },
+                                    setOf(aDef)
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+
+            schema.resolveComponentReferences { type ->
+                when (type.fullName) {
+                    "com.example.A" -> ResultScheme(createObjectNode().apply { put("type", "object") }, setOf(bDef))
+                    "com.example.B" -> ResultScheme(createObjectNode().apply { put("type", "object") }, setOf(aDef))
+                    else -> ResultScheme(createObjectNode(), emptySet())
+                }
+            }
+
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.A").isObject.containsEntry("type", "object")
+            assertThatJson(schema.toJson()).inPath("$.components.schemas.B").isObject.containsEntry("type", "object")
+        }
+
+        @Test
+        fun `should resolve deep transitive chain`() {
+            val schema = builder()
+
+            val aDef = ClassDefinition(simpleName = "A", fullName = "com.example.A")
+
+            schema.path("/test").operation("get") {
+                responses {
+                    response("200") {
+                        description("OK")
+                        content {
+                            mediaType("application/json") {
+                                schema(ResultScheme(
+                                    createObjectNode().apply { put("\$ref", "#/components/schemas/A") },
+                                    setOf(aDef)
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // A -> B -> C (chain of 3)
+            val bDef = ClassDefinition(simpleName = "B", fullName = "com.example.B")
+            val cDef = ClassDefinition(simpleName = "C", fullName = "com.example.C")
+
+            schema.resolveComponentReferences { type ->
+                when (type.fullName) {
+                    "com.example.A" -> ResultScheme(createObjectNode().apply { put("type", "object") }, setOf(bDef))
+                    "com.example.B" -> ResultScheme(createObjectNode().apply { put("type", "object") }, setOf(cDef))
+                    "com.example.C" -> ResultScheme(createObjectNode().apply { put("type", "object") }, emptySet())
+                    else -> ResultScheme(createObjectNode(), emptySet())
+                }
+            }
+
+            assertThatJson(schema.toJson()).inPath("$.components.schemas").isObject
+                .containsKey("A")
+                .containsKey("B")
+                .containsKey("C")
+        }
+
+        @Test
         fun `should preserve non-schema components in toJson`() {
             val schema = builder().withBasicAuth()
             schema.addComponentSchema("User", ResultScheme(createObjectNode().apply { put("type", "object") }, emptySet()))
@@ -725,13 +917,13 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should round-trip fromJson`() {
             val original = OpenApiSchemaBuilder()
-                .openApiVersion("3.0.3")
+                .openApiVersion("3.1.0")
                 .info { it.title("My API").version("1.0") }
             original.path("/users").operation("get") { summary("List users") }
 
             val roundTripped = OpenApiSchemaBuilder.fromJson(original.toJson()).toJson()
 
-            assertThatJson(roundTripped).isObject.containsEntry("openapi", "3.0.3")
+            assertThatJson(roundTripped).isObject.containsEntry("openapi", "3.1.0")
             assertThatJson(roundTripped).inPath("$.info").isObject
                 .containsEntry("title", "My API")
                 .containsEntry("version", "1.0")
@@ -740,14 +932,14 @@ internal class OpenApiSchemaBuilderTest {
 
         @Test
         fun `should modify schema after fromJson`() {
-            val original = """{"openapi":"3.0.3","info":{"title":"API","version":"1.0"},"paths":{},"components":{"schemas":{}}}"""
+            val original = """{"openapi":"3.1.0","info":{"title":"API","version":"1.0"},"paths":{},"components":{"schemas":{}}}"""
             val schema = OpenApiSchemaBuilder.fromJson(original)
             schema.path("/new").operation("get") { summary("New endpoint") }
 
             val json = schema.toJson()
 
             assertThatJson(json).inPath("$.paths['/new'].get.summary").isEqualTo("New endpoint")
-            assertThatJson(json).inPath("$.openapi").isEqualTo("3.0.3")
+            assertThatJson(json).inPath("$.openapi").isEqualTo("3.1.0")
         }
     }
 
@@ -892,7 +1084,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should preserve unknown extension fields`() {
             val jsonWithExtensions = """
             {
-                "openapi": "3.0.3",
+                "openapi": "3.1.0",
                 "info": { "title": "", "version": "" },
                 "paths": {
                     "/test": {
@@ -1214,7 +1406,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should extend compile-time generated schema at runtime via fromJson`() {
             val compileTimeJson = """
             {
-                "openapi": "3.0.3",
+                "openapi": "3.1.0",
                 "info": { "title": "Generated API", "version": "1.0" },
                 "paths": {
                     "/users": {

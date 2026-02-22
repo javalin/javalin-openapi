@@ -19,49 +19,47 @@ fun classDefinitionFrom(
     type: StructureType = DEFAULT
 ): ClassDefinition =
     with(context) {
-        with(mirror) {
-            when (this) {
-                is TypeVariable ->
-                    upperBound?.toClassDefinition(generics, type) ?: lowerBound?.toClassDefinition(generics, type)
-                is ArrayType ->
-                    componentType.toClassDefinition(generics, type = ARRAY)
-                is PrimitiveType -> {
-                    val boxedMirror = types.boxedClass(this).asType()
-                    val boxedElement = types.boxedClass(this)
-                    ClassDefinition(
-                        simpleName = context.inContext { boxedMirror.getSimpleName() },
-                        fullName = context.inContext { boxedMirror.getFullName() },
-                        generics = generics,
-                        structureType = type,
-                        handle = ClassDefinitionHandle(boxedMirror, boxedElement)
-                    )
-                }
-                is DeclaredType ->
-                    when {
-                        types.isAssignable(types.erasure(this), mapType().asType()) ->
-                            ClassDefinition(
-                                simpleName = context.inContext { this@with.getSimpleName() },
-                                fullName = context.inContext { this@with.getFullName() },
-                                generics = listOfNotNull(
-                                    typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(),
-                                    typeArguments.getOrElse(1) { objectType().asType() }.toClassDefinition()
-                                ),
-                                structureType = DICTIONARY,
-                                handle = ClassDefinitionHandle(this, mapType())
-                            )
-                        types.isAssignable(types.erasure(this), collectionType().asType()) ->
-                            typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(generics, ARRAY)
-                        else ->
-                            ClassDefinition(
-                                simpleName = context.inContext { this@with.getSimpleName() },
-                                fullName = context.inContext { this@with.getFullName() },
-                                generics = typeArguments.mapNotNull { it.toClassDefinition() },
-                                structureType = type,
-                                handle = ClassDefinitionHandle(this, asElement())
-                            )
-                    }
-                else ->
-                    types.asElement(this)?.asType()?.toClassDefinition(generics, type)
+        when (mirror) {
+            is TypeVariable ->
+                mirror.upperBound?.toClassDefinition(generics, type) ?: mirror.lowerBound?.toClassDefinition(generics, type)
+            is ArrayType ->
+                mirror.componentType.toClassDefinition(generics, type = ARRAY)
+            is PrimitiveType -> {
+                val boxedMirror = types.boxedClass(mirror).asType()
+                val boxedElement = types.boxedClass(mirror)
+                ClassDefinition(
+                    simpleName = context.inContext { boxedMirror.getSimpleName() },
+                    fullName = context.inContext { boxedMirror.getFullName() },
+                    generics = generics,
+                    structureType = type,
+                    handle = ClassDefinitionHandle(boxedMirror, boxedElement)
+                )
             }
+            is DeclaredType ->
+                when {
+                    types.isAssignable(types.erasure(mirror), mapType().asType()) ->
+                        ClassDefinition(
+                            simpleName = context.inContext { mirror.getSimpleName() },
+                            fullName = context.inContext { mirror.getFullName() },
+                            generics = listOfNotNull(
+                                mirror.typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(),
+                                mirror.typeArguments.getOrElse(1) { objectType().asType() }.toClassDefinition()
+                            ),
+                            structureType = DICTIONARY,
+                            handle = ClassDefinitionHandle(mirror, mapType())
+                        )
+                    types.isAssignable(types.erasure(mirror), collectionType().asType()) ->
+                        mirror.typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(generics, ARRAY)
+                    else ->
+                        ClassDefinition(
+                            simpleName = context.inContext { mirror.getSimpleName() },
+                            fullName = context.inContext { mirror.getFullName() },
+                            generics = mirror.typeArguments.mapNotNull { it.toClassDefinition() },
+                            structureType = type,
+                            handle = ClassDefinitionHandle(mirror, mirror.asElement())
+                        )
+                }
+            else ->
+                types.asElement(mirror)?.asType()?.toClassDefinition(generics, type)
         } ?: objectType().asType().toClassDefinition(type = type)
     }

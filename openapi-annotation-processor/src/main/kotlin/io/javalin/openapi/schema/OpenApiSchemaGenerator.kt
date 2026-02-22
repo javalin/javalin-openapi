@@ -28,7 +28,7 @@ class OpenApiSchemaGenerator(
         val schema =
             OpenApiSchemaBuilder()
                 .openApiVersion("3.1.0")
-                .info { it.title(context.parameters.info.title ?: "").version(context.parameters.info.version ?: "") }
+                .info { it.title(context.parameters.info.title).version(context.parameters.info.version) }
 
         for ((openApiElement, routeAnnotation) in openApiAnnotations.sortedBy { it.second.getFormattedPath() }) {
             if (routeAnnotation.ignore) {
@@ -121,7 +121,7 @@ class OpenApiSchemaGenerator(
         requestBody {
             description(annotation.description.takeIf { it != NULL_STRING })
             content { addResolvedContent(element, annotation.content) }
-            required(annotation.required)
+            if (annotation.required) { required(true) }
         }
     }
 
@@ -303,13 +303,8 @@ class OpenApiSchemaGenerator(
         }
 
     private fun ExampleHolder.applyExample(contentData: OpenApiContentData) {
-        if (contentData.example != null) {
-            example(contentData.example!!)
-        }
-
-        if (contentData.exampleObjects != null) {
-            applyExamples(contentData.exampleObjects!!)
-        }
+        contentData.example?.let { example(it) }
+        contentData.exampleObjects?.let { applyExamples(it) }
     }
 
     private fun ObjectSchemaBuilder.buildProperties(properties: List<OpenApiContentProperty>) {

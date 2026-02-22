@@ -8,12 +8,13 @@ Add OpenAPI schema validation constraints to properties using validation annotat
 @OpenApiNumberValidation(
     minimum = "0",
     maximum = "10000",
-    exclusiveMinimum = "0",
     exclusiveMaximum = "10000",
     multipleOf = "0.01"
 )
 val price: Double = 0.0
 ```
+
+In OAS 3.1.0, `exclusiveMinimum` and `exclusiveMaximum` are standalone numeric values (not booleans). Use `minimum` for inclusive bounds and `exclusiveMinimum`/`exclusiveMaximum` when the bound itself should be excluded.
 
 | Property | Description |
 |----------|-------------|

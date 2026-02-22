@@ -23,8 +23,8 @@ fun createDefaultSimpleTypeMappings(): MutableMap<String, SimpleType> = mutableM
     "char" to SimpleType("string"),
     "java.lang.Character" to SimpleType("string"),
     "java.lang.String" to SimpleType("string"),
-    "java.math.BigDecimal" to SimpleType("string"),
-    "java.util.UUID" to SimpleType("string"),
+    "java.math.BigDecimal" to SimpleType("string", "decimal"),
+    "java.util.UUID" to SimpleType("string", "uuid"),
     "org.bson.types.ObjectId" to SimpleType("string"),
 
     "byte[]" to SimpleType("string", "binary"),

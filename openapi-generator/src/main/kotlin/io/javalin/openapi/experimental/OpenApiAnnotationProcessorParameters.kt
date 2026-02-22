@@ -2,6 +2,7 @@ package io.javalin.openapi.experimental
 
 const val OPENAPI_INFO_TITLE = "openapi.info.title"
 const val OPENAPI_INFO_VERSION = "openapi.info.version"
+const val OPENAPI_GROOVY_SCRIPT_PATH = "openapi.groovy.path"
 
 data class OpenApiAnnotationProcessorParameters(
     val info: Info

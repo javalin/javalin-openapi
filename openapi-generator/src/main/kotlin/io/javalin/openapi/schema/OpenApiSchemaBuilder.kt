@@ -125,9 +125,19 @@ class OpenApiSchemaBuilder {
         componentSchemas.has(name)
 
     fun resolveComponentReferences(resolver: ComponentSchemaResolver) {
+        val maxIterations = 1000
         val generatedComponents = TreeMap<String, Pair<ClassDefinition, ObjectNode>?> { a, b -> a.compareTo(b) }
+        var iteration = 0
 
         while (generatedComponents.size < componentReferences.size) {
+            if (++iteration > maxIterations) {
+                val unresolved = componentReferences.keys - generatedComponents.keys
+                throw IllegalStateException(
+                    "Component reference resolution exceeded $maxIterations iterations. " +
+                    "Possible unbounded type expansion. Unresolved: $unresolved"
+                )
+            }
+
             for ((name, componentReference) in componentReferences.toMutableMap()) {
                 if (generatedComponents.containsKey(name)) {
                     continue
@@ -429,6 +439,17 @@ class ParametersBuilder(
         )
     }
 
+    fun parameter(
+        name: String,
+        location: String,
+        description: String?,
+        required: Boolean,
+        deprecated: Boolean,
+        allowEmptyValue: Boolean,
+        example: String?,
+        schema: Consumer<SchemaBuilder>,
+    ) = parameter(name, location, description, required, deprecated, allowEmptyValue, example) { schema.accept(this) }
+
     internal fun build(): ArrayNode = parameters
 }
 
@@ -539,6 +560,8 @@ class MediaTypeBuilder(
         schemaObject = SchemaBuilder().apply(configure).build()
     }
 
+    fun schema(configure: Consumer<SchemaBuilder>) = schema { configure.accept(this) }
+
     fun objectSchema(configure: ObjectSchemaBuilder.() -> Unit) {
         val builder = ObjectSchemaBuilder(refCollector)
         builder.configure()
@@ -591,6 +614,8 @@ class ObjectSchemaBuilder(
         properties.set<JsonNode>(name, SchemaBuilder().apply(schema).build())
     }
 
+    fun property(name: String, schema: Consumer<SchemaBuilder>) = property(name) { schema.accept(this) }
+
     fun property(name: String, type: String, format: String?) {
         val schema = createObjectNode()
         schema.put("type", type)
@@ -613,6 +638,8 @@ class ObjectSchemaBuilder(
         properties.set<JsonNode>(name, schema)
     }
 
+    fun arrayProperty(name: String, items: Consumer<SchemaBuilder>) = arrayProperty(name) { items.accept(this) }
+
     fun arrayProperty(name: String, itemType: String, itemFormat: String?) {
         val itemSchema = createObjectNode()
         itemSchema.put("type", itemType)
@@ -631,6 +658,8 @@ class ObjectSchemaBuilder(
     fun additionalProperties(schema: SchemaBuilder.() -> Unit) {
         additionalPropertiesObject = SchemaBuilder().apply(schema).build()
     }
+
+    fun additionalProperties(schema: Consumer<SchemaBuilder>) = additionalProperties { schema.accept(this) }
 
     fun additionalProperties(type: String?, format: String?) {
         val schema = createObjectNode()
@@ -793,6 +822,16 @@ class HeadersBuilder(
             example = example,
         )
     }
+
+    fun header(
+        name: String,
+        description: String?,
+        required: Boolean,
+        deprecated: Boolean,
+        allowEmptyValue: Boolean,
+        example: String?,
+        schema: Consumer<SchemaBuilder>,
+    ) = header(name, description, required, deprecated, allowEmptyValue, example) { schema.accept(this) }
 
     internal fun build(): ObjectNode = headers
 }

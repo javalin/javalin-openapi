@@ -25,6 +25,12 @@ dependencies {
     testImplementation("org.mongodb:bson:4.9.0")
 }
 
+kapt {
+    arguments {
+        arg("openapi.groovy.path", "$projectDir/src/test/compile/openapi.groovy")
+    }
+}
+
 tasks.withType<KaptGenerateStubs> {
     dependsOn(
         ":openapi-annotation-processor:clean",

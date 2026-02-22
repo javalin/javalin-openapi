@@ -63,7 +63,6 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                         "testProperty": {
                             "type": ["number", "null"],

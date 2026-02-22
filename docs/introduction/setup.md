@@ -1,6 +1,6 @@
 # Setup with Javalin
 
-Javalin OpenAPI is a compile-time annotation processor that generates OpenAPI 3.0.3 specifications and JSON Schema Draft-7 documents. It works with any Java/Kotlin project, but provides first-class integration with the [Javalin](https://javalin.io) web framework through plugins that serve the generated specification and host Swagger UI or ReDoc.
+Javalin OpenAPI is a compile-time annotation processor that generates OpenAPI 3.1.0 specifications and JSON Schema 2020-12 documents. It works with any Java/Kotlin project, but provides first-class integration with the [Javalin](https://javalin.io) web framework through plugins that serve the generated specification and host Swagger UI or ReDoc.
 
 This page covers the Javalin integration. If you're using a different framework or want standalone schema generation, see [Setup without Javalin](./json-schema-setup).
 

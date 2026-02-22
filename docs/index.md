@@ -17,7 +17,7 @@ features:
   - title: Compile-time Generation
     details: Schemas are generated during compilation using annotation processing. No runtime reflection, no classpath scanning, no startup overhead.
   - title: Two Modes
-    details: Generate OpenAPI 3.0.3 endpoint documentation with @OpenApi, or standalone JSON Schema Draft-7 files with @JsonSchema — using the same annotation processor.
+    details: Generate OpenAPI 3.1.0 endpoint documentation with @OpenApi, or standalone JSON Schema 2020-12 files with @JsonSchema — using the same annotation processor.
   - title: Swagger UI & ReDoc
     details: Built-in plugins serve Swagger UI and ReDoc out of the box. Register the plugin and your interactive API documentation is live.
   - title: Schema Customization

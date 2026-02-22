@@ -32,7 +32,6 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
             .isEqualTo(json("""
                 {
                     "type": "object",
-                    "additionalProperties": false,
                     "properties": {
                       "text": {
                         "type": "string"

@@ -4,6 +4,7 @@ import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.experimental.AnnotationProcessorContext
+import io.javalin.openapi.experimental.OPENAPI_GROOVY_SCRIPT_PATH
 import io.javalin.openapi.experimental.OPENAPI_INFO_TITLE
 import io.javalin.openapi.experimental.OPENAPI_INFO_VERSION
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
@@ -47,7 +48,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         context.roundEnv = roundEnv
 
         val openApiPrecompileScriptingEngine = OpenApiPrecompileScriptingEngine()
-        val configurer = openApiPrecompileScriptingEngine.load(roundEnv)
+        val configurer = openApiPrecompileScriptingEngine.load()
         configurer?.configure(context.configuration)
 
         context.inDebug {
@@ -67,6 +68,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
         setOf(
             OPENAPI_INFO_TITLE,
             OPENAPI_INFO_VERSION,
+            OPENAPI_GROOVY_SCRIPT_PATH,
         )
 
     override fun getSupportedAnnotationTypes(): Set<String> =

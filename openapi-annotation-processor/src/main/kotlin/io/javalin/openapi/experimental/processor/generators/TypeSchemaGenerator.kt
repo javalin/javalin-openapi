@@ -112,7 +112,6 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
             }
             else -> {
                 schema.put("type", "object")
-                schema.put("additionalProperties", false)
 
                 val extra = source.findExtra(context)
                 schema.addExtra(extra)
@@ -197,6 +196,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
         if (nullable) {
             val currentType = scheme.get("type")?.asText()
             val currentRef = scheme.get("\$ref")?.asText()
+            val compositionKey = listOf("oneOf", "anyOf", "allOf").firstOrNull { scheme.has(it) }
             when {
                 currentType != null -> {
                     scheme.remove("type")
@@ -208,6 +208,20 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                     anyOf.add(createObjectNode().put("\$ref", currentRef))
                     anyOf.add(createObjectNode().put("type", "null"))
                     scheme.set<JsonNode>("anyOf", anyOf)
+                }
+                compositionKey == "allOf" -> {
+                    val allOfArray = scheme.remove("allOf")
+                    val discriminator = scheme.remove("discriminator")
+                    val inner = createObjectNode()
+                    inner.set<JsonNode>("allOf", allOfArray)
+                    if (discriminator != null) inner.set<JsonNode>("discriminator", discriminator)
+                    val anyOf = createArrayNode()
+                    anyOf.add(inner)
+                    anyOf.add(createObjectNode().put("type", "null"))
+                    scheme.set<JsonNode>("anyOf", anyOf)
+                }
+                compositionKey != null -> {
+                    (scheme.get(compositionKey) as? ArrayNode)?.add(createObjectNode().put("type", "null"))
                 }
             }
         }
@@ -392,28 +406,29 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
     }
 
     getAnnotationsByType(OpenApiNumberValidation::class.java).forEach { validation ->
-        extra["minimum"] = validation.minimum.takeIf { it != NULL_STRING }
-        extra["maximum"] = validation.maximum.takeIf { it != NULL_STRING }
-        extra["exclusiveMinimum"] = validation.exclusiveMinimum.takeIf { it != NULL_STRING }
-        extra["exclusiveMaximum"] = validation.exclusiveMaximum.takeIf { it != NULL_STRING }
-        extra["multipleOf"] = validation.multipleOf.takeIf { it != NULL_STRING }
+        extra["minimum"] = validation.minimum.takeIf { it != NULL_STRING }?.toBigDecimal()
+        extra["maximum"] = validation.maximum.takeIf { it != NULL_STRING }?.toBigDecimal()
+        extra["exclusiveMinimum"] = validation.exclusiveMinimum.takeIf { it != NULL_STRING }?.toBigDecimal()
+        extra["exclusiveMaximum"] = validation.exclusiveMaximum.takeIf { it != NULL_STRING }?.toBigDecimal()
+        extra["multipleOf"] = validation.multipleOf.takeIf { it != NULL_STRING }?.toBigDecimal()
     }
 
     getAnnotationsByType(OpenApiStringValidation::class.java).forEach { validation ->
-        extra["minLength"] = validation.minLength.takeIf { it != NULL_STRING }
-        extra["maxLength"] = validation.maxLength.takeIf { it != NULL_STRING }
+        extra["minLength"] = validation.minLength.takeIf { it != NULL_STRING }?.toInt()
+        extra["maxLength"] = validation.maxLength.takeIf { it != NULL_STRING }?.toInt()
+        extra["format"] = validation.format.takeIf { it != NULL_STRING }
         extra["pattern"] = validation.pattern.takeIf { it != NULL_STRING }
     }
 
     getAnnotationsByType(OpenApiArrayValidation::class.java).forEach { validation ->
-        extra["minItems"] = validation.minItems.takeIf { it != NULL_STRING }
-        extra["maxItems"] = validation.maxItems.takeIf { it != NULL_STRING }
+        extra["minItems"] = validation.minItems.takeIf { it != NULL_STRING }?.toInt()
+        extra["maxItems"] = validation.maxItems.takeIf { it != NULL_STRING }?.toInt()
         extra["uniqueItems"] = validation.uniqueItems.takeIf { it }
     }
 
     getAnnotationsByType(OpenApiObjectValidation::class.java).forEach { validation ->
-        extra["minProperties"] = validation.minProperties.takeIf { it != NULL_STRING }
-        extra["maxProperties"] = validation.maxProperties.takeIf { it != NULL_STRING }
+        extra["minProperties"] = validation.minProperties.takeIf { it != NULL_STRING }?.toInt()
+        extra["maxProperties"] = validation.maxProperties.takeIf { it != NULL_STRING }?.toInt()
     }
 
     getAnnotationsByType(Custom::class.java).forEach { custom ->

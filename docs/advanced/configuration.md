@@ -4,7 +4,8 @@ Configure the annotation processor using a Groovy script. This allows custom typ
 
 ## Setup
 
-Create an `openapi.groovy` file at `src/main/compile/openapi.groovy`:
+Create a Groovy configuration script (e.g. `openapi.groovy`) anywhere in your project
+and point the annotation processor to it using the `openapi.groovy.path` option:
 
 ```groovy
 import io.javalin.openapi.experimental.*
@@ -21,6 +22,82 @@ class OpenApiConfiguration
     }
 }
 ```
+
+=== "Gradle (Kotlin)"
+
+    ```kotlin
+    kapt {
+        arguments {
+            arg(
+                "openapi.groovy.path",
+                "$projectDir/src/main/compile/openapi.groovy"
+            )
+        }
+    }
+    ```
+
+=== "Gradle (Groovy)"
+
+    ```groovy
+    kapt {
+        arguments {
+            arg(
+                'openapi.groovy.path',
+                "$projectDir/src/main/compile/openapi.groovy"
+            )
+        }
+    }
+    ```
+
+=== "Maven"
+
+    ```xml
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <compilerArgs>
+                <arg>-Aopenapi.groovy.path=${project.basedir}/src/main/compile/openapi.groovy</arg>
+            </compilerArgs>
+        </configuration>
+    </plugin>
+    ```
+
+## Annotation Processor Options
+
+The following options can be passed to the annotation processor:
+
+| Option                  | Description                                              |
+|-------------------------|----------------------------------------------------------|
+| `openapi.info.title`    | Set the `info.title` field in the generated specification |
+| `openapi.info.version`  | Set the `info.version` field in the generated specification |
+| `openapi.groovy.path`   | Path to the Groovy configuration script                   |
+
+=== "Gradle (Kapt)"
+
+    ```kotlin
+    kapt {
+        arguments {
+            arg("openapi.info.title", "My API")
+            arg("openapi.info.version", "1.0.0")
+        }
+    }
+    ```
+
+=== "Maven"
+
+    ```xml
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <compilerArgs>
+                <arg>-Aopenapi.info.title=My API</arg>
+                <arg>-Aopenapi.info.version=1.0.0</arg>
+            </compilerArgs>
+        </configuration>
+    </plugin>
+    ```
 
 ## Custom Type Mappings
 
@@ -64,7 +141,6 @@ configuration.insertEmbeddedTypeProcessor({
 
         if (typeName.startsWith("java.util.Optional")) {
             def innerType = context.type.generics[0]
-            context.schema.addProperty("nullable", true)
             return context.createEmbeddedTypeDescription(
                 innerType,
                 context.inlineRefs

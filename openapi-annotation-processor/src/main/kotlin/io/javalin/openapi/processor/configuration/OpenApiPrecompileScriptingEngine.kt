@@ -1,15 +1,12 @@
 package io.javalin.openapi.processor.configuration
 
 import groovy.lang.GroovyClassLoader
-import io.javalin.openapi.JsonSchema
-import io.javalin.openapi.OpenApi
-import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
+import io.javalin.openapi.experimental.OPENAPI_GROOVY_SCRIPT_PATH
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfigurer
 import io.javalin.openapi.experimental.processor.shared.info
 import io.javalin.openapi.processor.OpenApiAnnotationProcessor.Companion.context
 import java.io.File
-import javax.annotation.processing.RoundEnvironment
 
 class OpenApiPrecompileScriptingEngine {
 
@@ -17,28 +14,17 @@ class OpenApiPrecompileScriptingEngine {
     private val groovyClassLoader by lazy { GroovyClassLoader(classLoader) }
 
     @OptIn(ExperimentalCompileOpenApiConfiguration::class)
-    fun load(roundEnvironment: RoundEnvironment): OpenApiAnnotationProcessorConfigurer? =
-        roundEnvironment.getElementsAnnotatedWithAny(setOf(OpenApis::class.java, OpenApi::class.java, JsonSchema::class.java))
-            .firstOrNull()
-            ?.let { context.trees?.getPath(it)?.compilationUnit?.sourceFile?.name }
-            ?.let {
-                when {
-                    /* Default sources */
-                    it.contains("src".toPathSegmentIdentifier()) -> it.findSourceTargetNameBy("src") to it.substringBeforeLast("src".toPathSegmentIdentifier())
-                    /* Kapt stubs */
-                    it.contains("stubs".toPathSegmentIdentifier()) -> it.findSourceTargetNameBy("stubs") to it.substringBeforeLast("build".toPathSegmentIdentifier())
-                    else -> null
-                }
-            }
-            ?.let { (sourceTargetName, compileSources) -> File(compileSources).resolve("src").resolve(sourceTargetName).resolve("compile").resolve("openapi.groovy") }
-            ?.also { context.env.messager.info(it.absolutePath.toString()) }
-            ?.takeIf { it.exists() }
-            ?.let { scriptFile -> groovyClassLoader.parseClass(scriptFile).getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer }
+    fun load(): OpenApiAnnotationProcessorConfigurer? {
+        val path = context.env.options[OPENAPI_GROOVY_SCRIPT_PATH] ?: return null
+        val scriptFile = File(path)
 
-    private fun String.findSourceTargetNameBy(segment: String): String =
-        substringAfterLast(segment.toPathSegmentIdentifier()).substringBefore(File.separator)
+        context.env.messager.info(scriptFile.absolutePath)
 
-    private fun String.toPathSegmentIdentifier(): String =
-        File.separator + this + File.separator
+        if (!scriptFile.exists()) {
+            throw IllegalArgumentException("OpenAPI groovy script not found at $path")
+        }
+
+        return groovyClassLoader.parseClass(scriptFile).getConstructor().newInstance() as OpenApiAnnotationProcessorConfigurer
+    }
 
 }
