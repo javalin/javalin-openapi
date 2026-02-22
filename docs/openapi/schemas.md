@@ -57,6 +57,10 @@ The annotation processor automatically generates OpenAPI component schemas from 
 | `Map<K, V>` | `{ "type": "object", "additionalProperties": { ... } }` |
 | `Object` | `{ "type": "object" }` |
 
+### Optional
+
+`java.util.Optional<T>` is automatically unwrapped to a nullable `T` schema. For example, `Optional<String>` produces `"type": ["string", "null"]`.
+
 ## Property Resolution
 
 By default, properties are resolved from getter methods following JavaBean conventions. The `get` / `is` prefix is stripped:

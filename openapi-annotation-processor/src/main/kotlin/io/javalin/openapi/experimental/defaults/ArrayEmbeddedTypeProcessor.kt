@@ -18,7 +18,7 @@ class ArrayEmbeddedTypeProcessor : EmbeddedTypeProcessor {
                 context.scheme.put("type", "array")
                 val items = createObjectNode()
                 context.parentContext.typeSchemaGenerator.addType(items, type, inlineRefs, references, requiresNonNulls)
-                context.scheme.set<JsonNode>("items", items)
+                context.scheme.set("items", items)
             }
 
             return true

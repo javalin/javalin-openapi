@@ -130,12 +130,12 @@ configuration.propertyInSchemeFilter = {
 
 ## Custom Type Processors
 
-Insert custom logic for handling specific types (e.g., unwrapping `Optional<T>`):
+Insert custom logic for handling specific types (e.g., unwrapping `AtomicReference<T>`):
 
 ```groovy
 configuration.insertEmbeddedTypeProcessor({
     EmbeddedTypeProcessorContext context ->
-        if (context.type.simpleName == 'Optional'
+        if (context.type.simpleName == 'AtomicReference'
             && context.type.generics.size() == 1) {
             context.parentContext.typeSchemaGenerator.addType(
                 context.scheme,
@@ -150,6 +150,8 @@ configuration.insertEmbeddedTypeProcessor({
         return false // use default processing
 })
 ```
+
+Custom type processors run before all built-in type processing, so they can override the default behavior for any type.
 
 ## Debug Mode
 

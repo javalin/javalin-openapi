@@ -3,51 +3,11 @@ package io.javalin.openapi.experimental.processor.generators
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.javalin.openapi.Custom
-import io.javalin.openapi.CustomAnnotation
-import io.javalin.openapi.JsonSchema
-import io.javalin.openapi.NULL_STRING
-import io.javalin.openapi.Nullability
-import io.javalin.openapi.OpenApiArrayValidation
-import io.javalin.openapi.OpenApiByFields
-import io.javalin.openapi.OpenApiDescription
-import io.javalin.openapi.OpenApiExample
-import io.javalin.openapi.OpenApiIgnore
-import io.javalin.openapi.OpenApiName
-import io.javalin.openapi.OpenApiNaming
-import io.javalin.openapi.OpenApiNullable
-import io.javalin.openapi.OpenApiNamingStrategy
-import io.javalin.openapi.OpenApiNumberValidation
-import io.javalin.openapi.OpenApiObjectValidation
-import io.javalin.openapi.OpenApiPropertyType
-import io.javalin.openapi.OpenApiRequired
-import io.javalin.openapi.OpenApiStringValidation
-import io.javalin.openapi.Visibility
-import io.javalin.openapi.experimental.AnnotationProcessorContext
-import io.javalin.openapi.experimental.ClassDefinition
-import io.javalin.openapi.experimental.CustomProperty
-import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
-import io.javalin.openapi.experimental.mirror
-import io.javalin.openapi.experimental.source
-import io.javalin.openapi.experimental.processor.shared.MessagerWriter
-import io.javalin.openapi.experimental.processor.shared.createArrayNode
-import io.javalin.openapi.experimental.processor.shared.createObjectNode
-import io.javalin.openapi.experimental.processor.shared.getTypeMirror
-import io.javalin.openapi.experimental.processor.shared.hasAnnotation
-import io.javalin.openapi.experimental.processor.shared.info
-import io.javalin.openapi.experimental.processor.shared.jsonMapper
-import io.javalin.openapi.experimental.processor.shared.isPrimitive
-import io.javalin.openapi.experimental.processor.shared.objectType
-import io.javalin.openapi.experimental.processor.shared.recordType
-import io.javalin.openapi.experimental.processor.shared.toSimpleName
-import javax.lang.model.element.AnnotationMirror
-import javax.lang.model.element.AnnotationValue
-import javax.lang.model.element.AnnotationValueVisitor
-import javax.lang.model.element.Element
+import io.javalin.openapi.*
+import io.javalin.openapi.experimental.*
+import io.javalin.openapi.experimental.processor.shared.*
+import javax.lang.model.element.*
 import javax.lang.model.element.ElementKind.*
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.Modifier
-import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 
 class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
@@ -174,8 +134,8 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
         val scheme = createObjectNode()
         val references = mutableSetOf<ClassDefinition>()
 
-        context.configuration.embeddedTypeProcessors
-            .firstOrNull {
+        val handledByCustomProcessor =
+            context.configuration.embeddedTypeProcessors.firstOrNull {
                 it.process(
                     EmbeddedTypeProcessorContext(
                         parentContext = context,
@@ -189,25 +149,33 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                     )
                 )
             }
-            ?: addType(scheme, type, inlineRefs, references, requiresNonNulls)
+
+        if (handledByCustomProcessor == null) {
+            // Unwrap Optional<T> as nullable T
+            if (type.fullName == "java.util.Optional" && type.generics.size == 1) {
+                return@inContext createEmbeddedTypeDescription(type.generics.first(), inlineRefs, requiresNonNulls, composition, extra, nullable = true)
+            }
+
+            addType(scheme, type, inlineRefs, references, requiresNonNulls)
+        }
 
         scheme.addExtra(extra)
 
         if (nullable) {
             val currentType = scheme.get("type")?.takeIf { it.isTextual }?.asText()
-            val currentRef = scheme.get("\$ref")?.asText()
+            val currentRef = scheme.get($$"$ref")?.asText()
             val compositionKey = listOf("oneOf", "anyOf", "allOf").firstOrNull { scheme.has(it) }
             when {
                 currentType != null -> {
                     scheme.remove("type")
-                    scheme.set<JsonNode>("type", createArrayNode().add(currentType).add("null"))
+                    scheme.set("type", createArrayNode().add(currentType).add("null"))
                 }
                 currentRef != null -> {
-                    scheme.remove("\$ref")
+                    scheme.remove($$"$ref")
                     val anyOf = createArrayNode()
-                    anyOf.add(createObjectNode().put("\$ref", currentRef))
+                    anyOf.add(createObjectNode().put($$"$ref", currentRef))
                     anyOf.add(createObjectNode().put("type", "null"))
-                    scheme.set<JsonNode>("anyOf", anyOf)
+                    scheme.set("anyOf", anyOf)
                 }
                 compositionKey == "allOf" -> {
                     val allOfArray = scheme.remove("allOf")
@@ -218,7 +186,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                     val anyOf = createArrayNode()
                     anyOf.add(inner)
                     anyOf.add(createObjectNode().put("type", "null"))
-                    scheme.set<JsonNode>("anyOf", anyOf)
+                    scheme.set("anyOf", anyOf)
                 }
                 compositionKey != null -> {
                     (scheme.get(compositionKey) as? ArrayNode)?.add(createObjectNode().put("type", "null"))
@@ -244,7 +212,7 @@ class TypeSchemaGenerator(val context: AnnotationProcessorContext) {
                     references.addAll(subReferences)
                 } else {
                     references.add(type)
-                    scheme.put("\$ref", "#/components/schemas/${type.simpleName}")
+                    scheme.put($$"$ref", "#/components/schemas/${type.simpleName}")
                 }
             }
             else -> {
@@ -439,7 +407,7 @@ private fun Element.findExtra(context: AnnotationProcessorContext): Map<String, 
         .filterNot { it.annotationType.getFullName() == Metadata::class.qualifiedName }
         .onEach { annotation -> inDebug { it.info("TypeSchemaGenerator#findExtra | Annotation: ${annotation.annotationType}") } }
         .filter { annotation ->
-            val isCustom = annotation.annotationType?.asElement()?.getAnnotation(CustomAnnotation::class.java) != null
+            val isCustom = annotation.annotationType.asElement()?.getAnnotation(CustomAnnotation::class.java) != null
 
             if (!isCustom) {
                 inDebug {

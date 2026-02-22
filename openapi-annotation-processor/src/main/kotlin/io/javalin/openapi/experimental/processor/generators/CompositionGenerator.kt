@@ -7,7 +7,6 @@ import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Composition.ALL_OF
 import io.javalin.openapi.Composition.ANY_OF
 import io.javalin.openapi.Composition.ONE_OF
-import io.javalin.openapi.Discriminator
 import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OneOf
@@ -61,9 +60,9 @@ fun ObjectNode.createComposition(
             false ->
                 refs
                     .onEach { references.add(it) }
-                    .map { createJsonObjectOf("\$ref", "#/components/schemas/${it.simpleName}") }
+                    .map { createJsonObjectOf($$"$ref", "#/components/schemas/${it.simpleName}") }
                     .toJsonArray { add(it) }
-                    .let { set<JsonNode>(propertyComposition.type.propertyName, it) }
+                    .let { set(propertyComposition.type.propertyName, it) }
         }
 
         propertyComposition.discriminator

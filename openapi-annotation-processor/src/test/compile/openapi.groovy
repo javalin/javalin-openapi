@@ -37,9 +37,9 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
             return true // include
         }
 
-        // Used by CustomTypeMappingsTest
+        // Used by CustomTypeMappingsTest - unwrap AtomicReference<T> to T
         configuration.insertEmbeddedTypeProcessor({ EmbeddedTypeProcessorContext context ->
-            if (context.type.simpleName == 'Optional' && context.type.generics.size() == 1) {
+            if (context.type.simpleName == 'AtomicReference' && context.type.generics.size() == 1) {
                 context.parentContext.typeSchemaGenerator.addType(context.scheme, context.type.generics[0], context.inlineRefs, context.references, false)
                 return true
             }

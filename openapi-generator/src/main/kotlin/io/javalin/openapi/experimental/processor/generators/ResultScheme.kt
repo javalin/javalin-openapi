@@ -13,7 +13,7 @@ data class ResultScheme(
 ) {
     fun toJsonSchemaString(): String {
         val scheme = createObjectNode()
-        scheme.put("\$schema", "https://json-schema.org/draft/2020-12/schema")
+        scheme.put($$"$schema", "https://json-schema.org/draft/2020-12/schema")
         json.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
         return scheme.toPrettyString()
     }

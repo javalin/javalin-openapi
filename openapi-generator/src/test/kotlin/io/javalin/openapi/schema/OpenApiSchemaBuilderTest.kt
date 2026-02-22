@@ -303,7 +303,7 @@ internal class OpenApiSchemaBuilderTest {
                 .containsEntry("description", "User to create")
                 .containsEntry("required", true)
             assertThatJson(json).inPath("$.paths['/users'].post.requestBody.content['application/json'].schema").isObject
-                .containsEntry("\$ref", "#/components/schemas/User")
+                .containsEntry($$"$ref", "#/components/schemas/User")
         }
 
         @Test
@@ -336,7 +336,7 @@ internal class OpenApiSchemaBuilderTest {
 
             assertThatJson(json).inPath("$.paths['/users'].get.responses['200'].description").isEqualTo("OK")
             assertThatJson(json).inPath("$.paths['/users'].get.responses['200'].content['application/json'].schema").isObject
-                .containsEntry("\$ref", "#/components/schemas/User")
+                .containsEntry($$"$ref", "#/components/schemas/User")
             assertThatJson(json).inPath("$.paths['/users'].get.responses['200'].headers['X-Request-Id']").isObject
                 .containsEntry("description", "Request ID")
             assertThatJson(json).inPath("$.paths['/users'].get.responses['404'].description").isEqualTo("Not Found")
@@ -375,7 +375,7 @@ internal class OpenApiSchemaBuilderTest {
             }
 
             assertThatJson(schema.toJson()).inPath("$.paths['/users'].get.responses['200'].content['application/json'].schema").isObject
-                .containsEntry("\$ref", "#/components/schemas/User")
+                .containsEntry($$"$ref", "#/components/schemas/User")
         }
 
         @Test
@@ -424,7 +424,7 @@ internal class OpenApiSchemaBuilderTest {
             }
 
             assertThatJson(schema.toJson()).inPath("$.paths['/test'].get.responses['200'].content['application/json'].schema").isObject
-                .containsEntry("\$ref", "#/components/schemas/User")
+                .containsEntry($$"$ref", "#/components/schemas/User")
                 .doesNotContainKey("type")
         }
 
@@ -558,7 +558,7 @@ internal class OpenApiSchemaBuilderTest {
 
             assertThatJson(schema.toJson())
                 .inPath("$.paths['/test'].post.requestBody.content['application/json'].schema.properties.address").isObject
-                .containsEntry("\$ref", "#/components/schemas/Address")
+                .containsEntry($$"$ref", "#/components/schemas/Address")
         }
 
         @Test
@@ -582,7 +582,7 @@ internal class OpenApiSchemaBuilderTest {
             val basePath = "$.paths['/test'].post.requestBody.content['application/json'].schema.properties"
 
             assertThatJson(json).inPath("$basePath.tags").isObject.containsEntry("type", "array")
-            assertThatJson(json).inPath("$basePath.tags.items").isObject.containsEntry("\$ref", "#/components/schemas/Tag")
+            assertThatJson(json).inPath("$basePath.tags.items").isObject.containsEntry($$"$ref", "#/components/schemas/Tag")
             assertThatJson(json).inPath("$basePath.scores").isObject.containsEntry("type", "array")
             assertThatJson(json).inPath("$basePath.scores.items").isObject
                 .containsEntry("type", "integer")
@@ -624,7 +624,7 @@ internal class OpenApiSchemaBuilderTest {
 
             assertThatJson(schema.toJson())
                 .inPath("$.paths['/test'].post.requestBody.content['application/json'].schema.additionalProperties").isObject
-                .containsEntry("\$ref", "#/components/schemas/Value")
+                .containsEntry($$"$ref", "#/components/schemas/Value")
         }
 
         @Test
@@ -727,7 +727,7 @@ internal class OpenApiSchemaBuilderTest {
                         content {
                             mediaType("application/json") {
                                 schema(ResultScheme(
-                                    createObjectNode().apply { put("\$ref", "#/components/schemas/Address") },
+                                    createObjectNode().apply { put($$"$ref", "#/components/schemas/Address") },
                                     setOf(addressDef)
                                 ))
                             }
@@ -755,7 +755,7 @@ internal class OpenApiSchemaBuilderTest {
             val userSchema = ResultScheme(createObjectNode().apply {
                 put("type", "object")
                 set<JsonNode>("properties", createObjectNode().apply {
-                    set<JsonNode>("address", createObjectNode().apply { put("\$ref", "#/components/schemas/Address") })
+                    set<JsonNode>("address", createObjectNode().apply { put($$"$ref", "#/components/schemas/Address") })
                 })
             }, setOf(addressDef))
 
@@ -773,7 +773,7 @@ internal class OpenApiSchemaBuilderTest {
                         content {
                             mediaType("application/json") {
                                 schema(ResultScheme(
-                                    createObjectNode().apply { put("\$ref", "#/components/schemas/User") },
+                                    createObjectNode().apply { put($$"$ref", "#/components/schemas/User") },
                                     setOf(userDef)
                                 ))
                             }
@@ -807,7 +807,7 @@ internal class OpenApiSchemaBuilderTest {
                         content {
                             mediaType("application/json") {
                                 schema(ResultScheme(
-                                    createObjectNode().apply { put("\$ref", "#/components/schemas/Object") },
+                                    createObjectNode().apply { put($$"$ref", "#/components/schemas/Object") },
                                     setOf(objectDef)
                                 ))
                             }
@@ -836,7 +836,7 @@ internal class OpenApiSchemaBuilderTest {
                         content {
                             mediaType("application/json") {
                                 schema(ResultScheme(
-                                    createObjectNode().apply { put("\$ref", "#/components/schemas/A") },
+                                    createObjectNode().apply { put($$"$ref", "#/components/schemas/A") },
                                     setOf(aDef)
                                 ))
                             }
@@ -870,7 +870,7 @@ internal class OpenApiSchemaBuilderTest {
                         content {
                             mediaType("application/json") {
                                 schema(ResultScheme(
-                                    createObjectNode().apply { put("\$ref", "#/components/schemas/A") },
+                                    createObjectNode().apply { put($$"$ref", "#/components/schemas/A") },
                                     setOf(aDef)
                                 ))
                             }

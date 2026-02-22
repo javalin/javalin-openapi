@@ -234,7 +234,7 @@ class SchemaBuilder {
 
     fun type(type: String): SchemaBuilder = apply { schema.put("type", type) }
     fun format(format: String): SchemaBuilder = apply { schema.put("format", format) }
-    fun ref(ref: String): SchemaBuilder = apply { schema.put("\$ref", ref) }
+    fun ref(ref: String): SchemaBuilder = apply { schema.put($$"$ref", ref) }
 
     internal fun build(): ObjectNode = schema
 }

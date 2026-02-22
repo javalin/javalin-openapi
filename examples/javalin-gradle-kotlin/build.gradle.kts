@@ -24,29 +24,29 @@ sourceSets.getByName("main") {
 
 dependencies {
     // declare lombok annotation processor as first
-    val lombok = "1.18.28"
+    val lombok = "1.18.42"
     compileOnly("org.projectlombok:lombok:$lombok")
     annotationProcessor("org.projectlombok:lombok:$lombok")
     testCompileOnly("org.projectlombok:lombok:$lombok")
     testAnnotationProcessor("org.projectlombok:lombok:$lombok")
-    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
 
     // then openapi annotation processor
     kapt(project(":openapi-annotation-processor"))
     implementation(project(":javalin-plugins:javalin-openapi-plugin"))
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
-    testImplementation("org.apache.groovy:groovy:4.0.12")
+    testImplementation("org.apache.groovy:groovy:4.0.30")
 
     // javalin
-    implementation("io.javalin:javalin:7.0.0-beta.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.1")
+    implementation("io.javalin:javalin:7.0.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.0")
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.32")
 
     // some test integrations
-    implementation("org.mongodb:bson:4.9.1")
+    implementation("org.mongodb:bson:5.6.3")
 }
 
 kapt {

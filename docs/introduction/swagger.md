@@ -25,7 +25,7 @@ All available options:
 | `documentationPath` | `/openapi`                                 | Path to the OpenAPI JSON endpoint         |
 | `uiPath`            | `/swagger`                                 | Route where Swagger UI is served          |
 | `title`             | `"OpenApi documentation"`                  | HTML page title                           |
-| `version`           | `"5.17.14"`                                | Swagger UI bundle version                 |
+| `version`           | `"5.31.2"`                                 | Swagger UI bundle version                 |
 | `basePath`          | `""`                                       | Base path prefix for reverse proxy setups |
 | `roles`             | `[]`                                       | Access control roles                      |
 | `validatorUrl`      | `"https://validator.swagger.io/validator"` | Validator endpoint URL                    |

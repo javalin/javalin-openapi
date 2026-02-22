@@ -76,5 +76,5 @@ OpenApiResponse(
 |----------|------|---------|-------------|
 | `status` | `String` | — | HTTP status code (required) |
 | `content` | `OpenApiContent[]` | `[]` | Response content |
-| `description` | `String` | — | Response description |
+| `description` | `String` | `""` | Response description |
 | `headers` | `OpenApiParam[]` | `[]` | Response headers |

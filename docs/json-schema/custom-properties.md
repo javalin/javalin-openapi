@@ -26,6 +26,7 @@ Create reusable annotation types that group multiple custom properties together.
     AnnotationTarget.FIELD,
     AnnotationTarget.CLASS
 )
+@Retention(AnnotationRetention.RUNTIME)
 @CustomAnnotation
 annotation class Description(
     val title: String,
