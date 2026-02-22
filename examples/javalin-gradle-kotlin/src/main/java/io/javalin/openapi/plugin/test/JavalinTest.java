@@ -97,13 +97,13 @@ public final class JavalinTest implements Handler {
                         return content.toPrettyString();
                     })));
 
-            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration -> {
-                swaggerConfiguration.setDocumentationPath(deprecatedDocsPath);
-            }));
+            config.registerPlugin(new SwaggerPlugin(swaggerConfiguration ->
+                swaggerConfiguration.withDocumentationPath(deprecatedDocsPath)
+            ));
 
-            config.registerPlugin(new ReDocPlugin(reDocConfiguration -> {
-                reDocConfiguration.setDocumentationPath(deprecatedDocsPath);
-            }));
+            config.registerPlugin(new ReDocPlugin(reDocConfiguration ->
+                reDocConfiguration.withDocumentationPath(deprecatedDocsPath)
+            ));
 
             for (JsonSchemaResource generatedJsonSchema : new JsonSchemaLoader().loadGeneratedSchemes()) {
                 System.out.println(generatedJsonSchema.getName());

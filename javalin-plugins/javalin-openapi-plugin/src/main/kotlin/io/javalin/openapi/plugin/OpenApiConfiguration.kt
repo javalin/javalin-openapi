@@ -15,7 +15,7 @@ fun interface DefinitionProcessor {
 /** Configure OpenApi plugin */
 class OpenApiPluginConfiguration @JvmOverloads constructor(
     @JvmField var documentationPath: String = "/openapi",
-    @JvmField var roles: List<RouteRole>? = null,
+    @JvmField var roles: Array<RouteRole> = emptyArray(),
     @JvmField var prettyOutputEnabled: Boolean = true,
     @JvmField var definitionConfiguration: BiConsumer<String, OpenApiSchemaBuilder>? = null,
     @JvmField var definitionProcessor: DefinitionProcessor? = null
@@ -28,7 +28,7 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
 
     /** List of roles eligible to access OpenApi routes */
     fun withRoles(vararg roles: RouteRole): OpenApiPluginConfiguration = also {
-        this.roles = roles.toList()
+        this.roles = arrayOf(*roles)
     }
 
     /** Pretty print JSON output */

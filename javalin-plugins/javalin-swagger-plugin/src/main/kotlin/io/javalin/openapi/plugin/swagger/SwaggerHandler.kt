@@ -20,15 +20,9 @@ class SwaggerEndpoint(
     handler = handler
 )
 
-data class SwaggerVersionMapping(
-    val name: String,
-    val url: String? = null,
-    val type: SwaggerVersionType,
-) {
-    enum class SwaggerVersionType {
-        CUSTOM,
-        OPENAPI_LOADER
-    }
+sealed class SwaggerVersionMapping(val name: String) {
+    class OpenApiLoader(name: String) : SwaggerVersionMapping(name)
+    class Custom(name: String, val url: String) : SwaggerVersionMapping(name)
 }
 
 /**
@@ -64,9 +58,9 @@ class SwaggerHandler(
 
         val allDocumentations = versions
             .joinToString(separator = ",\n") {
-                when (it.type) {
-                    SwaggerVersionMapping.SwaggerVersionType.OPENAPI_LOADER -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
-                    SwaggerVersionMapping.SwaggerVersionType.CUSTOM -> "{ name: '${it.name}', url: '${it.url!!}' }"
+                when (it) {
+                    is SwaggerVersionMapping.OpenApiLoader -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
+                    is SwaggerVersionMapping.Custom -> "{ name: '${it.name}', url: '${it.url}' }"
                 }
             }
         val allCustomStylesheets = customStylesheetFiles

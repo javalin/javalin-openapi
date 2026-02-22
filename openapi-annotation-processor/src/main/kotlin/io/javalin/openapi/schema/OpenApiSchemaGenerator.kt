@@ -107,7 +107,7 @@ class OpenApiSchemaGenerator(
                         location = parameterType.identifier,
                         schema = paramSchema,
                         description = parameterAnnotation.description.takeIf { it != NULL_STRING },
-                        required = parameterAnnotation.required,
+                        required = parameterAnnotation.required || parameterType == In.PATH,
                         deprecated = parameterAnnotation.deprecated,
                         allowEmptyValue = parameterAnnotation.allowEmptyValue,
                         example = parameterAnnotation.example.takeIf { it.isNotEmpty() },
@@ -129,11 +129,12 @@ class OpenApiSchemaGenerator(
         responses {
             for (responseAnnotation in responseAnnotations.sortedBy { it.status }) {
                 response(responseAnnotation.status) {
-                    val desc = responseAnnotation.description
+                    val description = responseAnnotation.description
                         .takeIf { it != NULL_STRING }
                         ?: defaultStatusDescription(responseAnnotation.status)
+                        ?: ""
 
-                    description(desc)
+                    description(description)
                     content { addResolvedContent(element, responseAnnotation.content) }
                     headers {
                         responseAnnotation.headers.forEach { headerParam ->
@@ -176,11 +177,12 @@ class OpenApiSchemaGenerator(
                     responses {
                         for (responseAnnotation in callbackAnnotation.responses.sortedBy { it.status }) {
                             response(responseAnnotation.status) {
-                                val desc = responseAnnotation.description
+                                val description = responseAnnotation.description
                                     .takeIf { it != NULL_STRING }
                                     ?: defaultStatusDescription(responseAnnotation.status)
+                                    ?: ""
 
-                                description(desc)
+                                description(description)
                                 content { addResolvedContent(element, responseAnnotation.content) }
                             }
                         }

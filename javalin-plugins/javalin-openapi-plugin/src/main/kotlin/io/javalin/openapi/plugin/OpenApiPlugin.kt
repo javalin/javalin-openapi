@@ -16,7 +16,7 @@ open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plu
         state.routes.get(
             pluginConfig.documentationPath,
             OpenApiHandler(createDocumentation()),
-            *pluginConfig.roles?.toTypedArray() ?: emptyArray()
+            *pluginConfig.roles
         )
     }
 
@@ -27,9 +27,10 @@ open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plu
                 .mapValues { (version, rawDocs) ->
                     val builder = OpenApiSchemaBuilder.fromJson(rawDocs)
                     pluginConfig.definitionConfiguration?.accept(version, builder)
+                    val json = if (pluginConfig.prettyOutputEnabled) builder.toJson() else builder.toCompactJson()
                     when (val processor = pluginConfig.definitionProcessor) {
-                        null -> if (pluginConfig.prettyOutputEnabled) builder.toJson() else builder.toCompactJson()
-                        else -> processor.process(jsonMapper.readTree(builder.toJson()) as ObjectNode)
+                        null -> json
+                        else -> processor.process(jsonMapper.readTree(json) as ObjectNode)
                     }
                 }
         }
