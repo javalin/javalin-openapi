@@ -25,6 +25,7 @@ export default defineConfig({
           { text: 'Setup without Javalin', link: '/introduction/json-schema-setup' },
           { text: 'Javalin Swagger UI', link: '/introduction/swagger' },
           { text: 'Javalin ReDoc', link: '/introduction/redoc' },
+          { text: 'Migration from 6.x', link: '/introduction/migration-from-6x' },
         ],
       },
       {
