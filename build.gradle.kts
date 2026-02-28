@@ -113,6 +113,34 @@ subprojects {
     }
 }
 
+val mavenExamples = listOf("javalin-maven-java", "javalin-maven-kotlin")
+
+mavenExamples.forEach { example ->
+    tasks.register<Exec>("test-maven-example-$example") {
+        description = "Compile Maven example: $example"
+        group = "verification"
+        workingDir = file("examples/$example")
+        commandLine("./mvnw", "compile", "-B", "-q")
+        environment("JAVA_HOME", System.getProperty("java.home"))
+        dependsOn(subprojects.map { it.tasks.named("publishToMavenLocal") })
+    }
+
+    tasks.register<Exec>("run-maven-example-$example") {
+        description = "Run Maven example: $example"
+        group = "application"
+        workingDir = file("examples/$example")
+        commandLine("./mvnw", "compile", "exec:java", "-B", "-q")
+        environment("JAVA_HOME", System.getProperty("java.home"))
+        dependsOn(subprojects.map { it.tasks.named("publishToMavenLocal") })
+    }
+}
+
+tasks.register("test-maven-examples") {
+    description = "Compile all Maven examples"
+    group = "verification"
+    dependsOn(mavenExamples.map { "test-maven-example-$it" })
+}
+
 nexusPublishing {
     repositories {
         sonatype {

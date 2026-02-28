@@ -1,7 +1,6 @@
 description = "Javalin OpenAPI Specification | Compile-time OpenAPI integration for Javalin 7.x"
 
 dependencies {
-    compileOnly(libs.javalin)
     api(libs.jackson.annotations)
 
     testImplementation(libs.javalin)

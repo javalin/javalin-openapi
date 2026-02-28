@@ -84,7 +84,14 @@
                     <artifactId>kotlin-maven-plugin</artifactId>
                     <groupId>org.jetbrains.kotlin</groupId>
                     <version>2.1.0</version>
-
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <mainClass>io.javalin.openapi.plugin.test.KotlinTestKt</mainClass>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

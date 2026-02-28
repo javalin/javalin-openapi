@@ -95,11 +95,11 @@ public final class JavalinTest implements Handler {
             ));
 
             config.registerPlugin(new SwaggerPlugin(swaggerConfiguration ->
-                swaggerConfiguration.setDocumentationPath(deprecatedDocsPath)
+                swaggerConfiguration.documentationPath = deprecatedDocsPath
             ));
 
             config.registerPlugin(new ReDocPlugin(reDocConfiguration ->
-                reDocConfiguration.setDocumentationPath(deprecatedDocsPath)
+                reDocConfiguration.documentationPath = deprecatedDocsPath
             ));
         })
         .start(8080);
