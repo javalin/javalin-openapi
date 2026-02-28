@@ -1,10 +1,21 @@
 description = "Javalin ReDoc Plugin | Serve ReDoc UI for OpenAPI specification"
 
 dependencies {
+    compileOnly(libs.javalin)
     api(project(":openapi-specification"))
 
-    implementation("org.webjars.npm:redoc:2.5.0") { // also bump redoc-ui version in OpenApiConfiguration
+    implementation(libs.redoc) { // also bump redoc-ui version in OpenApiConfiguration
         exclude(group = "org.webjars.npm")
     }
-    implementation("org.webjars.npm:js-tokens:8.0.3")
+    implementation(libs.js.tokens)
+
+    testImplementation(libs.javalin)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.json.unit.assertj)
+    testImplementation(libs.unirest)
+    testImplementation(libs.logback.classic)
 }

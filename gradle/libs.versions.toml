@@ -1,0 +1,63 @@
+[versions]
+nexus-publish = "2.0.0"
+
+kotlin = "2.3.10"
+javalin = "7.0.0"
+
+jackson = "2.21.0"
+jackson-annotations = "2.21"
+
+swagger-parser = "2.1.38"
+swagger-ui = "5.31.2"
+js-tokens = "8.0.3"
+redoc = "2.5.0"
+
+jakarta-validation = "3.1.1"
+groovy = "4.0.30"
+mongodb-bson = "5.6.3"
+
+junit = "5.14.2"
+logback = "1.5.32"
+assertj = "3.27.6"
+lombok = "1.18.42"
+json-unit = "4.1.1"
+unirest = "3.14.5"
+
+[libraries]
+# Javalin
+javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
+
+# OpenAPI / Swagger
+swagger-parser = { module = "io.swagger.parser.v3:swagger-parser", version.ref = "swagger-parser" }
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
+js-tokens = { module = "org.webjars.npm:js-tokens", version.ref = "js-tokens" }
+redoc = { module = "org.webjars.npm:redoc", version.ref = "redoc" }
+
+# Jackson
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+
+# Other
+groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+mongodb-bson = { module = "org.mongodb:bson", version.ref = "mongodb-bson" }
+
+# Logging
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# Testing
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+json-unit-assertj = { module = "net.javacrumbs.json-unit:json-unit-assertj", version.ref = "json-unit" }
+unirest = { module = "com.konghq:unirest-java", version.ref = "unirest" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }

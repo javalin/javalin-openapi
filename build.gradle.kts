@@ -3,10 +3,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     `java-library`
-    kotlin("jvm") version "2.3.10"
+    alias(libs.plugins.kotlin.jvm)
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    alias(libs.plugins.nexus.publish)
 }
 
 description = "Javalin OpenAPI Parent | Parent"
@@ -108,27 +108,37 @@ subprojects {
         }
     }
 
-    dependencies {
-        val javalin = "7.0.0"
-        compileOnly("io.javalin:javalin:$javalin")
-        testImplementation("io.javalin:javalin:$javalin")
-
-        val junit = "5.14.2"
-        testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
-        testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
-        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
-        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-        testImplementation("org.assertj:assertj-core:3.27.6")
-        testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
-        testImplementation("com.konghq:unirest-java:3.14.5")
-
-        testImplementation("ch.qos.logback:logback-classic:1.5.32")
-    }
-
     tasks.withType<Test> {
         useJUnitPlatform()
     }
+}
+
+val mavenExamples = listOf("javalin-maven-java", "javalin-maven-kotlin")
+
+mavenExamples.forEach { example ->
+    tasks.register<Exec>("test-maven-example-$example") {
+        description = "Compile Maven example: $example"
+        group = "verification"
+        workingDir = file("examples/$example")
+        commandLine("./mvnw", "compile", "-B", "-q")
+        environment("JAVA_HOME", System.getProperty("java.home"))
+        dependsOn(subprojects.map { it.tasks.named("publishToMavenLocal") })
+    }
+
+    tasks.register<Exec>("run-maven-example-$example") {
+        description = "Run Maven example: $example"
+        group = "application"
+        workingDir = file("examples/$example")
+        commandLine("./mvnw", "compile", "exec:java", "-B", "-q")
+        environment("JAVA_HOME", System.getProperty("java.home"))
+        dependsOn(subprojects.map { it.tasks.named("publishToMavenLocal") })
+    }
+}
+
+tasks.register("test-maven-examples") {
+    description = "Compile all Maven examples"
+    group = "verification"
+    dependsOn(mavenExamples.map { "test-maven-example-$it" })
 }
 
 nexusPublishing {

@@ -24,29 +24,36 @@ sourceSets.getByName("main") {
 
 dependencies {
     // declare lombok annotation processor as first
-    val lombok = "1.18.42"
-    compileOnly("org.projectlombok:lombok:$lombok")
-    annotationProcessor("org.projectlombok:lombok:$lombok")
-    testCompileOnly("org.projectlombok:lombok:$lombok")
-    testAnnotationProcessor("org.projectlombok:lombok:$lombok")
-    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
+    implementation(libs.jakarta.validation.api)
 
     // then openapi annotation processor
     kapt(project(":openapi-annotation-processor"))
     implementation(project(":javalin-plugins:javalin-openapi-plugin"))
     implementation(project(":javalin-plugins:javalin-swagger-plugin"))
     implementation(project(":javalin-plugins:javalin-redoc-plugin"))
-    testImplementation("org.apache.groovy:groovy:4.0.30")
 
     // javalin
-    implementation("io.javalin:javalin:7.0.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.0")
+    implementation(libs.javalin)
+    implementation(libs.jackson.databind)
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.5.32")
+    implementation(libs.logback.classic)
 
     // some test integrations
-    implementation("org.mongodb:bson:5.6.3")
+    implementation(libs.mongodb.bson)
+    testImplementation(libs.groovy)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.json.unit.assertj)
+    testImplementation(libs.unirest)
+    testImplementation(libs.logback.classic)
 }
 
 kapt {
