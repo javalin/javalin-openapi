@@ -12,16 +12,33 @@ dependencies {
     testImplementation(project(":openapi-annotation-processor"))
 
     implementation(kotlin("reflect"))
-    implementation("org.apache.groovy:groovy:4.0.30")
+    implementation(libs.groovy)
 
-    implementation("io.javalin:javalin:7.0.0") {
+    implementation(libs.javalin) {
         exclude(group = "org.slf4j")
     }
 
-    implementation("io.swagger.parser.v3:swagger-parser:2.1.38")
-    implementation("ch.qos.logback:logback-classic:1.5.32")
+    implementation(libs.swagger.parser) {
+        exclude(group = "com.fasterxml.jackson")
+        exclude(group = "com.fasterxml.jackson.core")
+        exclude(group = "com.fasterxml.jackson.dataformat")
+        exclude(group = "com.fasterxml.jackson.datatype")
+    }
+    implementation(libs.jackson.dataformat.yaml)
+    implementation(libs.jackson.datatype.jsr310)
 
-    testImplementation("org.mongodb:bson:5.6.3")
+    implementation(libs.logback.classic)
+
+    testImplementation(libs.javalin)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.json.unit.assertj)
+    testImplementation(libs.unirest)
+    testImplementation(libs.logback.classic)
+    testImplementation(libs.mongodb.bson)
 }
 
 kapt {
