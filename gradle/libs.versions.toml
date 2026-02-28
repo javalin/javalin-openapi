@@ -2,7 +2,7 @@
 nexus-publish = "2.0.0"
 
 kotlin = "2.3.10"
-javalin = "7.0.0"
+javalin = "7.0.1"
 
 jackson = "2.21.0"
 jackson-annotations = "2.21"
