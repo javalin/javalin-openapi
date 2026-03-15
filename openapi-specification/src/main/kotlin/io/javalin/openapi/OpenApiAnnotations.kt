@@ -359,7 +359,9 @@ enum class HttpMethod {
     TRACE;
 }
 
-class OpenApiLoader {
+class OpenApiLoader @JvmOverloads constructor(
+    private val classLoader: ClassLoader = OpenApiLoader::class.java.classLoader
+) {
 
     fun loadOpenApiSchemes(): Map<String, String> =
         loadVersions()
@@ -367,7 +369,7 @@ class OpenApiLoader {
             .associateWith { loadVersion(it) ?: "{}" }
 
     fun loadVersions(): Set<String> =
-        OpenApiLoader::class.java.getResourceAsStream("/openapi-plugin/.index")
+        classLoader.getResourceAsStream("openapi-plugin/.index")
             ?.readAllBytes()
             ?.decodeToString()
             ?.split("\n")
@@ -379,6 +381,6 @@ class OpenApiLoader {
             ?: emptySet()
 
     fun loadVersion(version: String): String? =
-        OpenApiLoader::class.java.getResource("/openapi-plugin/openapi-$version.json")?.readText()
+        classLoader.getResource("openapi-plugin/openapi-$version.json")?.readText()
 
 }

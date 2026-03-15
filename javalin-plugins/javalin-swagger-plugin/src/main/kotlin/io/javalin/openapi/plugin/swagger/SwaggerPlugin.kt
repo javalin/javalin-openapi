@@ -36,6 +36,8 @@ class SwaggerConfiguration @JvmOverloads constructor(
     @JvmField var customStylesheetFiles: MutableList<Pair<String, String>> = arrayListOf(),
     /** Custom JavaScript files to be injected into Swagger HTML */
     @JvmField var customJavaScriptFiles: MutableList<Pair<String, String>> = arrayListOf(),
+    /** Custom class loader for loading generated OpenAPI resources from classpath */
+    @JvmField var resourceClassLoader: ClassLoader? = null,
 ) {
 
     /** Set the location of OpenApi documentation */
@@ -84,6 +86,11 @@ class SwaggerConfiguration @JvmOverloads constructor(
     fun injectCustomVersion(name: String, url: String): SwaggerConfiguration = also {
         customVersions.add(name to url)
     }
+
+    /** Set custom class loader for loading generated OpenAPI resources from classpath */
+    fun withResourceClassLoader(classLoader: ClassLoader): SwaggerConfiguration = also {
+        resourceClassLoader = classLoader
+    }
 }
 
 open class SwaggerPlugin @JvmOverloads constructor(
@@ -93,10 +100,10 @@ open class SwaggerPlugin @JvmOverloads constructor(
     override fun repeatable(): Boolean = true
 
     override fun onStart(state: JavalinState) {
-        val openApiLoader = OpenApiLoader()
-        val versions = openApiLoader.loadVersions().map {
-            SwaggerVersionMapping.OpenApiLoader(name = it)
-        }
+        val openApiLoader = OpenApiLoader(pluginConfig.resourceClassLoader ?: OpenApiLoader::class.java.classLoader)
+        val versions = openApiLoader.loadVersions()
+            .ifEmpty { setOf("default") }
+            .map { SwaggerVersionMapping.OpenApiLoader(name = it) }
 
         val swaggerHandler = SwaggerHandler(
             title = pluginConfig.title,

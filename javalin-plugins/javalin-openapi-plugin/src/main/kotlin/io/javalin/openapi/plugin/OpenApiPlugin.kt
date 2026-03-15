@@ -22,7 +22,7 @@ open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plu
 
     private fun createDocumentation(): Lazy<Map<String, String>> =
         lazy {
-            OpenApiLoader()
+            OpenApiLoader(pluginConfig.resourceClassLoader ?: OpenApiLoader::class.java.classLoader)
                 .loadOpenApiSchemes()
                 .mapValues { (version, rawDocs) ->
                     val builder = OpenApiSchemaBuilder.fromJson(rawDocs)

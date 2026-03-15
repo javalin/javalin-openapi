@@ -18,7 +18,8 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
     @JvmField var roles: Array<RouteRole> = emptyArray(),
     @JvmField var prettyOutputEnabled: Boolean = true,
     @JvmField var definitionConfiguration: BiConsumer<String, OpenApiSchemaBuilder>? = null,
-    @JvmField var definitionProcessor: DefinitionProcessor? = null
+    @JvmField var definitionProcessor: DefinitionProcessor? = null,
+    @JvmField var resourceClassLoader: ClassLoader? = null
 ) {
 
     /** Path to host documentation as JSON */
@@ -45,6 +46,11 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
     /** Global definition processor applied to all versions without their own processor */
     fun withDefinitionProcessor(definitionProcessor: DefinitionProcessor): OpenApiPluginConfiguration = also {
         this.definitionProcessor = definitionProcessor
+    }
+
+    /** Set custom class loader for loading generated OpenAPI resources from classpath */
+    fun withResourceClassLoader(classLoader: ClassLoader): OpenApiPluginConfiguration = also {
+        this.resourceClassLoader = classLoader
     }
 
 }
