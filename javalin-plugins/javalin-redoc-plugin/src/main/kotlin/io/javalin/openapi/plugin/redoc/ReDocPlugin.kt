@@ -28,6 +28,8 @@ class ReDocConfiguration @JvmOverloads constructor(
     @JvmField var version: String = "2.5.0",
     /** ReDoc WebJar route */
     @JvmField var webJarPath: String = "/webjars/redoc",
+    /** Custom class loader for loading webjar resources from classpath */
+    @JvmField var resourceClassLoader: ClassLoader? = null,
 ) {
 
     /** Set page title */
@@ -50,6 +52,11 @@ class ReDocConfiguration @JvmOverloads constructor(
 
     /** Set ReDoc WebJar route */
     fun withWebJarPath(path: String): ReDocConfiguration = also { webJarPath = path }
+
+    /** Set custom class loader for loading webjar resources from classpath */
+    fun withResourceClassLoader(classLoader: ClassLoader): ReDocConfiguration = also {
+        resourceClassLoader = classLoader
+    }
 }
 
 internal class ReDocEndpoint(
@@ -98,7 +105,8 @@ open class ReDocPlugin @JvmOverloads constructor(
                 .takeIf { routes -> routes.noneMatch { it.endpoint is ReDocEndpoint } }
                 ?.run {
                     val webJarHandler = ReDocWebJarHandler(
-                        redocWebJarPath = pluginConfig.webJarPath
+                        redocWebJarPath = pluginConfig.webJarPath,
+                        classLoader = pluginConfig.resourceClassLoader ?: ReDocWebJarHandler::class.java.classLoader
                     )
                     router.addEndpoint(
                         ReDocEndpoint(

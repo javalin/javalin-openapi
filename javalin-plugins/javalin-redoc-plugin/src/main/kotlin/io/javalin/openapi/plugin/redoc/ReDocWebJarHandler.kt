@@ -5,11 +5,14 @@ import io.javalin.http.Handler
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.http.MimeTypes
 
-internal class ReDocWebJarHandler(private val redocWebJarPath: String) : Handler {
+internal class ReDocWebJarHandler(
+    private val redocWebJarPath: String,
+    private val classLoader: ClassLoader = ReDocWebJarHandler::class.java.classLoader,
+) : Handler {
 
     override fun handle(context: Context) {
-        val resourcePath = "/META-INF/resources" + redocWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(redocWebJarPath, "")
-        val resource = ReDocPlugin::class.java.getResourceAsStream(resourcePath)
+        val resourcePath = "META-INF/resources" + redocWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(redocWebJarPath, "")
+        val resource = classLoader.getResourceAsStream(resourcePath)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)

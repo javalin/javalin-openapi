@@ -138,7 +138,8 @@ open class SwaggerPlugin @JvmOverloads constructor(
                 .takeIf { routes -> routes.noneMatch { it.endpoint is SwaggerEndpoint } }
                 ?.run {
                     val swaggerWebJarHandler = SwaggerWebJarHandler(
-                        swaggerWebJarPath = pluginConfig.webJarPath
+                        swaggerWebJarPath = pluginConfig.webJarPath,
+                        classLoader = pluginConfig.resourceClassLoader ?: SwaggerWebJarHandler::class.java.classLoader
                     )
                     router.addEndpoint(
                         SwaggerEndpoint(

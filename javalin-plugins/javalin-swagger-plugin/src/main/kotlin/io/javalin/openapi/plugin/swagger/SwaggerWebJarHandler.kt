@@ -8,16 +8,17 @@ import java.io.InputStream
 
 internal class SwaggerWebJarHandler(
     private val swaggerWebJarPath: String,
+    private val classLoader: ClassLoader = SwaggerWebJarHandler::class.java.classLoader,
 ) : Handler {
 
     override fun handle(context: Context) {
-        val resourceRootPath = "/META-INF/resources$swaggerWebJarPath"
+        val resourceRootPath = "META-INF/resources$swaggerWebJarPath"
 
         val requestedResource = context.path()
             .replaceFirst(context.contextPath(), "")
             .replaceFirst(swaggerWebJarPath, "")
 
-        val resource: InputStream? = SwaggerPlugin::class.java.getResourceAsStream(resourceRootPath + requestedResource)
+        val resource: InputStream? = classLoader.getResourceAsStream(resourceRootPath + requestedResource)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)
