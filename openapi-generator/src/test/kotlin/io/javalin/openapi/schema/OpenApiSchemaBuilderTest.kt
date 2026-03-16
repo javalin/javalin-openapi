@@ -1165,6 +1165,61 @@ internal class OpenApiSchemaBuilderTest {
                 assertThatJson(json).inPath("$.paths['/users'].get.parameters[0].in").isEqualTo("query")
                 assertThatJson(json).inPath("$.paths['/users'].get.parameters[1].in").isEqualTo("header")
             }
+
+            @Test
+            fun `should use content wrapper for parameter with complex type references`() {
+                val sorterDef = ClassDefinition(simpleName = "Sorter", fullName = "com.example.Sorter")
+                val schema = builder()
+                schema.path("/users").operation("get") {
+                    parameters {
+                        parameter(
+                            name = "sorter",
+                            location = "query",
+                            schema = ResultScheme(
+                                createObjectNode().apply {
+                                    put("type", "array")
+                                    set<JsonNode>("items", createObjectNode().put("\$ref", "#/components/schemas/Sorter"))
+                                },
+                                setOf(sorterDef)
+                            ),
+                            description = "JSON encoded sort criteria",
+                        )
+                    }
+                }
+
+                val json = schema.toJson()
+                val paramPath = "$.paths['/users'].get.parameters[0]"
+
+                assertThatJson(json).inPath("$paramPath.name").isEqualTo("sorter")
+                assertThatJson(json).inPath("$paramPath.in").isEqualTo("query")
+                assertThatJson(json).inPath("$paramPath.description").isEqualTo("JSON encoded sort criteria")
+                assertThatJson(json).inPath(paramPath).isObject.doesNotContainKey("schema")
+                assertThatJson(json).inPath("$paramPath.content.application/json.schema.type").isEqualTo("array")
+                assertThatJson(json).inPath("$paramPath.content.application/json.schema.items.\$ref").isEqualTo("#/components/schemas/Sorter")
+            }
+
+            @Test
+            fun `should use schema directly for parameter without references`() {
+                val schema = builder()
+                schema.path("/users").operation("get") {
+                    parameters {
+                        parameter(
+                            name = "limit",
+                            location = "query",
+                            schema = ResultScheme(
+                                createObjectNode().apply { put("type", "integer") },
+                                emptySet()
+                            ),
+                        )
+                    }
+                }
+
+                val json = schema.toJson()
+                val paramPath = "$.paths['/users'].get.parameters[0]"
+
+                assertThatJson(json).inPath(paramPath).isObject.doesNotContainKey("content")
+                assertThatJson(json).inPath("$paramPath.schema.type").isEqualTo("integer")
+            }
         }
 
         @Nested

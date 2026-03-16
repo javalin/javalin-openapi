@@ -413,7 +413,15 @@ class ParametersBuilder(
         if (required) param.put("required", true)
         if (deprecated) param.put("deprecated", true)
         if (allowEmptyValue) param.put("allowEmptyValue", true)
-        param.set<JsonNode>("schema", schemaJson)
+        if (schema.references.isNotEmpty()) {
+            val mediaTypeNode = createObjectNode()
+            mediaTypeNode.set<JsonNode>("schema", schemaJson)
+            val contentNode = createObjectNode()
+            contentNode.set<JsonNode>("application/json", mediaTypeNode)
+            param.set<JsonNode>("content", contentNode)
+        } else {
+            param.set<JsonNode>("schema", schemaJson)
+        }
         if (example != null) {
             param.put("example", example)
         }
