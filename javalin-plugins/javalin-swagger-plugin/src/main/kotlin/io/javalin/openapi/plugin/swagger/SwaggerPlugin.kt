@@ -135,7 +135,7 @@ open class SwaggerPlugin @JvmOverloads constructor(
             /** Register webjar handler if and only if there isn't already a [SwaggerWebJarHandler] at configured route */
             state.internalRouter
                 .findHttpHandlerEntries(GET, "${pluginConfig.webJarPath}/*")
-                .takeIf { routes -> routes.noneMatch { it.endpoint is SwaggerEndpoint } }
+                .takeIf { routes -> routes.none { it.endpoint is SwaggerEndpoint } }
                 ?.run {
                     val swaggerWebJarHandler = SwaggerWebJarHandler(
                         swaggerWebJarPath = pluginConfig.webJarPath,

@@ -102,7 +102,7 @@ open class ReDocPlugin @JvmOverloads constructor(
             /** Register webjar handler if and only if there isn't already a [ReDocWebJarHandler] at configured route */
             state.internalRouter
                 .findHttpHandlerEntries(GET, "${pluginConfig.webJarPath}/*")
-                .takeIf { routes -> routes.noneMatch { it.endpoint is ReDocEndpoint } }
+                .takeIf { routes -> routes.none { it.endpoint is ReDocEndpoint } }
                 ?.run {
                     val webJarHandler = ReDocWebJarHandler(
                         redocWebJarPath = pluginConfig.webJarPath,
