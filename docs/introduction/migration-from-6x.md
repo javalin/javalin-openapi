@@ -130,11 +130,11 @@ Update the version in your build file:
 ::: code-group
 
 ```kotlin [Gradle (Kotlin)]
-val openapi = "7.1.0" // was 6.x
+val openapi = "7.2.0" // was 6.x
 ```
 
 ```xml [Maven]
-<version>7.1.0</version> <!-- was 6.x -->
+<version>7.2.0</version> <!-- was 6.x -->
 ```
 
 :::
@@ -184,7 +184,7 @@ kapt {
             <path>
                 <groupId>io.javalin.community.openapi</groupId>
                 <artifactId>openapi-annotation-processor</artifactId>
-                <version>7.1.0</version>
+                <version>7.2.0</version>
             </path>
         </annotationProcessorPaths>
         <compilerArgs>
