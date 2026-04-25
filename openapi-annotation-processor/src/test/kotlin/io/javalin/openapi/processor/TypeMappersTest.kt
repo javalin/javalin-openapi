@@ -418,6 +418,39 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             ))
     }
 
+    private enum class xEnumDescriptionsEnum {
+        @OpenApiName("1")
+        @OpenApiDescription("Description of 1")
+        REQUEST_TYPE_1,
+        @OpenApiName("2")
+        @OpenApiDescription("Description of 2")
+        REQUEST_TYPE_2
+    }
+
+    @OpenApi(
+        path = "x-enum-descriptions-enum",
+        versions = ["should_support_x_enum_descriptions_enum"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = xEnumDescriptionsEnum::class)])]
+    )
+    @Test
+    fun should_support_x_enum_descriptions_enum() = withOpenApi("should_support_x_enum_descriptions_enum") {
+        println(it)
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.xEnumDescriptionsEnum")
+            .isObject
+            .isEqualTo(json(
+                // language=json
+                """
+                {
+                  "type": "string",
+                  "enum": ["1", "2"],
+                  "x-enum-descriptions": ["Description of 1", "Description of 2"]
+                }
+                """
+            ))
+    }
+
     @OpenApiDescription("A regular string enum with description")
     private enum class DescribedStringEnum {
         ALPHA,
