@@ -418,7 +418,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             ))
     }
 
-    private enum class xEnumDescriptionsEnum {
+    private enum class XEnumDescriptionsEnum {
         @OpenApiName("1")
         @OpenApiDescription("Description of 1")
         REQUEST_TYPE_1,
@@ -430,14 +430,14 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     @OpenApi(
         path = "x-enum-descriptions-enum",
         versions = ["should_support_x_enum_descriptions_enum"],
-        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = xEnumDescriptionsEnum::class)])]
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = XEnumDescriptionsEnum::class)])]
     )
     @Test
     fun should_support_x_enum_descriptions_enum() = withOpenApi("should_support_x_enum_descriptions_enum") {
         println(it)
 
         assertThatJson(it)
-            .inPath("$.components.schemas.xEnumDescriptionsEnum")
+            .inPath("$.components.schemas.XEnumDescriptionsEnum")
             .isObject
             .isEqualTo(json(
                 // language=json
