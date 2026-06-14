@@ -6,6 +6,11 @@ class Address(val city: String, val zip: String)
 
 enum class Color { RED, GREEN }
 
+class Box<T>(val value: T)
+
+@JvmRecord
+data class Point(val x: Int, val label: String, val tags: List<String>)
+
 class Account(
     val id: String,
     val age: Int,
@@ -13,6 +18,7 @@ class Account(
     val address: Address?,
     val tags: List<String>,
     val meta: Map<String, Int>,
+    val bounded: Box<out Number>,
 )
 
 open class Base(val baseField: String) {
@@ -21,6 +27,32 @@ open class Base(val baseField: String) {
 }
 
 class Derived(val own: String) : Base("")
+
+/** Extends a Java base in another package that has a package-private field, to exercise cross-package field inheritance. */
+class CrossPackageChild : io.javalin.introspection.test.sub.PackagePrivateBase()
+
+class Tricky {
+    fun getName(): String = ""
+    fun issue(): String = ""
+    fun getaway(): String = ""
+    fun getResult() {}
+}
+
+annotation class Marker
+
+class Annotated(@get:Marker val tagged: String, val plain: String)
+
+annotation class Meta(val note: String)
+
+annotation class Outer(val meta: Meta)
+
+@Outer(Meta("x"))
+class Wrapped
+
+annotation class Flags(val ints: IntArray)
+
+@Flags(ints = [1, 2, 3])
+class Flagged
 
 annotation class Ref(val value: KClass<*>)
 

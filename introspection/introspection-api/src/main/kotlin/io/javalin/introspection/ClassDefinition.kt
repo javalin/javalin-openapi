@@ -1,12 +1,15 @@
 package io.javalin.introspection
 
-/** A type resolved by a backend; navigation ([getProperties], [isEnum], …) is implemented per backend. */
+/** A type resolved by a backend; navigation is implemented per backend. */
 abstract class ClassDefinition(
     val simpleName: String,
     val fullName: String,
     val generics: List<ClassDefinition> = emptyList(),
     val structureType: StructureType = StructureType.DEFAULT,
 ) {
+
+    /** Backend-native token this was resolved from (`Class`, `TypeMirror`, ...), for consumers needing backend specifics. */
+    abstract val source: Any
 
     abstract fun isEnum(): Boolean
 

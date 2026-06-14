@@ -2,6 +2,7 @@ description = "Javalin OpenAPI Dynamic | Runtime reflection-based OpenAPI intros
 
 dependencies {
     api(project(":openapi-generator"))
+    api(project(":introspection:introspection-runtime"))
 
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.junit.jupiter.api)

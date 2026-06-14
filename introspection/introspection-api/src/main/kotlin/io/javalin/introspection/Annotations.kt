@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 interface Annotations {
     fun <A : Annotation> find(annotationType: Class<A>): A?
 
-    /** True if an annotation with this simple name is present (lets callers match e.g. `@NotNull` without depending on it). */
+    /** True if an annotation with this simple name is present (match e.g. `@NotNull` without depending on it). */
     fun hasNamed(simpleName: String): Boolean
 
     /** Resolve a class-valued member (e.g. `value = Foo::class`) to a [ClassDefinition]. */
