@@ -60,7 +60,7 @@ class ReflectiveTypeIntrospector(
         val namingStrategy = raw.getAnnotations().find(OpenApiNaming::class.java)?.value
 
         return raw.getProperties().mapNotNull { property ->
-            if (!property.includedBy(byFields)) return@mapNotNull null
+            if (!property.includedBy(byFields) || property.transient) return@mapNotNull null
             val annotations = property.annotations
             if (annotations.find(OpenApiIgnore::class.java) != null) return@mapNotNull null
 

@@ -31,6 +31,8 @@ class Derived(val own: String) : Base("")
 /** Extends a Java base in another package that has a package-private field, to exercise cross-package field inheritance. */
 class CrossPackageChild : io.javalin.introspection.test.sub.PackagePrivateBase()
 
+class WithTransient(@Transient val skipped: String, val kept: String)
+
 class Tricky {
     fun getName(): String = ""
     fun issue(): String = ""

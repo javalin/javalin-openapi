@@ -7,6 +7,7 @@ class PropertyView(
     val accessor: Accessor,
     val nullable: Boolean,
     val visibility: Visibility,
+    val transient: Boolean,
     val annotations: Annotations,
 )
 

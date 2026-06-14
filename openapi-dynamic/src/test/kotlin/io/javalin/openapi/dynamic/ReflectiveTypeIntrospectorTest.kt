@@ -5,6 +5,7 @@ import io.javalin.openapi.dynamic.fixtures.Address
 import io.javalin.openapi.dynamic.fixtures.FieldsDto
 import io.javalin.openapi.dynamic.fixtures.Role
 import io.javalin.openapi.dynamic.fixtures.SnakeCaseDto
+import io.javalin.openapi.dynamic.fixtures.TransientDto
 import io.javalin.openapi.experimental.StructureType
 import io.javalin.openapi.experimental.processor.generators.Property
 import org.assertj.core.api.Assertions.assertThat
@@ -91,6 +92,12 @@ class ReflectiveTypeIntrospectorTest {
     fun `reads fields and honors visibility when OpenApiByFields is present`() {
         val props = introspector.properties(introspector.introspect(FieldsDto::class.java)).associateBy { it.name }
         assertThat(props.keys).containsExactly("publicField")
+    }
+
+    @Test
+    fun `skips transient fields under OpenApiByFields`() {
+        val props = introspector.properties(introspector.introspect(TransientDto::class.java)).associateBy { it.name }
+        assertThat(props.keys).containsExactly("kept")
     }
 
     @Test

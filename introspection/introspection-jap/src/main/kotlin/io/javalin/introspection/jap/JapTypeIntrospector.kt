@@ -126,6 +126,7 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                         accessor = Accessor.RECORD_COMPONENT,
                         nullable = component.asType().nullable(),
                         visibility = Visibility.PUBLIC,
+                        transient = false,
                         annotations = AnnotationsView(component),
                     )
                 }
@@ -141,6 +142,7 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                             accessor = Accessor.GETTER,
                             nullable = getter.returnType.nullable(),
                             visibility = getter.visibility(),
+                            transient = false,
                             annotations = AnnotationsView(getter),
                         )
                     }
@@ -152,6 +154,7 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                             accessor = Accessor.FIELD,
                             nullable = field.asType().nullable(),
                             visibility = field.visibility(),
+                            transient = Modifier.TRANSIENT in field.modifiers,
                             annotations = AnnotationsView(field),
                         )
                     }

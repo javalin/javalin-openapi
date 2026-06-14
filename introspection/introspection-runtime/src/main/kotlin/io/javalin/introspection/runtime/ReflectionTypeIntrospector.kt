@@ -105,6 +105,7 @@ private class ReflectionClassDefinition(
                 accessor = member.accessor,
                 nullable = (member.genericType as? Class<*>)?.isPrimitive != true,
                 visibility = member.visibility,
+                transient = member.transient,
                 annotations = ReflectionAnnotations(member.sources),
             )
         }
@@ -117,7 +118,7 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
     if (clazz.isRecord) {
         return clazz.recordComponents.map { component ->
             val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
-            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, Visibility.PUBLIC, listOfNotNull(component.accessor, backingField, component))
+            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, Visibility.PUBLIC, transient = false, listOfNotNull(component.accessor, backingField, component))
         }
     }
 
@@ -127,12 +128,12 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
         if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
-        members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), listOf(method))
+        members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), transient = false, listOf(method))
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {
         if (Modifier.isStatic(field.modifiers)) continue
-        members += Member(field.name, field.genericType, Accessor.FIELD, visibilityOf(field.modifiers), listOf(field))
+        members += Member(field.name, field.genericType, Accessor.FIELD, visibilityOf(field.modifiers), Modifier.isTransient(field.modifiers), listOf(field))
     }
 
     return members
@@ -171,6 +172,7 @@ private class Member(
     val genericType: Type,
     val accessor: Accessor,
     val visibility: Visibility,
+    val transient: Boolean,
     val sources: List<AnnotatedElement>,
 )
 

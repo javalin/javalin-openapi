@@ -19,6 +19,7 @@ import io.javalin.introspection.test.fixtures.Point
 import io.javalin.introspection.test.fixtures.Ref
 import io.javalin.introspection.test.fixtures.Refs
 import io.javalin.introspection.test.fixtures.Tricky
+import io.javalin.introspection.test.fixtures.WithTransient
 import io.javalin.introspection.test.fixtures.Wrapped
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -45,6 +46,14 @@ class IntrospectionParityTest {
     @Test fun `record components match across backends`() = assertParity(Point::class)
 
     @Test fun `cross-package inherited fields match across backends`() = assertParity(CrossPackageChild::class)
+
+    @Test
+    fun `transient fields are flagged on both backends`() {
+        assertParity(WithTransient::class)
+        val transientByName = runtime.introspect(WithTransient::class.java).getProperties().associate { it.name to it.transient }
+        assertThat(transientByName.getValue("skipped")).isTrue()
+        assertThat(transientByName.getValue("kept")).isFalse()
+    }
 
     @Test
     fun `getter detection excludes get-or-is lookalikes on both backends`() {
@@ -120,6 +129,7 @@ private data class PropertyShape(
     val accessor: Accessor,
     val nullable: Boolean,
     val visibility: Visibility,
+    val transient: Boolean,
 )
 
 /** Normalized, order-independent structural view of a type, so the two backends can be compared by value. */
@@ -131,6 +141,6 @@ private fun ClassDefinition.toShape(): TypeShape =
         isEnum = isEnum(),
         enumConstants = getEnumConstants()?.sorted(),
         properties = if (isEnum()) emptyList() else getProperties()
-            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility) }
+            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
             .sortedBy { "${it.accessor}:${it.name}" },
     )
