@@ -72,7 +72,6 @@ class ReflectiveTypeIntrospector(
                         classDefinitionOf(arguments.getOrElse(1) { Any::class.java }),
                     ),
                     structureType = DICTIONARY,
-                    fullType = type,
                 )
             Collection::class.java.isAssignableFrom(erasure) ->
                 classDefinitionOf(arguments.getOrElse(0) { Any::class.java }, generics, ARRAY)
@@ -81,7 +80,6 @@ class ReflectiveTypeIntrospector(
                     erasure = erasure,
                     generics = arguments.map { classDefinitionOf(it) },
                     structureType = structureType,
-                    fullType = type,
                 )
         }
     }
@@ -90,7 +88,6 @@ class ReflectiveTypeIntrospector(
         erasure: Class<*>,
         generics: List<ClassDefinition>,
         structureType: StructureType,
-        fullType: Type = erasure,
     ): ClassDefinition {
         val customName = erasure.getAnnotation(OpenApiName::class.java)?.value
         val packageName = erasure.`package`?.name?.takeIf { it.isNotEmpty() }
@@ -102,7 +99,7 @@ class ReflectiveTypeIntrospector(
             },
             generics = generics,
             structureType = structureType,
-            handle = ReflectionHandle(erasure, fullType),
+            handle = ReflectionHandle(erasure),
         )
     }
 
@@ -129,12 +126,7 @@ class ReflectiveTypeIntrospector(
             val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, resolvedName) else resolvedName
 
             val isPrimitive = (member.genericType as? Class<*>)?.isPrimitive == true
-            val isNotNull = when {
-                member.hasAnnotationNamed("NotNull") -> true
-                isPrimitive -> true
-                member.hasAnnotationNamed("Nullable") -> false
-                else -> false
-            }
+            val isNotNull = member.hasAnnotationNamed("NotNull") || isPrimitive
             val required = member.annotation(OpenApiRequired::class.java) != null || (requireNonNullsByDefault && isNotNull)
 
             val openApiNullable = member.annotation(OpenApiNullable::class.java)
@@ -218,18 +210,7 @@ class ReflectiveTypeIntrospector(
         type.reflectedClass.getAnnotation(annotationType)
 
     private companion object {
-        private fun box(primitive: Class<*>): Class<*> = when (primitive) {
-            Int::class.javaPrimitiveType -> Int::class.javaObjectType
-            Long::class.javaPrimitiveType -> Long::class.javaObjectType
-            Short::class.javaPrimitiveType -> Short::class.javaObjectType
-            Byte::class.javaPrimitiveType -> Byte::class.javaObjectType
-            Char::class.javaPrimitiveType -> Char::class.javaObjectType
-            Boolean::class.javaPrimitiveType -> Boolean::class.javaObjectType
-            Float::class.javaPrimitiveType -> Float::class.javaObjectType
-            Double::class.javaPrimitiveType -> Double::class.javaObjectType
-            Void.TYPE -> Void::class.javaObjectType
-            else -> primitive
-        }
+        private fun box(primitive: Class<*>): Class<*> = primitive.kotlin.javaObjectType
 
         private fun declaredFieldsHierarchy(clazz: Class<*>): List<Field> {
             val fields = mutableListOf<Field>()
