@@ -3,7 +3,6 @@ package io.javalin.introspection.test
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.StructureType
-import io.javalin.introspection.TypeIntrospector
 
 /** A backend-neutral, order-independent snapshot of one type's introspection, for comparing backends. */
 data class TypeSnapshot(
@@ -24,15 +23,15 @@ data class PropertySnapshot(
     val nullable: Boolean,
 )
 
-fun snapshot(introspector: TypeIntrospector, type: ClassDefinition): TypeSnapshot {
-    val enum = introspector.isEnum(type)
+fun snapshot(type: ClassDefinition): TypeSnapshot {
+    val enum = type.isEnum()
     return TypeSnapshot(
         fullName = type.fullName,
         simpleName = type.simpleName,
         structure = type.structureType,
         isEnum = enum,
-        enumConstants = introspector.enumConstants(type)?.sorted(),
-        properties = if (enum) emptyList() else introspector.properties(type)
+        enumConstants = type.getEnumConstants()?.sorted(),
+        properties = if (enum) emptyList() else type.getProperties()
             .map { PropertySnapshot(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable) }
             .sortedBy { "${it.accessor}:${it.name}" },
     )

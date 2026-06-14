@@ -29,62 +29,33 @@ import javax.lang.model.util.Types
 import kotlin.reflect.KClass
 
 /** [TypeIntrospector] backed by `javax.lang.model` (Java annotation processing). */
-class JapTypeIntrospector(
-    private val types: Types,
-    private val elements: Elements,
-) : TypeIntrospector {
+class JapTypeIntrospector(types: Types, elements: Elements) : TypeIntrospector {
+
+    private val env = JapEnv(types, elements)
 
     override fun introspect(source: Any): ClassDefinition {
         require(source is TypeMirror) { "JapTypeIntrospector expects a javax.lang.model.type.TypeMirror, got ${source::class.java.name}" }
-        return classDefinitionOf(source)
+        return env.resolve(source)
     }
 
-    fun introspect(mirror: TypeMirror): ClassDefinition = classDefinitionOf(mirror)
+    fun introspect(mirror: TypeMirror): ClassDefinition =
+        env.resolve(mirror)
+}
 
-    override fun isEnum(type: ClassDefinition): Boolean =
-        typeElementOf(type)?.kind == ElementKind.ENUM
+/** The `javax.lang.model` context + the type-resolution factory shared by the JAP [ClassDefinition]s. */
+internal class JapEnv(val types: Types, val elements: Elements) {
 
-    override fun enumConstants(type: ClassDefinition): List<String>? =
-        typeElementOf(type)
-            ?.takeIf { it.kind == ElementKind.ENUM }
-            ?.enclosedElements
-            ?.filter { it.kind == ElementKind.ENUM_CONSTANT }
-            ?.map { it.simpleName.toString() }
-
-    override fun annotations(type: ClassDefinition): Annotations =
-        annotationsOf(typeElementOf(type))
-
-    override fun properties(type: ClassDefinition): List<PropertyView> {
-        val element = typeElementOf(type) ?: return emptyList()
-
-        if (element.kind == ElementKind.RECORD) {
-            return element.recordComponents.map { component ->
-                PropertyView(component.simpleName.toString(), classDefinitionOf(component.asType()), Accessor.RECORD_COMPONENT, component.asType().nullable(), annotationsOf(component))
-            }
-        }
-
-        return elements.getAllMembers(element).mapNotNull { member ->
-            when {
-                member.isGetter() ->
-                    PropertyView(member.simpleName.toString(), classDefinitionOf((member as ExecutableElement).returnType), Accessor.GETTER, member.returnType.nullable(), annotationsOf(member))
-                member.isInstanceField() ->
-                    PropertyView(member.simpleName.toString(), classDefinitionOf((member as VariableElement).asType()), Accessor.FIELD, member.asType().nullable(), annotationsOf(member))
-                else -> null
-            }
-        }
-    }
-
-    private fun annotationsOf(element: Element?): Annotations =
-        JapAnnotations(element, elements) { classDefinitionOf(it) }
-
-    private fun classDefinitionOf(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), structureType: StructureType = DEFAULT): ClassDefinition =
+    fun resolve(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), structureType: StructureType = DEFAULT): ClassDefinition =
         when (mirror) {
-            is TypeVariable -> (mirror.upperBound ?: mirror.lowerBound)?.let { classDefinitionOf(it, generics, structureType) } ?: objectDefinition(structureType)
-            is ArrayType -> classDefinitionOf(mirror.componentType, generics, ARRAY)
+            is TypeVariable -> (mirror.upperBound ?: mirror.lowerBound)?.let { resolve(it, generics, structureType) } ?: objectDefinition(structureType)
+            is ArrayType -> resolve(mirror.componentType, generics, ARRAY)
             is PrimitiveType -> definition(types.boxedClass(mirror).asType(), generics, structureType)
             is DeclaredType -> declared(mirror, generics, structureType)
-            else -> types.asElement(mirror)?.asType()?.takeIf { it != mirror }?.let { classDefinitionOf(it, generics, structureType) } ?: objectDefinition(structureType)
+            else -> types.asElement(mirror)?.asType()?.takeIf { it != mirror }?.let { resolve(it, generics, structureType) } ?: objectDefinition(structureType)
         }
+
+    fun objectMirror(): TypeMirror =
+        elements.getTypeElement("java.lang.Object").asType()
 
     private fun declared(mirror: DeclaredType, generics: List<ClassDefinition>, structureType: StructureType): ClassDefinition {
         val erasure = types.erasure(mirror)
@@ -93,40 +64,107 @@ class JapTypeIntrospector(
                 definition(
                     mirror = mirror,
                     generics = listOf(
-                        classDefinitionOf(mirror.typeArguments.getOrElse(0) { objectMirror() }),
-                        classDefinitionOf(mirror.typeArguments.getOrElse(1) { objectMirror() }),
+                        resolve(mirror.typeArguments.getOrElse(0) { objectMirror() }),
+                        resolve(mirror.typeArguments.getOrElse(1) { objectMirror() }),
                     ),
                     structureType = DICTIONARY,
                 )
             types.isAssignable(erasure, erasureOf("java.util.Collection")) ->
-                classDefinitionOf(mirror.typeArguments.getOrElse(0) { objectMirror() }, generics, ARRAY)
+                resolve(mirror.typeArguments.getOrElse(0) { objectMirror() }, generics, ARRAY)
             else ->
-                definition(mirror, mirror.typeArguments.map { classDefinitionOf(it) }, structureType)
+                definition(mirror, mirror.typeArguments.map { resolve(it) }, structureType)
         }
     }
 
     private fun definition(mirror: TypeMirror, generics: List<ClassDefinition>, structureType: StructureType): ClassDefinition {
         val element = types.asElement(mirror) as? TypeElement
         val fullName = element?.qualifiedName?.toString() ?: mirror.toString().substringBefore("<")
-        return ClassDefinition(
+        return JapClassDefinition(
             simpleName = element?.simpleName?.toString() ?: fullName.substringAfterLast('.'),
             fullName = fullName,
             generics = generics,
             structureType = structureType,
-            handle = mirror,
+            mirror = mirror,
+            env = this,
         )
     }
 
     private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
         definition(objectMirror(), emptyList(), structureType)
 
-    private fun typeElementOf(type: ClassDefinition): TypeElement? =
-        types.asElement(type.handle as TypeMirror) as? TypeElement
+    private fun erasureOf(name: String): TypeMirror =
+        types.erasure(elements.getTypeElement(name).asType())
+}
 
-    private fun objectMirror(): TypeMirror = elements.getTypeElement("java.lang.Object").asType()
-    private fun erasureOf(name: String): TypeMirror = types.erasure(elements.getTypeElement(name).asType())
+private class JapClassDefinition(
+    simpleName: String,
+    fullName: String,
+    generics: List<ClassDefinition>,
+    structureType: StructureType,
+    private val mirror: TypeMirror,
+    private val env: JapEnv,
+) : ClassDefinition(simpleName, fullName, generics, structureType) {
 
-    private fun TypeMirror.nullable(): Boolean = !kind.isPrimitive
+    override fun isEnum(): Boolean =
+        element()?.kind == ElementKind.ENUM
+
+    override fun getEnumConstants(): List<String>? =
+        element()
+            ?.takeIf { it.kind == ElementKind.ENUM }
+            ?.enclosedElements
+            ?.filter { it.kind == ElementKind.ENUM_CONSTANT }
+            ?.map { it.simpleName.toString() }
+
+    override fun getAnnotations(): Annotations =
+        JapAnnotations(element(), env)
+
+    override fun getProperties(): List<PropertyView> {
+        val element = element() ?: return emptyList()
+
+        if (element.kind == ElementKind.RECORD) {
+            return element.recordComponents.map { component ->
+                PropertyView(
+                    name = component.simpleName.toString(),
+                    type = env.resolve(component.asType()),
+                    accessor = Accessor.RECORD_COMPONENT,
+                    nullable = component.asType().nullable(),
+                    annotations = JapAnnotations(component, env),
+                )
+            }
+        }
+
+        return env.elements.getAllMembers(element).mapNotNull { member ->
+            when {
+                member.isGetter() -> {
+                    val getter = member as ExecutableElement
+                    PropertyView(
+                        name = getter.simpleName.toString(),
+                        type = env.resolve(getter.returnType),
+                        accessor = Accessor.GETTER,
+                        nullable = getter.returnType.nullable(),
+                        annotations = JapAnnotations(getter, env),
+                    )
+                }
+                member.isInstanceField() -> {
+                    val field = member as VariableElement
+                    PropertyView(
+                        name = field.simpleName.toString(),
+                        type = env.resolve(field.asType()),
+                        accessor = Accessor.FIELD,
+                        nullable = field.asType().nullable(),
+                        annotations = JapAnnotations(field, env),
+                    )
+                }
+                else -> null
+            }
+        }
+    }
+
+    private fun element(): TypeElement? =
+        env.types.asElement(mirror) as? TypeElement
+
+    private fun TypeMirror.nullable(): Boolean =
+        !kind.isPrimitive
 
     private fun Element.isGetter(): Boolean {
         if (kind != ElementKind.METHOD || this !is ExecutableElement) return false
@@ -140,48 +178,48 @@ class JapTypeIntrospector(
         kind == ElementKind.FIELD && this is VariableElement && Modifier.STATIC !in modifiers
 }
 
-internal class JapAnnotations(
+private class JapAnnotations(
     private val element: Element?,
-    private val elements: Elements,
-    private val resolve: (TypeMirror) -> ClassDefinition,
+    private val env: JapEnv,
 ) : Annotations {
+
     override fun <A : Annotation> find(annotationType: Class<A>): A? =
         element?.getAnnotation(annotationType)
 
-    override fun hasBySimpleName(simpleName: String): Boolean =
+    override fun hasNamed(simpleName: String): Boolean =
         element?.annotationMirrors?.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } == true
 
-    override fun <A : Annotation> classValue(annotationType: Class<A>, member: A.() -> KClass<*>): ClassDefinition? {
+    override fun <A : Annotation> resolveType(annotationType: Class<A>, member: A.() -> KClass<*>): ClassDefinition? {
         val annotation = find(annotationType) ?: return null
         return try {
-            elements.getTypeElement(annotation.member().java.name)?.asType()?.let(resolve)
+            env.elements.getTypeElement(annotation.member().java.name)?.asType()?.let { env.resolve(it) }
         } catch (mirrored: MirroredTypeException) {
-            resolve(mirrored.typeMirror)
+            env.resolve(mirrored.typeMirror)
         }
     }
 
-    override fun <A : Annotation> classValues(annotationType: Class<A>, member: A.() -> Array<out KClass<*>>): List<ClassDefinition> {
+    override fun <A : Annotation> resolveTypes(annotationType: Class<A>, member: A.() -> Array<out KClass<*>>): List<ClassDefinition> {
         val annotation = find(annotationType) ?: return emptyList()
         return try {
-            annotation.member().mapNotNull { elements.getTypeElement(it.java.name)?.asType()?.let(resolve) }
+            annotation.member().mapNotNull { kClass -> env.elements.getTypeElement(kClass.java.name)?.asType()?.let { env.resolve(it) } }
         } catch (mirrored: MirroredTypesException) {
-            mirrored.typeMirrors.map(resolve)
+            mirrored.typeMirrors.map { env.resolve(it) }
         }
     }
 
-    override fun values(annotationType: Class<out Annotation>): Map<String, Any?>? {
+    override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
         val mirror = element?.annotationMirrors?.firstOrNull {
             (it.annotationType.asElement() as? TypeElement)?.qualifiedName?.contentEquals(annotationType.name) == true
         } ?: return null
 
         val visitor = object : SimpleAnnotationValueVisitor8<Any?, Nothing?>() {
             override fun defaultAction(value: Any?, p: Nothing?): Any? = value
-            override fun visitType(t: TypeMirror, p: Nothing?): Any = resolve(t)
+            override fun visitType(t: TypeMirror, p: Nothing?): Any = env.resolve(t)
             override fun visitEnumConstant(constant: VariableElement, p: Nothing?): Any = constant.simpleName.toString()
             override fun visitArray(values: MutableList<out AnnotationValue>, p: Nothing?): Any = values.map { it.accept(this, null) }
         }
 
-        return elements.getElementValuesWithDefaults(mirror).entries
+        return env.elements.getElementValuesWithDefaults(mirror).entries
             .associate { (executable, value) -> executable.simpleName.toString() to value.accept(visitor, null) }
     }
 }

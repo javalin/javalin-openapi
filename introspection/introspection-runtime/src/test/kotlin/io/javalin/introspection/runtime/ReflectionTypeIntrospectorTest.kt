@@ -12,7 +12,7 @@ class ReflectionTypeIntrospectorTest {
     private val introspector = ReflectionTypeIntrospector()
 
     private fun props(type: Class<*>): Map<String, PropertyView> =
-        introspector.properties(introspector.introspect(type)).associateBy { it.name }
+        introspector.introspect(type).getProperties().associateBy { it.name }
 
     @Test
     fun `resolves a class into the shared model`() {
@@ -52,16 +52,16 @@ class ReflectionTypeIntrospectorTest {
     fun `exposes annotations without applying policy`() {
         val id = props(Account::class.java).getValue("getId")
         assertThat(id.annotations.find(Nn::class.java)).isNotNull()
-        assertThat(id.annotations.hasBySimpleName("Nn")).isTrue()
+        assertThat(id.annotations.hasNamed("Nn")).isTrue()
         assertThat(props(Account::class.java).getValue("getName").annotations.find(Nn::class.java)).isNull()
     }
 
     @Test
     fun `reads enum constants raw`() {
         val color = introspector.introspect(Color::class.java)
-        assertThat(introspector.isEnum(color)).isTrue()
-        assertThat(introspector.enumConstants(color)).containsExactly("RED", "GREEN")
-        assertThat(introspector.enumConstants(introspector.introspect(Account::class.java))).isNull()
+        assertThat(color.isEnum()).isTrue()
+        assertThat(color.getEnumConstants()).containsExactly("RED", "GREEN")
+        assertThat(introspector.introspect(Account::class.java).getEnumConstants()).isNull()
     }
 
     @Test
@@ -78,23 +78,23 @@ class ReflectionTypeIntrospectorTest {
 
     @Test
     fun `resolves Class-valued annotation members into ClassDefinitions`() {
-        val annotations = introspector.annotations(introspector.introspect(Holder::class.java))
+        val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        assertThat(annotations.classValue(Ref::class.java) { value }?.fullName).isEqualTo(Address::class.java.name)
-        assertThat(annotations.classValues(Refs::class.java) { value }.map { it.fullName })
+        assertThat(annotations.resolveType(Ref::class.java) { value }?.fullName).isEqualTo(Address::class.java.name)
+        assertThat(annotations.resolveTypes(Refs::class.java) { value }.map { it.fullName })
             .containsExactly(Address::class.java.name, Color::class.java.name)
     }
 
     @Test
     fun `reads all annotation members into a neutral value map`() {
-        val annotations = introspector.annotations(introspector.introspect(Holder::class.java))
+        val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        val values = annotations.values(Mixed::class.java)!!
+        val values = annotations.memberValues(Mixed::class.java)!!
         assertThat(values["name"]).isEqualTo("x")
         assertThat(values["count"]).isEqualTo(3)
         assertThat((values["type"] as io.javalin.introspection.ClassDefinition).fullName).isEqualTo(Address::class.java.name)
         assertThat(values["shade"]).isEqualTo("RED")
-        assertThat(annotations.values(java.lang.Deprecated::class.java)).isNull()
+        assertThat(annotations.memberValues(java.lang.Deprecated::class.java)).isNull()
     }
 }
 

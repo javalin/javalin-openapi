@@ -18,8 +18,8 @@ class IntrospectionParityTest {
 
     private fun assertParity(type: KClass<*>) {
         val fqn = type.qualifiedName!!
-        val runtimeSnapshot = snapshot(runtime, runtime.introspect(type.java))
-        val japSnapshot = withJap { jap, elements -> snapshot(jap, jap.introspect(elements.getTypeElement(fqn).asType())) }
+        val runtimeSnapshot = snapshot(runtime.introspect(type.java))
+        val japSnapshot = withJap { jap, elements -> snapshot(jap.introspect(elements.getTypeElement(fqn).asType())) }
         assertThat(japSnapshot).isEqualTo(runtimeSnapshot)
     }
 
@@ -33,13 +33,13 @@ class IntrospectionParityTest {
 
     @Test
     fun `Class-valued annotation members resolve identically across backends`() {
-        val runtimeAnnotations = runtime.annotations(runtime.introspect(Holder::class.java))
-        val runtimeRef = runtimeAnnotations.classValue(Ref::class.java) { value }?.fullName
-        val runtimeRefs = runtimeAnnotations.classValues(Refs::class.java) { value }.map { it.fullName }
+        val runtimeAnnotations = runtime.introspect(Holder::class.java).getAnnotations()
+        val runtimeRef = runtimeAnnotations.resolveType(Ref::class.java) { value }?.fullName
+        val runtimeRefs = runtimeAnnotations.resolveTypes(Refs::class.java) { value }.map { it.fullName }
 
         val (japRef, japRefs) = withJap { jap, elements ->
-            val annotations = jap.annotations(jap.introspect(elements.getTypeElement(Holder::class.qualifiedName).asType()))
-            annotations.classValue(Ref::class.java) { value }?.fullName to annotations.classValues(Refs::class.java) { value }.map { it.fullName }
+            val annotations = jap.introspect(elements.getTypeElement(Holder::class.qualifiedName).asType()).getAnnotations()
+            annotations.resolveType(Ref::class.java) { value }?.fullName to annotations.resolveTypes(Refs::class.java) { value }.map { it.fullName }
         }
 
         assertThat(japRef).isEqualTo(runtimeRef).isEqualTo(Address::class.java.name)
@@ -48,9 +48,9 @@ class IntrospectionParityTest {
 
     @Test
     fun `annotation value maps match across backends`() {
-        val runtimeValues = runtime.annotations(runtime.introspect(Holder::class.java)).values(Ref::class.java)
+        val runtimeValues = runtime.introspect(Holder::class.java).getAnnotations().memberValues(Ref::class.java)
         val japValues = withJap { jap, elements ->
-            jap.annotations(jap.introspect(elements.getTypeElement(Holder::class.qualifiedName).asType())).values(Ref::class.java)
+            jap.introspect(elements.getTypeElement(Holder::class.qualifiedName).asType()).getAnnotations().memberValues(Ref::class.java)
         }
 
         val runtimeRefType = (runtimeValues!!.getValue("value") as io.javalin.introspection.ClassDefinition).fullName
