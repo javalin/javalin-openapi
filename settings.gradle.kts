@@ -9,6 +9,7 @@ include(
     "introspection:introspection-api",
     "introspection:introspection-runtime",
     "introspection:introspection-jap",
+    "introspection:introspection-ksp",
     "introspection:introspection-test",
     "javalin-plugins",
     "javalin-plugins:javalin-openapi-plugin",

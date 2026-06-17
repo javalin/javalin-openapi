@@ -22,6 +22,8 @@ assertj = "3.27.6"
 lombok = "1.18.42"
 json-unit = "4.1.1"
 unirest = "3.14.5"
+ksp = "2.3.9"
+kctfork = "0.12.1"
 
 [libraries]
 # Javalin
@@ -39,6 +41,11 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+
+# KSP (introspection-ksp backend)
+ksp-symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "kctfork" }
+kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 
 # Other
 groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
