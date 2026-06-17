@@ -65,11 +65,17 @@ class KspTypeIntrospectorTest {
             )
         }
 
-        // Structure + collection/map/nullability resolve; NOTE KSP yields Kotlin FQNs (kotlin.String/Int), not java.lang.*
-        assertThat(snapshot.properties.keys).containsExactlyInAnyOrder("id", "age", "color", "address", "tags", "meta")
-        assertThat(snapshot.properties["tags"]).endsWith(":ARRAY")
-        assertThat(snapshot.properties["meta"]).endsWith(":DICTIONARY")
-        assertThat(snapshot.properties["color"]).isEqualTo("$REF_PKG.Color:DEFAULT")
+        // Structure + collection/map/nullability resolve, and Kotlin builtins normalize to JVM names (== jap/reflection)
+        assertThat(snapshot.properties).containsAllEntriesOf(
+            mapOf(
+                "id" to "java.lang.String:DEFAULT",
+                "age" to "java.lang.Integer:DEFAULT",
+                "color" to "$REF_PKG.Color:DEFAULT",
+                "address" to "$REF_PKG.Address:DEFAULT",
+                "tags" to "java.lang.String:ARRAY",
+                "meta" to "java.util.Map:DICTIONARY",
+            )
+        )
 
         // Enum
         assertThat(snapshot.isEnum).isTrue()

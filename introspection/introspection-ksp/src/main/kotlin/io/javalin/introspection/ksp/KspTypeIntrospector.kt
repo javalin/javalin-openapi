@@ -1,5 +1,6 @@
 package io.javalin.introspection.ksp
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.ClassKind
@@ -66,15 +67,21 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
     }
 
     private fun definition(type: KSType, structureType: StructureType, generics: List<ClassDefinition>): ClassDefinition {
-        val declaration = type.declaration
-        val fullName = declaration.qualifiedName?.asString() ?: declaration.simpleName.asString()
+        val fullName = canonicalName(type.declaration)
         return Definition(
-            simpleName = declaration.simpleName.asString(),
+            simpleName = fullName.substringAfterLast('.'),
             fullName = fullName,
             generics = generics,
             structureType = structureType,
             type = type,
         )
+    }
+
+    /** Normalize Kotlin builtin FQNs (kotlin.Int, kotlin.String, kotlin.collections.Map, ...) to their JVM names, matching jap/reflection. */
+    @OptIn(KspExperimental::class)
+    private fun canonicalName(declaration: KSDeclaration): String {
+        val kotlinName = declaration.qualifiedName ?: return declaration.simpleName.asString()
+        return (resolver.mapKotlinNameToJava(kotlinName) ?: kotlinName).asString()
     }
 
     private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
