@@ -129,7 +129,11 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
                 PropertyView(
                     name = property.simpleName.asString(),
                     type = resolve(propertyType),
-                    accessor = Accessor.GETTER,
+                    accessors = buildSet {
+                        add(Accessor.GETTER)
+                        add(Accessor.FIELD)
+                        if (property.isMutable) add(Accessor.SETTER)
+                    },
                     nullable = propertyType.isMarkedNullable,
                     visibility = visibilityOf(property.getVisibility()),
                     transient = Modifier.JAVA_TRANSIENT in property.modifiers,

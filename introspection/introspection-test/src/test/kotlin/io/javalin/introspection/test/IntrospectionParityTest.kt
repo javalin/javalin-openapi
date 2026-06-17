@@ -59,18 +59,18 @@ class IntrospectionParityTest {
     fun `getter detection excludes get-or-is lookalikes on both backends`() {
         assertParity(Tricky::class)
         val names = runtime.introspect(Tricky::class.java).getProperties().map { it.name }
-        assertThat(names).contains("getName").doesNotContain("issue", "getaway", "getResult")
+        assertThat(names).contains("name").doesNotContain("issue", "getaway", "result")
     }
 
     @Test
     fun `property-level annotations resolve identically across backends`() {
         val runtimeMarked = runtime.introspect(Annotated::class.java).getProperties().associate { it.name to it.annotations.hasNamed("Marker") }
         val processedMarked = AnnotationProcessing.introspect(Annotated::class) {
-            it.getProperties().associate { property -> property.name to property.annotations.hasNamed("Marker") }
+            it.getProperties().associate { p -> p.name to p.annotations.hasNamed("Marker") }
         }
         assertThat(processedMarked).isEqualTo(runtimeMarked)
-        assertThat(runtimeMarked.getValue("getTagged")).isTrue()
-        assertThat(runtimeMarked.getValue("getPlain")).isFalse()
+        assertThat(runtimeMarked.getValue("tagged")).isTrue()
+        assertThat(runtimeMarked.getValue("plain")).isFalse()
     }
 
     @Test
@@ -126,7 +126,7 @@ private data class PropertyShape(
     val typeFullName: String,
     val typeStructure: StructureType,
     val typeGenerics: List<String>,
-    val accessor: Accessor,
+    val accessors: Set<Accessor>,
     val nullable: Boolean,
     val visibility: Visibility,
     val transient: Boolean,
@@ -141,6 +141,6 @@ private fun ClassDefinition.toShape(): TypeShape =
         isEnum = isEnum(),
         enumConstants = getEnumConstants()?.sorted(),
         properties = if (isEnum()) emptyList() else getProperties()
-            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
-            .sortedBy { "${it.accessor}:${it.name}" },
+            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessors, it.nullable, it.visibility, it.transient) }
+            .sortedBy { it.name },
     )

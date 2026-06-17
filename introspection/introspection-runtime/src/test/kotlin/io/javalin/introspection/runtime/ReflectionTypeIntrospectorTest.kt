@@ -23,37 +23,37 @@ class ReflectionTypeIntrospectorTest {
     }
 
     @Test
-    fun `exposes raw getter members with boxed primitives and structural nullability`() {
+    fun `exposes getter members under logical names with boxed primitives and structural nullability`() {
         val props = props(Account::class.java)
 
-        assertThat(props.keys).contains("getId", "getAge", "getName", "getColor", "getAddress", "getTags", "getMeta")
-        assertThat(props.getValue("getId").accessor).isEqualTo(Accessor.GETTER)
+        assertThat(props.keys).contains("id", "age", "name", "color", "address", "tags", "meta")
+        assertThat(props.getValue("id").accessors).containsExactly(Accessor.GETTER)
 
-        assertThat(props.getValue("getAge").type.fullName).isEqualTo("java.lang.Integer")
-        assertThat(props.getValue("getAge").nullable).isFalse()
-        assertThat(props.getValue("getName").nullable).isTrue()
+        assertThat(props.getValue("age").type.fullName).isEqualTo("java.lang.Integer")
+        assertThat(props.getValue("age").nullable).isFalse()
+        assertThat(props.getValue("name").nullable).isTrue()
     }
 
     @Test
     fun `resolves collections, maps and nested types`() {
         val props = props(Account::class.java)
 
-        assertThat(props.getValue("getTags").type.structureType).isEqualTo(StructureType.ARRAY)
-        assertThat(props.getValue("getTags").type.fullName).isEqualTo("java.lang.String")
+        assertThat(props.getValue("tags").type.structureType).isEqualTo(StructureType.ARRAY)
+        assertThat(props.getValue("tags").type.fullName).isEqualTo("java.lang.String")
 
-        val meta = props.getValue("getMeta").type
+        val meta = props.getValue("meta").type
         assertThat(meta.structureType).isEqualTo(StructureType.DICTIONARY)
         assertThat(meta.generics.map { it.fullName }).containsExactly("java.lang.String", "java.lang.Integer")
 
-        assertThat(props.getValue("getAddress").type.fullName).isEqualTo(Address::class.java.name)
+        assertThat(props.getValue("address").type.fullName).isEqualTo(Address::class.java.name)
     }
 
     @Test
     fun `exposes annotations without applying policy`() {
-        val id = props(Account::class.java).getValue("getId")
+        val id = props(Account::class.java).getValue("id")
         assertThat(id.annotations.has(Nn::class.java)).isTrue()
         assertThat(id.annotations.hasNamed("Nn")).isTrue()
-        assertThat(props(Account::class.java).getValue("getName").annotations.has(Nn::class.java)).isFalse()
+        assertThat(props(Account::class.java).getValue("name").annotations.has(Nn::class.java)).isFalse()
     }
 
     @Test
@@ -65,15 +65,15 @@ class ReflectionTypeIntrospectorTest {
     }
 
     @Test
-    fun `returns both getters and fields tagged by accessor`() {
+    fun `tags each property with its backing accessors`() {
         class FieldBag {
             @JvmField val tag: String = ""
             fun getName(): String = ""
         }
 
         val props = props(FieldBag::class.java)
-        assertThat(props.getValue("getName").accessor).isEqualTo(Accessor.GETTER)
-        assertThat(props.getValue("tag").accessor).isEqualTo(Accessor.FIELD)
+        assertThat(props.getValue("name").accessors).containsExactly(Accessor.GETTER)
+        assertThat(props.getValue("tag").accessors).containsExactly(Accessor.FIELD)
     }
 
     @Test

@@ -66,11 +66,7 @@ class ReflectiveTypeIntrospector(
             if (annotations.has(OpenApiIgnore::class.java)) return@mapNotNull null
 
             val customName = annotations.memberValues(OpenApiName::class.java)?.get("value") as? String
-            val resolvedName = when {
-                customName != null -> customName
-                property.accessor == Accessor.GETTER -> property.name.stripGetterPrefix()
-                else -> property.name
-            }
+            val resolvedName = customName ?: property.name
             val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, resolvedName) else resolvedName
 
             val isPrimitive = !property.nullable
@@ -120,20 +116,12 @@ class ReflectiveTypeIntrospector(
         (type.raw.source as Class<*>).getAnnotation(annotationType)
 }
 
-/** `@OpenApiByFields` selection: getters unless `only`, fields at/above the configured visibility, record components always. */
-private fun RawProperty.includedBy(byFields: OpenApiByFields?): Boolean =
-    when (accessor) {
-        Accessor.RECORD_COMPONENT -> true
-        Accessor.GETTER -> byFields?.only != true
-        Accessor.FIELD -> byFields != null && byFields.value.priority <= visibility.toOpenApi().priority
-    }
-
-private fun String.stripGetterPrefix(): String =
-    when {
-        startsWith("get") -> removePrefix("get").replaceFirstChar { it.lowercase() }
-        startsWith("is") -> removePrefix("is").replaceFirstChar { it.lowercase() }
-        else -> this
-    }
+/** `@OpenApiByFields` selection: getter-backed properties by default; with the annotation, fields at/above the configured visibility (and getters too unless `only`). */
+private fun RawProperty.includedBy(byFields: OpenApiByFields?): Boolean {
+    if (byFields == null) return Accessor.GETTER in accessors
+    val fieldVisible = Accessor.FIELD in accessors && byFields.value.priority <= visibility.toOpenApi().priority
+    return if (byFields.only) fieldVisible else Accessor.GETTER in accessors || fieldVisible
+}
 
 private fun RawVisibility.toOpenApi(): Visibility =
     when (this) {

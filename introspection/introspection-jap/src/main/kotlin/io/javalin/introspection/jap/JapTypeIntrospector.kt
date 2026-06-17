@@ -11,6 +11,8 @@ import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.isGetterName
+import io.javalin.introspection.isSetterName
+import io.javalin.introspection.propertyName
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
@@ -110,7 +112,7 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                 ?.map { it.simpleName.toString() }
 
         override fun getAnnotations(): Annotations =
-            AnnotationsView(typeElement())
+            AnnotationsView(listOfNotNull(typeElement()))
 
         override fun getProperties(): List<PropertyView> {
             val element = typeElement() ?: return emptyList()
@@ -120,44 +122,68 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                     PropertyView(
                         name = component.simpleName.toString(),
                         type = resolve(component.asType()),
-                        accessor = Accessor.RECORD_COMPONENT,
+                        accessors = setOf(Accessor.GETTER, Accessor.FIELD),
                         nullable = component.asType().nullable(),
                         visibility = Visibility.PUBLIC,
                         transient = false,
-                        annotations = AnnotationsView(component),
+                        annotations = AnnotationsView(listOf(component)),
                     )
                 }
             }
 
-            return elements.getAllMembers(element).mapNotNull { member ->
+            val builders = LinkedHashMap<String, Acc>()
+            for (member in elements.getAllMembers(element)) {
                 when {
-                    member.isGetter() -> {
-                        val getter = member as ExecutableElement
-                        PropertyView(
-                            name = getter.simpleName.toString(),
-                            type = resolve(getter.returnType),
-                            accessor = Accessor.GETTER,
-                            nullable = getter.returnType.nullable(),
-                            visibility = getter.visibility(),
-                            transient = false,
-                            annotations = AnnotationsView(getter),
-                        )
+                    member.isGetter() -> (member as ExecutableElement).let { getter ->
+                        builders.getOrPut(propertyName(getter.simpleName.toString())) { Acc() }.apply {
+                            accessors += Accessor.GETTER
+                            getterType = getter.returnType
+                            getterVisibility = getter.visibility()
+                            sources += getter
+                        }
                     }
-                    member.isInstanceField() -> {
-                        val field = member as VariableElement
-                        PropertyView(
-                            name = field.simpleName.toString(),
-                            type = resolve(field.asType()),
-                            accessor = Accessor.FIELD,
-                            nullable = field.asType().nullable(),
-                            visibility = field.visibility(),
-                            transient = Modifier.TRANSIENT in field.modifiers,
-                            annotations = AnnotationsView(field),
-                        )
+                    member.isSetter() -> (member as ExecutableElement).let { setter ->
+                        builders.getOrPut(propertyName(setter.simpleName.toString())) { Acc() }.apply {
+                            accessors += Accessor.SETTER
+                            setterType = setter.parameters[0].asType()
+                            sources += setter
+                        }
                     }
-                    else -> null
+                    member.isInstanceField() -> (member as VariableElement).let { field ->
+                        builders.getOrPut(field.simpleName.toString()) { Acc() }.apply {
+                            accessors += Accessor.FIELD
+                            fieldType = field.asType()
+                            fieldVisibility = field.visibility()
+                            transient = Modifier.TRANSIENT in field.modifiers
+                            sources += field
+                        }
+                    }
                 }
             }
+
+            return builders.map { (name, acc) ->
+                val type = acc.getterType ?: acc.fieldType ?: acc.setterType!!
+                PropertyView(
+                    name = name,
+                    type = resolve(type),
+                    accessors = acc.accessors,
+                    nullable = type.nullable(),
+                    visibility = acc.fieldVisibility ?: acc.getterVisibility ?: Visibility.PUBLIC,
+                    transient = acc.transient,
+                    annotations = AnnotationsView(acc.sources),
+                )
+            }
+        }
+
+        private inner class Acc {
+            val accessors = mutableSetOf<Accessor>()
+            val sources = mutableListOf<Element>()
+            var getterType: TypeMirror? = null
+            var fieldType: TypeMirror? = null
+            var setterType: TypeMirror? = null
+            var getterVisibility: Visibility? = null
+            var fieldVisibility: Visibility? = null
+            var transient = false
         }
 
         private fun typeElement(): TypeElement? =
@@ -174,6 +200,13 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
             return isGetterName(simpleName.toString())
         }
 
+        private fun Element.isSetter(): Boolean {
+            if (kind != ElementKind.METHOD || this !is ExecutableElement) return false
+            if (Modifier.PUBLIC !in modifiers || Modifier.STATIC in modifiers) return false
+            if (parameters.size != 1 || enclosingElement?.toString() == "java.lang.Object") return false
+            return isSetterName(simpleName.toString())
+        }
+
         private fun Element.isInstanceField(): Boolean =
             kind == ElementKind.FIELD && this is VariableElement && Modifier.STATIC !in modifiers
 
@@ -186,14 +219,16 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
             }
     }
 
-    private inner class AnnotationsView(private val element: Element?) : Annotations {
+    private inner class AnnotationsView(private val sources: List<Element>) : Annotations {
 
         override fun hasNamed(simpleName: String): Boolean =
-            element?.annotationMirrors?.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } == true
+            sources.any { source -> source.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } }
 
         override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
-            val mirror = element?.annotationMirrors?.firstOrNull {
-                (it.annotationType.asElement() as? TypeElement)?.qualifiedName?.contentEquals(annotationType.name) == true
+            val mirror = sources.firstNotNullOfOrNull { source ->
+                source.annotationMirrors.firstOrNull {
+                    (it.annotationType.asElement() as? TypeElement)?.qualifiedName?.contentEquals(annotationType.name) == true
+                }
             } ?: return null
 
             val visitor = object : SimpleAnnotationValueVisitor8<Any?, Nothing?>() {
