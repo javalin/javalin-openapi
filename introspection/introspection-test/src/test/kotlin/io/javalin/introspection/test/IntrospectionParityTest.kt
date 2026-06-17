@@ -83,12 +83,12 @@ class IntrospectionParityTest {
     @Test
     fun `Class-valued annotation members resolve identically across backends`() {
         val runtimeAnnotations = runtime.introspect(Holder::class.java).getAnnotations()
-        val runtimeRef = runtimeAnnotations.resolveType(Ref::class.java) { value }?.fullName
-        val runtimeRefs = runtimeAnnotations.resolveTypes(Refs::class.java) { value }.map { it.fullName }
+        val runtimeRef = runtimeAnnotations.resolveClass(Ref::class.java, "value")?.fullName
+        val runtimeRefs = runtimeAnnotations.resolveClasses(Refs::class.java, "value").map { it.fullName }
 
         val (processedRef, processedRefs) = AnnotationProcessing.introspect(Holder::class) {
             val annotations = it.getAnnotations()
-            annotations.resolveType(Ref::class.java) { value }?.fullName to annotations.resolveTypes(Refs::class.java) { value }.map { it.fullName }
+            annotations.resolveClass(Ref::class.java, "value")?.fullName to annotations.resolveClasses(Refs::class.java, "value").map { it.fullName }
         }
 
         assertThat(processedRef).isEqualTo(runtimeRef).isEqualTo(Address::class.java.name)

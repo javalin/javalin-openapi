@@ -56,15 +56,16 @@ class ReflectiveTypeIntrospector(
 
     override fun properties(type: ClassDefinition): List<Property> {
         val raw = type.raw
-        val byFields = raw.getAnnotations().find(OpenApiByFields::class.java)
-        val namingStrategy = raw.getAnnotations().find(OpenApiNaming::class.java)?.value
+        val erasure = raw.source as Class<*>
+        val byFields = erasure.getAnnotation(OpenApiByFields::class.java)
+        val namingStrategy = erasure.getAnnotation(OpenApiNaming::class.java)?.value
 
         return raw.getProperties().mapNotNull { property ->
             if (!property.includedBy(byFields) || property.transient) return@mapNotNull null
             val annotations = property.annotations
-            if (annotations.find(OpenApiIgnore::class.java) != null) return@mapNotNull null
+            if (annotations.has(OpenApiIgnore::class.java)) return@mapNotNull null
 
-            val customName = annotations.find(OpenApiName::class.java)?.value
+            val customName = annotations.memberValues(OpenApiName::class.java)?.get("value") as? String
             val resolvedName = when {
                 customName != null -> customName
                 property.accessor == Accessor.GETTER -> property.name.stripGetterPrefix()
@@ -73,18 +74,18 @@ class ReflectiveTypeIntrospector(
             val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, resolvedName) else resolvedName
 
             val isPrimitive = !property.nullable
-            val required = annotations.find(OpenApiRequired::class.java) != null ||
+            val required = annotations.has(OpenApiRequired::class.java) ||
                 (requireNonNullsByDefault && (annotations.hasNamed("NotNull") || isPrimitive))
 
-            val openApiNullable = annotations.find(OpenApiNullable::class.java)
+            val explicitNullable = annotations.memberValues(OpenApiNullable::class.java)?.get("nullable") as? Boolean
             val nullable = when {
-                openApiNullable != null -> openApiNullable.nullable
+                explicitNullable != null -> explicitNullable
                 annotations.hasNamed("Nullable") -> true
                 else -> false
             }
 
             val extra = buildMap<String, Any?> {
-                annotations.find(OpenApiDescription::class.java)?.let { put("description", it.value) }
+                (annotations.memberValues(OpenApiDescription::class.java)?.get("value") as? String)?.let { put("description", it) }
             }
 
             Property(
@@ -104,7 +105,7 @@ class ReflectiveTypeIntrospector(
         val raw = type.raw
         if (!raw.isEnum()) return null
         val erasure = raw.source as Class<*>
-        val namingStrategy = raw.getAnnotations().find(OpenApiNaming::class.java)?.value
+        val namingStrategy = erasure.getAnnotation(OpenApiNaming::class.java)?.value
         return raw.getEnumConstants()!!.map { name ->
             val customName = erasure.getField(name).getAnnotation(OpenApiName::class.java)?.value
             when {
@@ -116,7 +117,7 @@ class ReflectiveTypeIntrospector(
     }
 
     override fun <A : Annotation> annotation(type: ClassDefinition, annotationType: Class<A>): A? =
-        type.raw.getAnnotations().find(annotationType)
+        (type.raw.source as Class<*>).getAnnotation(annotationType)
 }
 
 /** `@OpenApiByFields` selection: getters unless `only`, fields at/above the configured visibility, record components always. */

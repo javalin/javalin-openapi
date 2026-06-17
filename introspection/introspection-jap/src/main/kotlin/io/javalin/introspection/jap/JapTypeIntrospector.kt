@@ -21,8 +21,6 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
-import javax.lang.model.type.MirroredTypeException
-import javax.lang.model.type.MirroredTypesException
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
@@ -31,7 +29,6 @@ import javax.lang.model.type.WildcardType
 import javax.lang.model.util.Elements
 import javax.lang.model.util.SimpleAnnotationValueVisitor8
 import javax.lang.model.util.Types
-import kotlin.reflect.KClass
 
 /** [TypeIntrospector] backed by `javax.lang.model` (Java annotation processing). */
 class JapTypeIntrospector(private val types: Types, private val elements: Elements) : TypeIntrospector {
@@ -191,29 +188,8 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
 
     private inner class AnnotationsView(private val element: Element?) : Annotations {
 
-        override fun <A : Annotation> find(annotationType: Class<A>): A? =
-            element?.getAnnotation(annotationType)
-
         override fun hasNamed(simpleName: String): Boolean =
             element?.annotationMirrors?.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } == true
-
-        override fun <A : Annotation> resolveType(annotationType: Class<A>, member: A.() -> KClass<*>): ClassDefinition? {
-            val annotation = find(annotationType) ?: return null
-            return try {
-                elements.getTypeElement(annotation.member().java.name)?.asType()?.let { resolve(it) }
-            } catch (mirrored: MirroredTypeException) {
-                resolve(mirrored.typeMirror)
-            }
-        }
-
-        override fun <A : Annotation> resolveTypes(annotationType: Class<A>, member: A.() -> Array<out KClass<*>>): List<ClassDefinition> {
-            val annotation = find(annotationType) ?: return emptyList()
-            return try {
-                annotation.member().mapNotNull { kClass -> elements.getTypeElement(kClass.java.name)?.asType()?.let { resolve(it) } }
-            } catch (mirrored: MirroredTypesException) {
-                mirrored.typeMirrors.map { resolve(it) }
-            }
-        }
 
         override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
             val mirror = element?.annotationMirrors?.firstOrNull {

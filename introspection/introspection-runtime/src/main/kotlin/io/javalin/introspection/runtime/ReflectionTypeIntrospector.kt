@@ -19,7 +19,6 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
-import kotlin.reflect.KClass
 
 /** [TypeIntrospector] backed by reflection ([java.lang.reflect.Type]). */
 class ReflectionTypeIntrospector : TypeIntrospector {
@@ -178,20 +177,11 @@ private class Member(
 
 private class ReflectionAnnotations(private val sources: List<AnnotatedElement>) : Annotations {
 
-    override fun <A : Annotation> find(annotationType: Class<A>): A? =
-        sources.firstNotNullOfOrNull { it.getAnnotation(annotationType) }
-
     override fun hasNamed(simpleName: String): Boolean =
         sources.any { source -> source.annotations.any { it.annotationClass.simpleName == simpleName } }
 
-    override fun <A : Annotation> resolveType(annotationType: Class<A>, member: A.() -> KClass<*>): ClassDefinition? =
-        find(annotationType)?.let { reflect(it.member().java) }
-
-    override fun <A : Annotation> resolveTypes(annotationType: Class<A>, member: A.() -> Array<out KClass<*>>): List<ClassDefinition> =
-        find(annotationType)?.member()?.map { reflect(it.java) } ?: emptyList()
-
     override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
-        find(annotationType)?.let { annotationToMap(it) }
+        sources.firstNotNullOfOrNull { it.getAnnotation(annotationType) }?.let { annotationToMap(it) }
 
     private fun annotationToMap(annotation: Annotation): Map<String, Any?> =
         annotation.annotationClass.java.declaredMethods.associate { it.name to normalize(it.invoke(annotation)) }

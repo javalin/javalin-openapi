@@ -51,9 +51,9 @@ class ReflectionTypeIntrospectorTest {
     @Test
     fun `exposes annotations without applying policy`() {
         val id = props(Account::class.java).getValue("getId")
-        assertThat(id.annotations.find(Nn::class.java)).isNotNull()
+        assertThat(id.annotations.has(Nn::class.java)).isTrue()
         assertThat(id.annotations.hasNamed("Nn")).isTrue()
-        assertThat(props(Account::class.java).getValue("getName").annotations.find(Nn::class.java)).isNull()
+        assertThat(props(Account::class.java).getValue("getName").annotations.has(Nn::class.java)).isFalse()
     }
 
     @Test
@@ -80,8 +80,8 @@ class ReflectionTypeIntrospectorTest {
     fun `resolves Class-valued annotation members into ClassDefinitions`() {
         val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        assertThat(annotations.resolveType(Ref::class.java) { value }?.fullName).isEqualTo(Address::class.java.name)
-        assertThat(annotations.resolveTypes(Refs::class.java) { value }.map { it.fullName })
+        assertThat(annotations.resolveClass(Ref::class.java, "value")?.fullName).isEqualTo(Address::class.java.name)
+        assertThat(annotations.resolveClasses(Refs::class.java, "value").map { it.fullName })
             .containsExactly(Address::class.java.name, Color::class.java.name)
     }
 

@@ -20,7 +20,6 @@ import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
-import kotlin.reflect.KClass
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
 /**
@@ -135,32 +134,12 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
 
     private inner class KspAnnotations(private val element: KSAnnotated?) : Annotations {
 
-        override fun <A : Annotation> find(annotationType: Class<A>): A? =
-            throw UnsupportedOperationException("KSP cannot materialize JVM annotation instances; use name/value access")
-
         override fun hasNamed(simpleName: String): Boolean =
             element?.annotations?.any { it.shortName.asString() == simpleName } == true
-
-        override fun <A : Annotation> resolveType(annotationType: Class<A>, member: A.() -> KClass<*>): ClassDefinition? =
-            throw UnsupportedOperationException("KSP cannot invoke a member lambda on an instance; use name-based resolution")
-
-        override fun <A : Annotation> resolveTypes(annotationType: Class<A>, member: A.() -> Array<out KClass<*>>): List<ClassDefinition> =
-            throw UnsupportedOperationException("KSP cannot invoke a member lambda on an instance; use name-based resolution")
 
         override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
             val annotation = annotationOf(annotationType.name) ?: return null
             return annotation.arguments.associate { it.name!!.asString() to normalize(it.value) }
-        }
-
-        /** Name-based class-member resolution — the portable replacement for the lambda forms above. */
-        fun resolveClass(annotationName: String, member: String): ClassDefinition? =
-            (annotationOf(annotationName)?.arguments?.firstOrNull { it.name?.asString() == member }?.value as? KSType)
-                ?.let { resolve(it) }
-
-        fun resolveClasses(annotationName: String, member: String): List<ClassDefinition> {
-            val value = annotationOf(annotationName)?.arguments?.firstOrNull { it.name?.asString() == member }?.value
-            @Suppress("UNCHECKED_CAST")
-            return (value as? List<KSType>).orEmpty().map { resolve(it) }
         }
 
         private fun annotationOf(qualifiedName: String): KSAnnotation? =
