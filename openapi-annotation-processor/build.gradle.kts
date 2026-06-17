@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
     api(project(":openapi-generator"))
+    implementation(project(":introspection:introspection-jap"))
     kaptTest(project(":openapi-annotation-processor"))
     testImplementation(project(":openapi-annotation-processor"))
 

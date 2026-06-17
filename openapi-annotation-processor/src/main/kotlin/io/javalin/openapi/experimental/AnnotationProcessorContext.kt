@@ -2,7 +2,6 @@ package io.javalin.openapi.experimental
 
 import com.sun.source.util.Trees
 import io.javalin.openapi.OpenApiName
-import io.javalin.openapi.experimental.StructureType.DEFAULT
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
 import io.javalin.openapi.experimental.processor.shared.getTypeMirror
 import io.javalin.openapi.experimental.processor.shared.getTypeMirrors
@@ -36,8 +35,8 @@ class AnnotationProcessorContext(
         }
     }
 
-    fun getClassDefinition(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition =
-        classDefinitionFrom(this, mirror, generics, type)
+    fun getClassDefinition(mirror: TypeMirror): ClassDefinition =
+        classDefinitionFrom(this, mirror)
 
     fun getClassDefinitions(mirrors: Set<TypeMirror>): Set<ClassDefinition> =
         mirrors.map { getClassDefinition(it) }.toSet()
@@ -69,10 +68,8 @@ class AnnotationProcessorContext(
 
     /* Extension methods, should be replaced by context receivers in the future */
 
-    fun TypeMirror.toClassDefinition(
-        generics: List<ClassDefinition> = emptyList(),
-        type: StructureType = DEFAULT
-    ): ClassDefinition = getClassDefinition(this, generics, type)
+    fun TypeMirror.toClassDefinition(): ClassDefinition =
+        getClassDefinition(this)
 
     fun TypeMirror.getSimpleName(): String =
         getFullName().substringAfterLast(".")

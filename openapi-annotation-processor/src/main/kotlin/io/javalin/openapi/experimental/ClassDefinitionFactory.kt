@@ -1,65 +1,30 @@
 package io.javalin.openapi.experimental
 
-import io.javalin.openapi.experimental.StructureType.ARRAY
-import io.javalin.openapi.experimental.StructureType.DEFAULT
-import io.javalin.openapi.experimental.StructureType.DICTIONARY
-import io.javalin.openapi.experimental.processor.shared.collectionType
+import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.experimental.processor.shared.mapType
 import io.javalin.openapi.experimental.processor.shared.objectType
-import javax.lang.model.type.ArrayType
-import javax.lang.model.type.DeclaredType
-import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
-import javax.lang.model.type.TypeVariable
+import io.javalin.introspection.ClassDefinition as RawType
+import io.javalin.introspection.StructureType as RawStructureType
 
-fun classDefinitionFrom(
-    context: AnnotationProcessorContext,
-    mirror: TypeMirror,
-    generics: List<ClassDefinition> = emptyList(),
-    type: StructureType = DEFAULT
-): ClassDefinition =
-    with(context) {
-        when (mirror) {
-            is TypeVariable ->
-                mirror.upperBound?.toClassDefinition(generics, type) ?: mirror.lowerBound?.toClassDefinition(generics, type)
-            is ArrayType ->
-                mirror.componentType.toClassDefinition(generics, type = ARRAY)
-            is PrimitiveType -> {
-                val boxedMirror = types.boxedClass(mirror).asType()
-                val boxedElement = types.boxedClass(mirror)
-                ClassDefinition(
-                    simpleName = context.inContext { boxedMirror.getSimpleName() },
-                    fullName = context.inContext { boxedMirror.getFullName() },
-                    generics = generics,
-                    structureType = type,
-                    handle = ClassDefinitionHandle(boxedMirror, boxedElement)
-                )
-            }
-            is DeclaredType ->
-                when {
-                    types.isAssignable(types.erasure(mirror), mapType().asType()) ->
-                        ClassDefinition(
-                            simpleName = context.inContext { mirror.getSimpleName() },
-                            fullName = context.inContext { mirror.getFullName() },
-                            generics = listOfNotNull(
-                                mirror.typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(),
-                                mirror.typeArguments.getOrElse(1) { objectType().asType() }.toClassDefinition()
-                            ),
-                            structureType = DICTIONARY,
-                            handle = ClassDefinitionHandle(mirror, mapType())
-                        )
-                    types.isAssignable(types.erasure(mirror), collectionType().asType()) ->
-                        mirror.typeArguments.getOrElse(0) { objectType().asType() }.toClassDefinition(generics, ARRAY)
-                    else ->
-                        ClassDefinition(
-                            simpleName = context.inContext { mirror.getSimpleName() },
-                            fullName = context.inContext { mirror.getFullName() },
-                            generics = mirror.typeArguments.mapNotNull { it.toClassDefinition() },
-                            structureType = type,
-                            handle = ClassDefinitionHandle(mirror, mirror.asElement())
-                        )
-                }
-            else ->
-                types.asElement(mirror)?.asType()?.toClassDefinition(generics, type)
-        } ?: objectType().asType().toClassDefinition(type = type)
+/**
+ * Resolves a [TypeMirror] into the OpenAPI [ClassDefinition] model. Structure resolution (array/map/collection/
+ * generics/primitive/typevar) is delegated to the shared [JapTypeIntrospector]; names + handle stay AP-specific.
+ */
+fun classDefinitionFrom(context: AnnotationProcessorContext, mirror: TypeMirror): ClassDefinition =
+    context.toExperimental(JapTypeIntrospector(context.types, context.env.elementUtils).introspect(mirror))
+
+private fun AnnotationProcessorContext.toExperimental(raw: RawType): ClassDefinition =
+    inContext {
+        val mirror = raw.source as TypeMirror
+        ClassDefinition(
+            simpleName = mirror.getSimpleName(),
+            fullName = mirror.getFullName(),
+            generics = raw.generics.map { toExperimental(it) },
+            structureType = StructureType.valueOf(raw.structureType.name),
+            handle = ClassDefinitionHandle(
+                mirror = mirror,
+                source = if (raw.structureType == RawStructureType.DICTIONARY) mapType() else (types.asElement(mirror) ?: objectType())
+            )
+        )
     }
