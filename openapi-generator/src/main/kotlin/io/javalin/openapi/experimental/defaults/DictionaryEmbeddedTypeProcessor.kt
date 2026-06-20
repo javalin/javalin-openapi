@@ -14,7 +14,7 @@ class DictionaryEmbeddedTypeProcessor : EmbeddedTypeProcessor {
             val additionalProperties = createObjectNode()
             val additionalType = context.type.generics[1]
 
-            context.parentContext.configuration.embeddedTypeProcessors
+            context.parentContext.embeddedTypeProcessors
                 .firstOrNull {
                     it.process(
                         context.copy(

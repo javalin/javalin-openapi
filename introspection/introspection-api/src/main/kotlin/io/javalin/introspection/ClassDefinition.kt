@@ -8,12 +8,13 @@ abstract class ClassDefinition(
     val structureType: StructureType = StructureType.DEFAULT,
 ) {
 
-    /** Backend-native token this was resolved from (`Class`, `TypeMirror`, ...), for consumers needing backend specifics. */
+    /** Backend-native token this was resolved from (`Class`, `TypeMirror`, ...); only the producing backend may cast it. */
+    @InternalIntrospectionApi
     abstract val source: Any
 
     abstract fun isEnum(): Boolean
 
-    abstract fun getEnumConstants(): List<String>?
+    abstract fun getEnumConstants(): List<EnumConstantView>?
 
     abstract fun getProperties(): List<PropertyView>
 
@@ -24,3 +25,6 @@ abstract class ClassDefinition(
 }
 
 enum class StructureType { DEFAULT, ARRAY, DICTIONARY }
+
+/** An enum constant paired with its declared annotations (e.g. for `@OpenApiName` overrides). */
+class EnumConstantView(val name: String, val annotations: Annotations)

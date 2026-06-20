@@ -7,10 +7,10 @@ import io.javalin.openapi.schema.OpenApiSchemaBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class IntrospectionSchemaGeneratorTest {
+class DynamicSchemaGeneratorTest {
 
     private val introspector = ReflectiveTypeIntrospector()
-    private val generator = IntrospectionSchemaGenerator(introspector)
+    private val generator = introspector.typeSchemaGenerator
 
     private fun JsonNode.ref(): String = path($$"$ref").asText()
     private fun JsonNode.stringArray(): List<String> = map { it.asText() }

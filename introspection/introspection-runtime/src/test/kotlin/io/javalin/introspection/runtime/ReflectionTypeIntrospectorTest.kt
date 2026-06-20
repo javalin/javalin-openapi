@@ -27,7 +27,7 @@ class ReflectionTypeIntrospectorTest {
         val props = props(Account::class.java)
 
         assertThat(props.keys).contains("id", "age", "name", "color", "address", "tags", "meta")
-        assertThat(props.getValue("id").accessors).containsExactly(Accessor.GETTER)
+        assertThat(props.getValue("id").accessor).isEqualTo(Accessor.GETTER)
 
         assertThat(props.getValue("age").type.fullName).isEqualTo("java.lang.Integer")
         assertThat(props.getValue("age").nullable).isFalse()
@@ -60,7 +60,7 @@ class ReflectionTypeIntrospectorTest {
     fun `reads enum constants raw`() {
         val color = introspector.introspect(Color::class.java)
         assertThat(color.isEnum()).isTrue()
-        assertThat(color.getEnumConstants()).containsExactly("RED", "GREEN")
+        assertThat(color.getEnumConstants()?.map { it.name }).containsExactly("RED", "GREEN")
         assertThat(introspector.introspect(Account::class.java).getEnumConstants()).isNull()
     }
 
@@ -72,8 +72,8 @@ class ReflectionTypeIntrospectorTest {
         }
 
         val props = props(FieldBag::class.java)
-        assertThat(props.getValue("name").accessors).containsExactly(Accessor.GETTER)
-        assertThat(props.getValue("tag").accessors).containsExactly(Accessor.FIELD)
+        assertThat(props.getValue("name").accessor).isEqualTo(Accessor.GETTER)
+        assertThat(props.getValue("tag").accessor).isEqualTo(Accessor.FIELD)
     }
 
     @Test

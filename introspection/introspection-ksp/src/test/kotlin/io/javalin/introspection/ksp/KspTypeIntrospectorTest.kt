@@ -50,6 +50,7 @@ class KspTypeIntrospectorTest {
             val enumConstants: List<String>?,
             val hasRef: Boolean,
             val refValue: String?,
+            val scannedLabel: Any?,
         )
 
         val snapshot = withKsp { ksp ->
@@ -59,9 +60,10 @@ class KspTypeIntrospectorTest {
             Snapshot(
                 properties = account.getProperties().associate { it.name to "${it.type.fullName}:${it.type.structureType}" },
                 isEnum = color.isEnum(),
-                enumConstants = color.getEnumConstants(),
+                enumConstants = color.getEnumConstants()?.map { it.name },
                 hasRef = account.getAnnotations().hasNamed("Ref"),
                 refValue = (account.getAnnotations().memberValues(Ref::class.java)?.getValue("value") as? ClassDefinition)?.fullName,
+                scannedLabel = account.getAnnotations().all().first { it.meta.hasNamed("MetaMarker") }.values()["label"],
             )
         }
 
@@ -84,6 +86,9 @@ class KspTypeIntrospectorTest {
         // Name-based annotation access (the only kind KSP can do): presence + class-valued member resolved to a ClassDefinition
         assertThat(snapshot.hasRef).isTrue()
         assertThat(snapshot.refValue).isEqualTo("$REF_PKG.Address")
+
+        // Enumerate-all + meta-annotation scan (the custom-annotation path) works on KSP too
+        assertThat(snapshot.scannedLabel).isEqualTo("x")
     }
 
     private companion object {

@@ -1,8 +1,11 @@
 package io.javalin.introspection.jap
 
 import io.javalin.introspection.Accessor
+import io.javalin.introspection.AnnotationView
 import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
+import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
@@ -11,7 +14,6 @@ import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.isGetterName
-import io.javalin.introspection.isSetterName
 import io.javalin.introspection.propertyName
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -39,6 +41,9 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
         require(source is TypeMirror) { "JapTypeIntrospector expects a javax.lang.model.type.TypeMirror, got ${source::class.java.name}" }
         return resolve(source)
     }
+
+    fun annotationsOf(element: Element): Annotations =
+        AnnotationsView(listOf(element))
 
     private fun resolve(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), structureType: StructureType = DEFAULT): ClassDefinition =
         when (mirror) {
@@ -90,6 +95,18 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
     private fun erasureOf(name: String): TypeMirror =
         types.erasure(elements.getTypeElement(name).asType())
 
+    private fun mirrorValues(mirror: AnnotationMirror): Map<String, Any?> {
+        val visitor = object : SimpleAnnotationValueVisitor8<Any?, Nothing?>() {
+            override fun defaultAction(value: Any?, p: Nothing?): Any? = value
+            override fun visitType(t: TypeMirror, p: Nothing?): Any = resolve(t)
+            override fun visitEnumConstant(constant: VariableElement, p: Nothing?): Any = constant.simpleName.toString()
+            override fun visitArray(values: MutableList<out AnnotationValue>, p: Nothing?): Any = values.map { it.accept(this, null) }
+            override fun visitAnnotation(nested: AnnotationMirror, p: Nothing?): Any = mirrorValues(nested)
+        }
+        return elements.getElementValuesWithDefaults(mirror).entries
+            .associate { (member, value) -> member.simpleName.toString() to value.accept(visitor, null) }
+    }
+
     private inner class Definition(
         simpleName: String,
         fullName: String,
@@ -98,18 +115,19 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
         private val mirror: TypeMirror,
     ) : ClassDefinition(simpleName, fullName, generics, structureType) {
 
+        @InternalIntrospectionApi
         override val source: Any
             get() = mirror
 
         override fun isEnum(): Boolean =
             typeElement()?.kind == ElementKind.ENUM
 
-        override fun getEnumConstants(): List<String>? =
+        override fun getEnumConstants(): List<EnumConstantView>? =
             typeElement()
                 ?.takeIf { it.kind == ElementKind.ENUM }
                 ?.enclosedElements
                 ?.filter { it.kind == ElementKind.ENUM_CONSTANT }
-                ?.map { it.simpleName.toString() }
+                ?.map { EnumConstantView(it.simpleName.toString(), AnnotationsView(listOf(it))) }
 
         override fun getAnnotations(): Annotations =
             AnnotationsView(listOfNotNull(typeElement()))
@@ -122,68 +140,45 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
                     PropertyView(
                         name = component.simpleName.toString(),
                         type = resolve(component.asType()),
-                        accessors = setOf(Accessor.GETTER, Accessor.FIELD),
+                        accessor = Accessor.RECORD_COMPONENT,
                         nullable = component.asType().nullable(),
                         visibility = Visibility.PUBLIC,
                         transient = false,
+                        source = component,
                         annotations = AnnotationsView(listOf(component)),
                     )
                 }
             }
 
-            val builders = LinkedHashMap<String, Acc>()
-            for (member in elements.getAllMembers(element)) {
+            return elements.getAllMembers(element).mapNotNull { member ->
                 when {
                     member.isGetter() -> (member as ExecutableElement).let { getter ->
-                        builders.getOrPut(propertyName(getter.simpleName.toString())) { Acc() }.apply {
-                            accessors += Accessor.GETTER
-                            getterType = getter.returnType
-                            getterVisibility = getter.visibility()
-                            sources += getter
-                        }
-                    }
-                    member.isSetter() -> (member as ExecutableElement).let { setter ->
-                        builders.getOrPut(propertyName(setter.simpleName.toString())) { Acc() }.apply {
-                            accessors += Accessor.SETTER
-                            setterType = setter.parameters[0].asType()
-                            sources += setter
-                        }
+                        PropertyView(
+                            name = propertyName(getter.simpleName.toString()),
+                            type = resolve(getter.returnType),
+                            accessor = Accessor.GETTER,
+                            nullable = getter.returnType.nullable(),
+                            visibility = getter.visibility(),
+                            transient = false,
+                            source = getter,
+                            annotations = AnnotationsView(listOf(getter)),
+                        )
                     }
                     member.isInstanceField() -> (member as VariableElement).let { field ->
-                        builders.getOrPut(field.simpleName.toString()) { Acc() }.apply {
-                            accessors += Accessor.FIELD
-                            fieldType = field.asType()
-                            fieldVisibility = field.visibility()
-                            transient = Modifier.TRANSIENT in field.modifiers
-                            sources += field
-                        }
+                        PropertyView(
+                            name = field.simpleName.toString(),
+                            type = resolve(field.asType()),
+                            accessor = Accessor.FIELD,
+                            nullable = field.asType().nullable(),
+                            visibility = field.visibility(),
+                            transient = Modifier.TRANSIENT in field.modifiers,
+                            source = field,
+                            annotations = AnnotationsView(listOf(field)),
+                        )
                     }
+                    else -> null
                 }
             }
-
-            return builders.map { (name, acc) ->
-                val type = acc.getterType ?: acc.fieldType ?: acc.setterType!!
-                PropertyView(
-                    name = name,
-                    type = resolve(type),
-                    accessors = acc.accessors,
-                    nullable = type.nullable(),
-                    visibility = acc.fieldVisibility ?: acc.getterVisibility ?: Visibility.PUBLIC,
-                    transient = acc.transient,
-                    annotations = AnnotationsView(acc.sources),
-                )
-            }
-        }
-
-        private inner class Acc {
-            val accessors = mutableSetOf<Accessor>()
-            val sources = mutableListOf<Element>()
-            var getterType: TypeMirror? = null
-            var fieldType: TypeMirror? = null
-            var setterType: TypeMirror? = null
-            var getterVisibility: Visibility? = null
-            var fieldVisibility: Visibility? = null
-            var transient = false
         }
 
         private fun typeElement(): TypeElement? =
@@ -198,13 +193,6 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
             if (parameters.isNotEmpty() || enclosingElement?.toString() == "java.lang.Object") return false
             if (returnType.kind == TypeKind.VOID) return false
             return isGetterName(simpleName.toString())
-        }
-
-        private fun Element.isSetter(): Boolean {
-            if (kind != ElementKind.METHOD || this !is ExecutableElement) return false
-            if (Modifier.PUBLIC !in modifiers || Modifier.STATIC in modifiers) return false
-            if (parameters.size != 1 || enclosingElement?.toString() == "java.lang.Object") return false
-            return isSetterName(simpleName.toString())
         }
 
         private fun Element.isInstanceField(): Boolean =
@@ -224,25 +212,38 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
         override fun hasNamed(simpleName: String): Boolean =
             sources.any { source -> source.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } }
 
-        override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
-            val mirror = sources.firstNotNullOfOrNull { source ->
-                source.annotationMirrors.firstOrNull {
-                    (it.annotationType.asElement() as? TypeElement)?.qualifiedName?.contentEquals(annotationType.name) == true
-                }
-            } ?: return null
+        override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
+            sources.firstNotNullOfOrNull { source -> source.annotationMirrors.firstOrNull { it.named(annotationType.name) } }
+                ?.let { mirrorValues(it) }
 
-            val visitor = object : SimpleAnnotationValueVisitor8<Any?, Nothing?>() {
-                override fun defaultAction(value: Any?, p: Nothing?): Any? = value
-                override fun visitType(t: TypeMirror, p: Nothing?): Any = resolve(t)
-                override fun visitEnumConstant(constant: VariableElement, p: Nothing?): Any = constant.simpleName.toString()
-                override fun visitArray(values: MutableList<out AnnotationValue>, p: Nothing?): Any = values.map { it.accept(this, null) }
-                override fun visitAnnotation(nested: AnnotationMirror, p: Nothing?): Any =
-                    elements.getElementValuesWithDefaults(nested).entries
-                        .associate { (member, value) -> member.simpleName.toString() to value.accept(this, null) }
-            }
-
-            return elements.getElementValuesWithDefaults(mirror).entries
-                .associate { (executable, value) -> executable.simpleName.toString() to value.accept(visitor, null) }
+        override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> {
+            val mirrors = sources.flatMap { it.annotationMirrors }
+            val direct = mirrors.filter { it.named(annotationType.name) }.map { mirrorValues(it) }
+            // javac wraps repeated annotations in their @Repeatable container; unwrap its `value` array
+            val containerName = annotationType.getAnnotation(java.lang.annotation.Repeatable::class.java)?.value?.java?.canonicalName
+            val repeated = containerName
+                ?.let { name -> mirrors.firstOrNull { it.named(name) } }
+                ?.let { mirrorValues(it)["value"] as? List<*> }
+                ?.filterIsInstance<Map<String, Any?>>()
+                .orEmpty()
+            return direct + repeated
         }
+
+        override fun all(): List<AnnotationView> =
+            sources.flatMap { it.annotationMirrors }.distinctBy { it.annotationType.asElement() }.map { JapAnnotationView(it) }
+
+        private fun AnnotationMirror.named(qualifiedName: String): Boolean =
+            (annotationType.asElement() as? TypeElement)?.qualifiedName?.contentEquals(qualifiedName) == true
+    }
+
+    private inner class JapAnnotationView(private val mirror: AnnotationMirror) : AnnotationView {
+        override val qualifiedName: String
+            get() = (mirror.annotationType.asElement() as? TypeElement)?.qualifiedName?.toString() ?: simpleName
+        override val simpleName: String
+            get() = mirror.annotationType.asElement().simpleName.toString()
+        override val meta: Annotations
+            get() = AnnotationsView(listOf(mirror.annotationType.asElement()))
+        override fun values(): Map<String, Any?> =
+            mirrorValues(mirror)
     }
 }

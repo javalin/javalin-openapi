@@ -3,7 +3,6 @@ package io.javalin.openapi.experimental.processor.shared
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
-import javax.lang.model.element.VariableElement
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.MirroredTypesException
 import javax.lang.model.type.TypeMirror
@@ -22,12 +21,6 @@ fun Element.hasAnnotation(simpleName: String): Boolean =
 
 fun Element.getFullName(): String =
     toString()
-
-fun Element.toSimpleName(): String =
-    simpleName.toString()
-
-fun VariableElement.toSimpleName(): String =
-    simpleName.toString()
 
 fun <A : Annotation> A.getTypeMirrors(supplier: A.() -> Array<out KClass<*>>): Set<TypeMirror> =
     try {

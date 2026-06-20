@@ -1,5 +1,6 @@
 package io.javalin.openapi.experimental
 
+import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.experimental.processor.shared.mapType
 import io.javalin.openapi.experimental.processor.shared.objectType
@@ -14,7 +15,8 @@ import io.javalin.introspection.StructureType as RawStructureType
 fun classDefinitionFrom(context: AnnotationProcessorContext, mirror: TypeMirror): ClassDefinition =
     context.toExperimental(JapTypeIntrospector(context.types, context.env.elementUtils).introspect(mirror))
 
-private fun AnnotationProcessorContext.toExperimental(raw: RawType): ClassDefinition =
+@OptIn(InternalIntrospectionApi::class)
+internal fun AnnotationProcessorContext.toExperimental(raw: RawType): ClassDefinition =
     inContext {
         val mirror = raw.source as TypeMirror
         ClassDefinition(

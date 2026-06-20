@@ -1,5 +1,6 @@
 package io.javalin.openapi.dynamic
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.javalin.openapi.dynamic.fixtures.Account
 import io.javalin.openapi.dynamic.fixtures.Address
 import io.javalin.openapi.dynamic.fixtures.FieldsDto
@@ -7,17 +8,18 @@ import io.javalin.openapi.dynamic.fixtures.Role
 import io.javalin.openapi.dynamic.fixtures.SnakeCaseDto
 import io.javalin.openapi.dynamic.fixtures.TransientDto
 import io.javalin.openapi.experimental.StructureType
-import io.javalin.openapi.experimental.processor.generators.Property
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class ReflectiveTypeIntrospectorTest {
 
     private val introspector = ReflectiveTypeIntrospector()
 
-    private fun accountProperties(): Map<String, Property> =
-        introspector.properties(introspector.introspect(Account::class.java)).associateBy { it.name }
+    private fun schemaOf(type: Class<*>): JsonNode =
+        introspector.typeSchemaGenerator.createTypeSchema(introspector.introspect(type)).json
+
+    private fun propertyNames(type: Class<*>): List<String> =
+        schemaOf(type).path("properties").fieldNames().asSequence().toList()
 
     @Test
     fun `resolves a class into the shared ClassDefinition model`() {
@@ -29,81 +31,53 @@ class ReflectiveTypeIntrospectorTest {
     }
 
     @Test
-    fun `lists scalar properties with required flags, renames, and ignores`() {
-        val props = accountProperties()
+    fun `applies renames, ignores, required flags and descriptions through the shared generator`() {
+        val account = schemaOf(Account::class.java)
+        val properties = account.path("properties")
 
-        assertThat(props.keys).contains("id", "age", "name", "e_mail")
-        assertThat(props.keys).doesNotContain("email", "secret", "class")
+        assertThat(properties.fieldNames().asSequence().toList()).contains("id", "age", "name", "e_mail")
+        assertThat(properties.has("email")).isFalse()
+        assertThat(properties.has("secret")).isFalse()
+        assertThat(properties.has("class")).isFalse()
 
-        assertThat(props.getValue("id").type.fullName).isEqualTo("java.lang.String")
-        assertThat(props.getValue("id").required).isTrue() // @NotNull
-
-        assertThat(props.getValue("age").type.fullName).isEqualTo("java.lang.Integer") // boxed primitive
-        assertThat(props.getValue("age").required).isTrue() // primitive ⇒ non-null
-
-        assertThat(props.getValue("name").required).isFalse()
+        assertThat(account.path("required").map { it.asText() }).containsExactlyInAnyOrder("id", "age")
+        assertThat(properties.path("label").path("description").asText()).isEqualTo("Human readable label")
     }
 
     @Test
-    fun `resolves collections and maps into structure types`() {
-        val props = accountProperties()
+    fun `resolves collections, maps and nested objects`() {
+        val properties = schemaOf(Account::class.java).path("properties")
 
-        val tags = props.getValue("tags").type
-        assertThat(tags.structureType).isEqualTo(StructureType.ARRAY)
-        assertThat(tags.fullName).isEqualTo("java.lang.String")
+        assertThat(properties.path("tags").path("type").asText()).isEqualTo("array")
+        assertThat(properties.path("tags").path("items").path("type").asText()).isEqualTo("string")
+        assertThat(properties.path("meta").path("type").asText()).isEqualTo("object")
+        assertThat(properties.path("meta").path("additionalProperties").path("type").asText()).isEqualTo("integer")
+        assertThat(properties.path("address").path($$"$ref").asText()).isEqualTo("#/components/schemas/Address")
 
-        val meta = props.getValue("meta").type
-        assertThat(meta.structureType).isEqualTo(StructureType.DICTIONARY)
-        assertThat(meta.generics.map { it.fullName }).containsExactly("java.lang.String", "java.lang.Integer")
-    }
-
-    @Test
-    fun `descends into nested object types`() {
-        val address = accountProperties().getValue("address").type
-        assertThat(address.fullName).isEqualTo(Address::class.java.name)
-
-        val addressProperties = introspector.properties(address).associateBy { it.name }
-        assertThat(addressProperties.keys).containsExactlyInAnyOrder("city", "zip")
+        assertThat(propertyNames(Address::class.java)).containsExactlyInAnyOrder("city", "zip")
     }
 
     @Test
     fun `reads enum constants with renames`() {
-        val role = accountProperties().getValue("role").type
+        assertThat(introspector.isEnum(introspector.introspect(Role::class.java))).isTrue()
 
-        assertThat(introspector.isEnum(role)).isTrue()
-        assertThat(introspector.enumConstants(role)).containsExactly("ADMIN", "regular_user")
-        assertThat(introspector.enumConstants(introspector.introspect(Role::class.java)))
-            .containsExactly("ADMIN", "regular_user")
-    }
-
-    @Test
-    fun `captures OpenApiDescription into property extra`() {
-        assertThat(accountProperties().getValue("label").extra["description"])
-            .isEqualTo("Human readable label")
+        val role = schemaOf(Role::class.java)
+        assertThat(role.path("type").asText()).isEqualTo("string")
+        assertThat(role.path("enum").map { it.asText() }).containsExactly("ADMIN", "regular_user")
     }
 
     @Test
     fun `applies the configured naming strategy`() {
-        val props = introspector.properties(introspector.introspect(SnakeCaseDto::class.java)).associateBy { it.name }
-        assertThat(props.keys).contains("first_name")
+        assertThat(propertyNames(SnakeCaseDto::class.java)).contains("first_name")
     }
 
     @Test
     fun `reads fields and honors visibility when OpenApiByFields is present`() {
-        val props = introspector.properties(introspector.introspect(FieldsDto::class.java)).associateBy { it.name }
-        assertThat(props.keys).containsExactly("publicField")
+        assertThat(propertyNames(FieldsDto::class.java)).containsExactly("publicField")
     }
 
     @Test
     fun `skips transient fields under OpenApiByFields`() {
-        val props = introspector.properties(introspector.introspect(TransientDto::class.java)).associateBy { it.name }
-        assertThat(props.keys).containsExactly("kept")
-    }
-
-    @Test
-    fun `rejects non-reflection native tokens`() {
-        assertThrows<IllegalArgumentException> {
-            introspector.introspect("not a type" as Any)
-        }
+        assertThat(propertyNames(TransientDto::class.java)).containsExactly("kept")
     }
 }

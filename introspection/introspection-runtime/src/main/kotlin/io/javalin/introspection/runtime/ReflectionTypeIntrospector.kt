@@ -1,8 +1,11 @@
 package io.javalin.introspection.runtime
 
 import io.javalin.introspection.Accessor
+import io.javalin.introspection.AnnotationView
 import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
+import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
@@ -11,7 +14,6 @@ import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.isGetterName
-import io.javalin.introspection.isSetterName
 import io.javalin.introspection.propertyName
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Array as JavaArray
@@ -89,98 +91,71 @@ private class ReflectionClassDefinition(
     private val erasure: Class<*>,
 ) : ClassDefinition(simpleName, fullName, generics, structureType) {
 
+    @InternalIntrospectionApi
     override val source: Any
         get() = erasure
 
     override fun isEnum(): Boolean =
         erasure.isEnum
 
-    override fun getEnumConstants(): List<String>? =
-        erasure.takeIf { it.isEnum }?.enumConstants?.map { (it as Enum<*>).name }
+    override fun getEnumConstants(): List<EnumConstantView>? =
+        erasure.takeIf { it.isEnum }?.enumConstants?.map {
+            val name = (it as Enum<*>).name
+            EnumConstantView(name, ReflectionAnnotations(listOf(erasure.getField(name))))
+        }
 
     override fun getProperties(): List<PropertyView> =
-        properties(erasure)
+        collectMembers(erasure).map { member ->
+            PropertyView(
+                name = if (member.accessor == Accessor.GETTER) propertyName(member.name) else member.name,
+                type = reflect(member.genericType),
+                accessor = member.accessor,
+                nullable = (member.genericType as? Class<*>)?.isPrimitive != true,
+                visibility = member.visibility,
+                transient = member.transient,
+                source = member.source,
+                annotations = ReflectionAnnotations(member.sources),
+            )
+        }
 
     override fun getAnnotations(): Annotations =
         ReflectionAnnotations(listOf(erasure))
 }
 
-/** Group a class's getters, setters and fields into one logical [PropertyView] per name. */
-private fun properties(clazz: Class<*>): List<PropertyView> {
+private fun collectMembers(clazz: Class<*>): List<Member> {
     if (clazz.isRecord) {
         return clazz.recordComponents.map { component ->
             val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
-            PropertyView(
-                name = component.name,
-                type = reflect(component.genericType),
-                accessors = setOf(Accessor.GETTER, Accessor.FIELD),
-                nullable = (component.genericType as? Class<*>)?.isPrimitive != true,
-                visibility = Visibility.PUBLIC,
-                transient = false,
-                annotations = ReflectionAnnotations(listOfNotNull(component.accessor, backingField, component)),
-            )
+            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, Visibility.PUBLIC, false, component.accessor, listOfNotNull(component.accessor, backingField, component))
         }
     }
 
-    val builders = LinkedHashMap<String, PropertyBuilder>()
+    val members = mutableListOf<Member>()
 
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
-        if (method.declaringClass == Any::class.java) continue
-        when {
-            method.parameterCount == 0 && method.returnType != Void.TYPE && isGetterName(method.name) ->
-                builders.getOrPut(propertyName(method.name)) { PropertyBuilder() }.apply {
-                    accessors += Accessor.GETTER
-                    getterType = method.genericReturnType
-                    getterVisibility = visibilityOf(method.modifiers)
-                    sources += method
-                }
-            method.parameterCount == 1 && isSetterName(method.name) ->
-                builders.getOrPut(propertyName(method.name)) { PropertyBuilder() }.apply {
-                    accessors += Accessor.SETTER
-                    setterType = method.genericParameterTypes[0]
-                    sources += method
-                }
-        }
+        if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
+        if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
+        members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {
         if (Modifier.isStatic(field.modifiers)) continue
-        builders.getOrPut(field.name) { PropertyBuilder() }.apply {
-            accessors += Accessor.FIELD
-            fieldType = field.genericType
-            fieldVisibility = visibilityOf(field.modifiers)
-            transient = Modifier.isTransient(field.modifiers)
-            sources += field
-        }
+        members += Member(field.name, field.genericType, Accessor.FIELD, visibilityOf(field.modifiers), Modifier.isTransient(field.modifiers), field, listOf(field))
     }
 
-    return builders.map { (name, builder) -> builder.build(name) }
+    return members
 }
 
-private class PropertyBuilder {
-    val accessors = mutableSetOf<Accessor>()
-    val sources = mutableListOf<AnnotatedElement>()
-    var getterType: Type? = null
-    var fieldType: Type? = null
-    var setterType: Type? = null
-    var getterVisibility: Visibility? = null
-    var fieldVisibility: Visibility? = null
-    var transient = false
-
-    fun build(name: String): PropertyView {
-        val type = getterType ?: fieldType ?: setterType!!
-        return PropertyView(
-            name = name,
-            type = reflect(type),
-            accessors = accessors,
-            nullable = (type as? Class<*>)?.isPrimitive != true,
-            visibility = fieldVisibility ?: getterVisibility ?: Visibility.PUBLIC,
-            transient = transient,
-            annotations = ReflectionAnnotations(sources),
-        )
-    }
-}
+private class Member(
+    val name: String,
+    val genericType: Type,
+    val accessor: Accessor,
+    val visibility: Visibility,
+    val transient: Boolean,
+    val source: AnnotatedElement,
+    val sources: List<AnnotatedElement>,
+)
 
 private fun visibilityOf(modifiers: Int): Visibility =
     when {
@@ -218,17 +193,30 @@ private class ReflectionAnnotations(private val sources: List<AnnotatedElement>)
     override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
         sources.firstNotNullOfOrNull { it.getAnnotation(annotationType) }?.let { annotationToMap(it) }
 
-    private fun annotationToMap(annotation: Annotation): Map<String, Any?> =
-        annotation.annotationClass.java.declaredMethods.associate { it.name to normalize(it.invoke(annotation)) }
+    override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> =
+        sources.flatMap { it.getAnnotationsByType(annotationType).toList() }.map { annotationToMap(it) }
 
-    private fun normalize(value: Any?): Any? =
-        when {
-            value is Class<*> -> reflect(value)
-            value is Enum<*> -> value.name
-            value is Annotation -> annotationToMap(value)
-            value is Array<*> -> value.map { normalize(it) }
-            value != null && value::class.java.isArray ->
-                (0 until JavaArray.getLength(value)).map { normalize(JavaArray.get(value, it)) }
-            else -> value
-        }
+    override fun all(): List<AnnotationView> =
+        sources.flatMap { it.annotations.toList() }.distinctBy { it.annotationClass }.map { ReflectionAnnotationView(it) }
 }
+
+private class ReflectionAnnotationView(private val annotation: Annotation) : AnnotationView {
+    override val qualifiedName: String get() = annotation.annotationClass.java.name
+    override val simpleName: String get() = annotation.annotationClass.java.simpleName
+    override val meta: Annotations get() = ReflectionAnnotations(listOf(annotation.annotationClass.java))
+    override fun values(): Map<String, Any?> = annotationToMap(annotation)
+}
+
+private fun annotationToMap(annotation: Annotation): Map<String, Any?> =
+    annotation.annotationClass.java.declaredMethods.associate { it.name to normalize(it.invoke(annotation)) }
+
+private fun normalize(value: Any?): Any? =
+    when {
+        value is Class<*> -> reflect(value)
+        value is Enum<*> -> value.name
+        value is Annotation -> annotationToMap(value)
+        value is Array<*> -> value.map { normalize(it) }
+        value != null && value::class.java.isArray ->
+            (0 until JavaArray.getLength(value)).map { normalize(JavaArray.get(value, it)) }
+        else -> value
+    }

@@ -23,6 +23,14 @@ fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
         objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
     )
 
+fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
+    ExampleProperty(
+        name = (this["name"] as? String)?.takeIf { it != NULL_STRING },
+        value = (this["value"] as? String)?.takeIf { it != NULL_STRING },
+        raw = (this["raw"] as? String)?.takeIf { it != NULL_STRING },
+        objects = (this["objects"] as? List<*>)?.filterIsInstance<Map<String, Any?>>()?.map { it.toExampleProperty() }?.takeIf { it.isNotEmpty() },
+    )
+
 object ExampleGenerator {
 
     data class GeneratorResult(

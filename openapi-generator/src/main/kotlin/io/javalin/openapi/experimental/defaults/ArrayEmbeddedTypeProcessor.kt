@@ -1,6 +1,5 @@
 package io.javalin.openapi.experimental.defaults
 
-import com.fasterxml.jackson.databind.JsonNode
 import io.javalin.openapi.experimental.EmbeddedTypeProcessor
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
 import io.javalin.openapi.experimental.StructureType.ARRAY

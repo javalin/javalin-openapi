@@ -2,6 +2,7 @@ description = "Javalin OpenAPI Generator | JSON schema generation for OpenAPI do
 
 dependencies {
     api(project(":openapi-specification"))
+    api(project(":introspection:introspection-api"))
     api(libs.jackson.databind)
     api(libs.jackson.module.kotlin)
 

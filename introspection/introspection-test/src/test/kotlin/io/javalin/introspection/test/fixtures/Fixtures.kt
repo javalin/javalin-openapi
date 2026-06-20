@@ -51,6 +51,14 @@ annotation class Outer(val meta: Meta)
 @Outer(Meta("x"))
 class Wrapped
 
+annotation class MetaMarker
+
+@MetaMarker
+annotation class Tagged(val label: String)
+
+@Tagged("x")
+class Scanned
+
 annotation class Flags(val ints: IntArray)
 
 @Flags(ints = [1, 2, 3])

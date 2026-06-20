@@ -12,8 +12,11 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Modifier
 import io.javalin.introspection.Accessor
+import io.javalin.introspection.AnnotationView
 import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
+import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
@@ -104,19 +107,20 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
         private val declaration: KSClassDeclaration?
             get() = type.declaration as? KSClassDeclaration
 
+        @InternalIntrospectionApi
         override val source: Any
             get() = type
 
         override fun isEnum(): Boolean =
             declaration?.classKind == ClassKind.ENUM_CLASS
 
-        override fun getEnumConstants(): List<String>? =
+        override fun getEnumConstants(): List<EnumConstantView>? =
             declaration
                 ?.takeIf { it.classKind == ClassKind.ENUM_CLASS }
                 ?.declarations
                 ?.filterIsInstance<KSClassDeclaration>()
                 ?.filter { it.classKind == ClassKind.ENUM_ENTRY }
-                ?.map { it.simpleName.asString() }
+                ?.map { EnumConstantView(it.simpleName.asString(), KspAnnotations(it)) }
                 ?.toList()
 
         override fun getAnnotations(): Annotations =
@@ -129,14 +133,11 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
                 PropertyView(
                     name = property.simpleName.asString(),
                     type = resolve(propertyType),
-                    accessors = buildSet {
-                        add(Accessor.GETTER)
-                        add(Accessor.FIELD)
-                        if (property.isMutable) add(Accessor.SETTER)
-                    },
+                    accessor = Accessor.GETTER,
                     nullable = propertyType.isMarkedNullable,
                     visibility = visibilityOf(property.getVisibility()),
                     transient = Modifier.JAVA_TRANSIENT in property.modifiers,
+                    source = property,
                     annotations = KspAnnotations(property),
                 )
             }.toList()
@@ -148,23 +149,43 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
         override fun hasNamed(simpleName: String): Boolean =
             element?.annotations?.any { it.shortName.asString() == simpleName } == true
 
-        override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? {
-            val annotation = annotationOf(annotationType.name) ?: return null
-            return annotation.arguments.associate { it.name!!.asString() to normalize(it.value) }
-        }
+        override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
+            element?.annotations
+                ?.firstOrNull { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationType.name }
+                ?.let { argumentValues(it) }
 
-        private fun annotationOf(qualifiedName: String): KSAnnotation? =
-            element?.annotations?.firstOrNull { it.annotationType.resolve().declaration.qualifiedName?.asString() == qualifiedName }
+        override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> =
+            element?.annotations
+                ?.filter { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationType.name }
+                ?.map { argumentValues(it) }
+                ?.toList() ?: emptyList()
 
-        private fun normalize(value: Any?): Any? =
-            when (value) {
-                is KSType -> resolve(value)
-                is KSAnnotation -> value.arguments.associate { it.name!!.asString() to normalize(it.value) }
-                is List<*> -> value.map { normalize(it) }
-                is KSDeclaration -> value.simpleName.asString()
-                else -> value
-            }
+        override fun all(): List<AnnotationView> =
+            element?.annotations?.map { KspAnnotationView(it) }?.toList() ?: emptyList()
     }
+
+    private inner class KspAnnotationView(private val annotation: KSAnnotation) : AnnotationView {
+        override val qualifiedName: String
+            get() = annotation.annotationType.resolve().declaration.qualifiedName?.asString() ?: simpleName
+        override val simpleName: String
+            get() = annotation.shortName.asString()
+        override val meta: Annotations
+            get() = KspAnnotations(annotation.annotationType.resolve().declaration)
+        override fun values(): Map<String, Any?> =
+            argumentValues(annotation)
+    }
+
+    private fun argumentValues(annotation: KSAnnotation): Map<String, Any?> =
+        annotation.arguments.associate { it.name!!.asString() to normalize(it.value) }
+
+    private fun normalize(value: Any?): Any? =
+        when (value) {
+            is KSType -> resolve(value)
+            is KSAnnotation -> argumentValues(value)
+            is List<*> -> value.map { normalize(it) }
+            is KSDeclaration -> value.simpleName.asString()
+            else -> value
+        }
 
     private fun visibilityOf(visibility: KspVisibility): Visibility =
         when (visibility) {

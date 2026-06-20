@@ -1,6 +1,5 @@
 package io.javalin.openapi.dynamic.hook
 
-import io.javalin.openapi.dynamic.IntrospectionSchemaGenerator
 import io.javalin.openapi.dynamic.ReflectiveTypeIntrospector
 import io.javalin.openapi.schema.MediaTypeBuilder
 import io.javalin.openapi.schema.OperationBuilder
@@ -19,7 +18,7 @@ class OpenApiMetadata(val configure: OperationBuilder.() -> Unit) : EndpointMeta
 }
 
 internal val dynamicIntrospector = ReflectiveTypeIntrospector()
-internal val dynamicSchemaGenerator = IntrospectionSchemaGenerator(dynamicIntrospector)
+internal val dynamicSchemaGenerator = dynamicIntrospector.typeSchemaGenerator
 
 /** Resolve a DTO [type] to a schema `$ref` inside the content DSL, reusing the reflection engine. */
 fun MediaTypeBuilder.schema(type: Class<*>): Unit =

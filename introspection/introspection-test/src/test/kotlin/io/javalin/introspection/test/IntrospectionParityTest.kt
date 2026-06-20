@@ -1,6 +1,7 @@
 package io.javalin.introspection.test
 
 import io.javalin.introspection.Accessor
+import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.Visibility
@@ -18,6 +19,7 @@ import io.javalin.introspection.test.fixtures.Outer
 import io.javalin.introspection.test.fixtures.Point
 import io.javalin.introspection.test.fixtures.Ref
 import io.javalin.introspection.test.fixtures.Refs
+import io.javalin.introspection.test.fixtures.Scanned
 import io.javalin.introspection.test.fixtures.Tricky
 import io.javalin.introspection.test.fixtures.WithTransient
 import io.javalin.introspection.test.fixtures.Wrapped
@@ -50,7 +52,9 @@ class IntrospectionParityTest {
     @Test
     fun `transient fields are flagged on both backends`() {
         assertParity(WithTransient::class)
-        val transientByName = runtime.introspect(WithTransient::class.java).getProperties().associate { it.name to it.transient }
+        val transientByName = runtime.introspect(WithTransient::class.java).getProperties()
+            .filter { it.accessor == Accessor.FIELD }
+            .associate { it.name to it.transient }
         assertThat(transientByName.getValue("skipped")).isTrue()
         assertThat(transientByName.getValue("kept")).isFalse()
     }
@@ -64,13 +68,36 @@ class IntrospectionParityTest {
 
     @Test
     fun `property-level annotations resolve identically across backends`() {
-        val runtimeMarked = runtime.introspect(Annotated::class.java).getProperties().associate { it.name to it.annotations.hasNamed("Marker") }
+        val runtimeMarked = runtime.introspect(Annotated::class.java).getProperties()
+            .filter { it.accessor == Accessor.GETTER }
+            .associate { it.name to it.annotations.hasNamed("Marker") }
         val processedMarked = AnnotationProcessing.introspect(Annotated::class) {
-            it.getProperties().associate { p -> p.name to p.annotations.hasNamed("Marker") }
+            it.getProperties().filter { p -> p.accessor == Accessor.GETTER }
+                .associate { p -> p.name to p.annotations.hasNamed("Marker") }
         }
         assertThat(processedMarked).isEqualTo(runtimeMarked)
         assertThat(runtimeMarked.getValue("tagged")).isTrue()
         assertThat(runtimeMarked.getValue("plain")).isFalse()
+    }
+
+    @Test
+    fun `annotation enumeration with meta-annotations matches across backends`() {
+        fun scan(annotations: Annotations): Pair<String, Any?> {
+            val tagged = annotations.all().first { it.meta.hasNamed("MetaMarker") }
+            return tagged.simpleName to tagged.values()["label"]
+        }
+        val runtimeScan = scan(runtime.introspect(Scanned::class.java).getAnnotations())
+        val processedScan = AnnotationProcessing.introspect(Scanned::class) { scan(it.getAnnotations()) }
+        assertThat(processedScan).isEqualTo(runtimeScan).isEqualTo("Tagged" to "x")
+    }
+
+    @Test
+    fun `repeatable annotations enumerate identically across backends`() {
+        fun notes(annotations: Annotations) = annotations.memberValuesList(Note::class.java).map { it["value"] }
+        val runtimeNotes = notes(runtime.introspect(Noted::class.java).getAnnotations())
+        val processedNotes = AnnotationProcessing.introspect(Noted::class) { notes(it.getAnnotations()) }
+        assertThat(processedNotes).isEqualTo(runtimeNotes)
+        assertThat(runtimeNotes).containsExactlyInAnyOrder("a", "b")
     }
 
     @Test
@@ -126,7 +153,7 @@ private data class PropertyShape(
     val typeFullName: String,
     val typeStructure: StructureType,
     val typeGenerics: List<String>,
-    val accessors: Set<Accessor>,
+    val accessor: Accessor,
     val nullable: Boolean,
     val visibility: Visibility,
     val transient: Boolean,
@@ -139,8 +166,8 @@ private fun ClassDefinition.toShape(): TypeShape =
         simpleName = simpleName,
         structure = structureType,
         isEnum = isEnum(),
-        enumConstants = getEnumConstants()?.sorted(),
+        enumConstants = getEnumConstants()?.map { it.name }?.sorted(),
         properties = if (isEnum()) emptyList() else getProperties()
-            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessors, it.nullable, it.visibility, it.transient) }
-            .sortedBy { it.name },
+            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
+            .sortedBy { "${it.accessor}:${it.name}" },
     )

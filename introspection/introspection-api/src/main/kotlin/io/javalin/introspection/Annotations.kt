@@ -16,6 +16,12 @@ interface Annotations {
      */
     fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>?
 
+    /** Each occurrence of a repeatable annotation, as a member value-map. */
+    fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>>
+
+    /** Every annotation present, as neutral views — for scanning by meta-annotation without depending on the annotation types. */
+    fun all(): List<AnnotationView>
+
     /** True if an annotation of [annotationType] is present. */
     fun has(annotationType: Class<out Annotation>): Boolean =
         memberValues(annotationType) != null
@@ -27,4 +33,16 @@ interface Annotations {
     /** Resolve a class-array-valued member to [ClassDefinition]s. */
     fun resolveClasses(annotationType: Class<out Annotation>, member: String): List<ClassDefinition> =
         (memberValues(annotationType)?.get(member) as? List<*>)?.filterIsInstance<ClassDefinition>() ?: emptyList()
+}
+
+interface AnnotationView {
+
+    val qualifiedName: String
+
+    val simpleName: String
+
+    /** Annotations on this annotation's own type — e.g. to detect `@CustomAnnotation`. */
+    val meta: Annotations
+
+    fun values(): Map<String, Any?>
 }
