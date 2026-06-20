@@ -1,7 +1,7 @@
 package io.javalin.openapi.schema
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
@@ -711,7 +711,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should resolve component references`() {
             val schema = builder()
 
-            val addressDef = ClassDefinition(simpleName = "Address", fullName = "com.example.Address")
+            val addressDef = OpenApiType(simpleName = "Address", fullName = "com.example.Address")
             val addressSchema = ResultScheme(createObjectNode().apply {
                 put("type", "object")
                 set<JsonNode>("properties", createObjectNode().apply {
@@ -748,8 +748,8 @@ internal class OpenApiSchemaBuilderTest {
         fun `should resolve transitive component references`() {
             val schema = builder()
 
-            val userDef = ClassDefinition(simpleName = "User", fullName = "com.example.User")
-            val addressDef = ClassDefinition(simpleName = "Address", fullName = "com.example.Address")
+            val userDef = OpenApiType(simpleName = "User", fullName = "com.example.User")
+            val addressDef = OpenApiType(simpleName = "Address", fullName = "com.example.Address")
 
             // User references Address
             val userSchema = ResultScheme(createObjectNode().apply {
@@ -798,7 +798,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should skip java-lang-Object references`() {
             val schema = builder()
 
-            val objectDef = ClassDefinition(simpleName = "Object", fullName = "java.lang.Object")
+            val objectDef = OpenApiType(simpleName = "Object", fullName = "java.lang.Object")
 
             schema.path("/test").operation("get") {
                 responses {
@@ -826,8 +826,8 @@ internal class OpenApiSchemaBuilderTest {
         fun `should resolve circular references between types`() {
             val schema = builder()
 
-            val aDef = ClassDefinition(simpleName = "A", fullName = "com.example.A")
-            val bDef = ClassDefinition(simpleName = "B", fullName = "com.example.B")
+            val aDef = OpenApiType(simpleName = "A", fullName = "com.example.A")
+            val bDef = OpenApiType(simpleName = "B", fullName = "com.example.B")
 
             schema.path("/test").operation("get") {
                 responses {
@@ -861,7 +861,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should resolve deep transitive chain`() {
             val schema = builder()
 
-            val aDef = ClassDefinition(simpleName = "A", fullName = "com.example.A")
+            val aDef = OpenApiType(simpleName = "A", fullName = "com.example.A")
 
             schema.path("/test").operation("get") {
                 responses {
@@ -880,8 +880,8 @@ internal class OpenApiSchemaBuilderTest {
             }
 
             // A -> B -> C (chain of 3)
-            val bDef = ClassDefinition(simpleName = "B", fullName = "com.example.B")
-            val cDef = ClassDefinition(simpleName = "C", fullName = "com.example.C")
+            val bDef = OpenApiType(simpleName = "B", fullName = "com.example.B")
+            val cDef = OpenApiType(simpleName = "C", fullName = "com.example.C")
 
             schema.resolveComponentReferences { type ->
                 when (type.fullName) {
@@ -1168,7 +1168,7 @@ internal class OpenApiSchemaBuilderTest {
 
             @Test
             fun `should use content wrapper for parameter with complex type references`() {
-                val sorterDef = ClassDefinition(simpleName = "Sorter", fullName = "com.example.Sorter")
+                val sorterDef = OpenApiType(simpleName = "Sorter", fullName = "com.example.Sorter")
                 val schema = builder()
                 schema.path("/users").operation("get") {
                     parameters {

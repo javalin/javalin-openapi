@@ -17,20 +17,20 @@ interface SchemaGenerationContext {
     val simpleTypeMappings: Map<String, SimpleType>
     val embeddedTypeProcessors: List<EmbeddedTypeProcessor>
 
-    fun isEnum(type: ClassDefinition): Boolean
+    fun isEnum(type: OpenApiType): Boolean
 
-    fun annotationsOf(type: ClassDefinition): Annotations
+    fun annotationsOf(type: OpenApiType): Annotations
 
-    fun propertiesOf(type: ClassDefinition): List<PropertyView>
+    fun propertiesOf(type: OpenApiType): List<PropertyView>
 
-    fun enumConstantsOf(type: ClassDefinition): List<EnumConstantView>
+    fun enumConstantsOf(type: OpenApiType): List<EnumConstantView>
 
-    /** Lift a backend-neutral [RawType] into the OpenAPI [ClassDefinition] model (names + handle stay backend-specific). */
-    fun toClassDefinition(raw: RawType): ClassDefinition
+    /** Lift a backend-neutral [RawType] into the OpenAPI [OpenApiType] model (names + handle stay backend-specific). */
+    fun toOpenApiType(raw: RawType): OpenApiType
 
     /** Whether [property] of [type] should be emitted (platform-specific filtering, e.g. the AP `propertyInSchemeFilter`). */
-    fun acceptsProperty(type: ClassDefinition, property: PropertyView): Boolean = true
+    fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean = true
 
     /** Discriminator subtypes discovered by the platform (AP round scan); empty when the backend cannot scan. */
-    fun discriminatorSubtypes(type: ClassDefinition): List<Pair<String, ClassDefinition>> = emptyList()
+    fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> = emptyList()
 }

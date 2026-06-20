@@ -11,7 +11,7 @@ import io.javalin.openapi.Composition.ANY_OF
 import io.javalin.openapi.Composition.ONE_OF
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OneOf
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.SchemaGenerationContext
 import io.javalin.openapi.experimental.processor.shared.createJsonObjectOf
@@ -27,7 +27,7 @@ fun findCompositionInElement(context: SchemaGenerationContext, annotations: Anno
 
 private fun compositionOf(context: SchemaGenerationContext, annotations: Annotations, annotationType: Class<out Annotation>, composition: Composition): PropertyComposition? {
     val values = annotations.memberValues(annotationType) ?: return null
-    val references = annotations.resolveClasses(annotationType, "value").map { context.toClassDefinition(it) }.toSet()
+    val references = annotations.resolveClasses(annotationType, "value").map { context.toOpenApiType(it) }.toSet()
     val discriminator = (values["discriminator"] as? Map<*, *>)?.let { discriminatorInfo(context, it) }
     return PropertyComposition(composition, references, discriminator)
 }
@@ -36,10 +36,10 @@ private fun discriminatorInfo(context: SchemaGenerationContext, discriminator: M
     val property = discriminator["property"] as Map<*, *>
     val mapping = (discriminator["mapping"] as? List<*>).orEmpty()
         .filterIsInstance<Map<*, *>>()
-        .map { (it["name"] as String) to context.toClassDefinition(it["value"] as RawType) }
+        .map { (it["name"] as String) to context.toOpenApiType(it["value"] as RawType) }
     return DiscriminatorInfo(
         propertyName = property["name"] as String,
-        propertyType = context.toClassDefinition(property["type"] as RawType),
+        propertyType = context.toOpenApiType(property["type"] as RawType),
         injectInMappings = property["injectInMappings"] as Boolean,
         mapping = mapping,
     )
@@ -47,15 +47,19 @@ private fun discriminatorInfo(context: SchemaGenerationContext, discriminator: M
 
 fun ObjectNode.createComposition(
     context: SchemaGenerationContext,
-    classDefinition: ClassDefinition,
+    classDefinition: OpenApiType,
     propertyComposition: PropertyComposition,
-    references: MutableSet<ClassDefinition>,
+    references: MutableSet<OpenApiType>,
     inlineRefs: Boolean = false,
     requiresNonNulls: Boolean = true,
 ) {
     val subtypes by lazy { context.discriminatorSubtypes(classDefinition) }
 
     val refs = propertyComposition.references.ifEmpty { subtypes.map { it.second } }
+
+    // No explicit refs and no discoverable subtypes (e.g. reflection has no round scan): emitting an empty
+    // `oneOf: []` would be invalid OpenAPI, so skip the composition entirely.
+    if (refs.isEmpty()) return
 
     when (inlineRefs) {
         true ->

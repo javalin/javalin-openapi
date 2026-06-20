@@ -9,8 +9,8 @@ import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
-import io.javalin.openapi.experimental.processor.shared.getTypeMirror
-import io.javalin.openapi.experimental.processor.shared.getTypeMirrors
+import io.javalin.openapi.experimental.processor.shared.mapType
+import io.javalin.openapi.experimental.processor.shared.objectType
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -20,8 +20,8 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
-import kotlin.reflect.KClass
 import io.javalin.introspection.ClassDefinition as RawType
+import io.javalin.introspection.StructureType as RawStructureType
 
 class AnnotationProcessorContext(
     val parameters: OpenApiAnnotationProcessorParameters,
@@ -39,39 +39,47 @@ class AnnotationProcessorContext(
 
     private val japIntrospector: JapTypeIntrospector by lazy { JapTypeIntrospector(types, env.elementUtils) }
 
-    fun annotationsOf(element: Element): Annotations =
-        japIntrospector.annotationsOf(element)
-
-    fun propertiesOf(mirror: TypeMirror): List<PropertyView> =
-        japIntrospector.introspect(mirror).getProperties()
-
-    fun enumConstantsOf(mirror: TypeMirror): List<EnumConstantView> =
-        japIntrospector.introspect(mirror).getEnumConstants() ?: emptyList()
-
-    override fun isEnum(type: ClassDefinition): Boolean =
+    override fun isEnum(type: OpenApiType): Boolean =
         type.source.kind == ElementKind.ENUM
 
-    override fun annotationsOf(type: ClassDefinition): Annotations =
-        annotationsOf(type.source)
+    override fun annotationsOf(type: OpenApiType): Annotations =
+        japIntrospector.annotationsOf(type.source)
 
-    override fun propertiesOf(type: ClassDefinition): List<PropertyView> =
-        propertiesOf(type.mirror)
+    override fun propertiesOf(type: OpenApiType): List<PropertyView> =
+        japIntrospector.introspect(type.mirror).getProperties()
 
-    override fun enumConstantsOf(type: ClassDefinition): List<EnumConstantView> =
-        enumConstantsOf(type.mirror)
+    override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
+        japIntrospector.introspect(type.mirror).getEnumConstants() ?: emptyList()
 
-    override fun toClassDefinition(raw: RawType): ClassDefinition =
-        toExperimental(raw)
+    /** Lift a backend-neutral [RawType] into the OpenAPI [OpenApiType] model; names + handle stay AP-specific. */
+    @OptIn(InternalIntrospectionApi::class)
+    override fun toOpenApiType(raw: RawType): OpenApiType {
+        val mirror = raw.source as TypeMirror
+        return OpenApiType(
+            simpleName = mirror.getSimpleName(),
+            fullName = mirror.getFullName(),
+            generics = raw.generics.map { toOpenApiType(it) },
+            structureType = StructureType.valueOf(raw.structureType.name),
+            handle = OpenApiTypeHandle(
+                mirror = mirror,
+                source = if (raw.structureType == RawStructureType.DICTIONARY) mapType() else (types.asElement(mirror) ?: objectType())
+            )
+        )
+    }
+
+    /** Resolve a [TypeMirror] into the OpenAPI model via the shared [JapTypeIntrospector]. */
+    fun TypeMirror.toOpenApiType(): OpenApiType =
+        toOpenApiType(japIntrospector.introspect(this))
 
     @OptIn(InternalIntrospectionApi::class)
-    override fun acceptsProperty(type: ClassDefinition, property: PropertyView): Boolean =
+    override fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean =
         configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
 
-    override fun discriminatorSubtypes(type: ClassDefinition): List<Pair<String, ClassDefinition>> =
+    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> =
         roundEnv!!.getElementsAnnotatedWith(DiscriminatorMappingName::class.java)
             .asSequence()
             .filterIsInstance<TypeElement>()
-            .map { it.getAnnotation(DiscriminatorMappingName::class.java).value to getClassDefinition(it.asType()) }
+            .map { it.getAnnotation(DiscriminatorMappingName::class.java).value to it.asType().toOpenApiType() }
             .filter { (_, subtype) -> isAssignable(subtype.mirror, type.mirror) }
             .toList()
 
@@ -83,12 +91,6 @@ class AnnotationProcessorContext(
             body(env.messager)
         }
     }
-
-    fun getClassDefinition(mirror: TypeMirror): ClassDefinition =
-        classDefinitionFrom(this, mirror)
-
-    fun getClassDefinitions(mirrors: Set<TypeMirror>): Set<ClassDefinition> =
-        mirrors.map { getClassDefinition(it) }.toSet()
 
     fun forTypeElement(name: String): TypeElement? =
         env.elementUtils.getTypeElement(name)
@@ -117,22 +119,11 @@ class AnnotationProcessorContext(
 
     /* Extension methods, should be replaced by context receivers in the future */
 
-    fun TypeMirror.toClassDefinition(): ClassDefinition =
-        getClassDefinition(this)
-
     fun TypeMirror.getSimpleName(): String =
         getFullName().substringAfterLast(".")
 
     @JvmName("getFullNameExt")
     fun TypeMirror.getFullName(): String =
         getFullName(this)
-
-    fun <A : Annotation> A.getClassDefinitions(supplier: A.() -> Array<out KClass<*>>): Set<ClassDefinition> =
-        getTypeMirrors(supplier)
-            .map { it.toClassDefinition() }
-            .toSet()
-
-    fun <A : Annotation> A.getClassDefinition(supplier: A.() -> KClass<*>): ClassDefinition =
-        getTypeMirror(supplier).toClassDefinition()
 
 }

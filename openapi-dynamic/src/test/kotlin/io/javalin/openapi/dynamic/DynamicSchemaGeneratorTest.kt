@@ -9,16 +9,13 @@ import org.junit.jupiter.api.Test
 
 class DynamicSchemaGeneratorTest {
 
-    private val introspector = ReflectiveTypeIntrospector()
-    private val generator = introspector.typeSchemaGenerator
+    private val schemaContext = ReflectionSchemaContext()
 
     private fun JsonNode.ref(): String = path($$"$ref").asText()
     private fun JsonNode.stringArray(): List<String> = map { it.asText() }
 
     @Test
     fun `renders a full component graph through OpenApiSchemaBuilder via reflection`() {
-        val account = introspector.introspect(Account::class.java)
-
         val builder = OpenApiSchemaBuilder().openApiVersion("3.1.0")
         builder.path("/account").operation("get") {
             responses {
@@ -26,13 +23,13 @@ class DynamicSchemaGeneratorTest {
                     description("OK")
                     content {
                         mediaType("application/json") {
-                            schema(generator.createEmbeddedTypeDescription(account))
+                            schema(schemaContext.inlineSchema(Account::class.java))
                         }
                     }
                 }
             }
         }
-        builder.resolveComponentReferences { type -> generator.createTypeSchema(type) }
+        builder.resolveComponentReferences { type -> schemaContext.componentSchema(type) }
 
         val document = jsonMapper.readTree(builder.toJson())
         val schemas = document.path("components").path("schemas")

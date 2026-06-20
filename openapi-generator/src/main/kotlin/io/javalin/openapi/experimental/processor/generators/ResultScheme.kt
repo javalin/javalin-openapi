@@ -3,13 +3,13 @@ package io.javalin.openapi.experimental.processor.generators
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.OpenApiNamingStrategy
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import java.math.BigDecimal
 
 data class ResultScheme(
     val json: ObjectNode,
-    val references: Set<ClassDefinition>
+    val references: Set<OpenApiType>
 ) {
     fun toJsonSchemaString(): String {
         val scheme = createObjectNode()
@@ -21,7 +21,7 @@ data class ResultScheme(
 
 data class Property(
     val name: String,
-    val type: ClassDefinition,
+    val type: OpenApiType,
     val composition: PropertyComposition? = null,
     val required: Boolean = true,
     val nullable: Boolean = false,

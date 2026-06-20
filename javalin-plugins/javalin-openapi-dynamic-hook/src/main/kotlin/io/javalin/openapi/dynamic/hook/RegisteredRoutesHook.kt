@@ -1,5 +1,6 @@
 package io.javalin.openapi.dynamic.hook
 
+import io.javalin.openapi.dynamic.ReflectionSchemaContext
 import io.javalin.openapi.plugin.OpenApiHook
 import io.javalin.openapi.plugin.OpenApiHookContext
 
@@ -7,6 +8,7 @@ import io.javalin.openapi.plugin.OpenApiHookContext
 class RegisteredRoutesHook : OpenApiHook {
 
     override fun apply(context: OpenApiHookContext) {
+        val schemaContext = ReflectionSchemaContext() // document-scoped: owns the generator + its memo cache
         context.builder.openApiVersion("3.1.0")
 
         context.state.internalRouter.allHttpHandlers()
@@ -32,7 +34,7 @@ class RegisteredRoutesHook : OpenApiHook {
                 }
             }
 
-        context.builder.resolveComponentReferences { type -> dynamicSchemaGenerator.createTypeSchema(type) }
+        context.builder.resolveComponentReferences { type -> schemaContext.componentSchema(type) }
     }
 
     /** Javalin `<slashParam>` → OpenAPI `{slashParam}`; `{param}` kept as-is. */

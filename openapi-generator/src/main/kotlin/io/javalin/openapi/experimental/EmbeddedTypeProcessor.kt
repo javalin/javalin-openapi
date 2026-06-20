@@ -6,8 +6,8 @@ import io.javalin.openapi.experimental.processor.generators.PropertyComposition
 data class EmbeddedTypeProcessorContext(
     val parentContext: SchemaGenerationContext,
     val scheme: ObjectNode,
-    val references: MutableSet<ClassDefinition>,
-    val type: ClassDefinition,
+    val references: MutableSet<OpenApiType>,
+    val type: OpenApiType,
     val inlineRefs: Boolean = false,
     val requiresNonNulls: Boolean = true,
     val composition: PropertyComposition? = null,

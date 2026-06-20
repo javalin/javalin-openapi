@@ -350,7 +350,7 @@ class OpenApiSchemaGenerator(
 
     private fun detectContentType(typeMirror: TypeMirror): String =
         context.inContext {
-            val model = typeMirror.toClassDefinition()
+            val model = typeMirror.toOpenApiType()
 
             when {
                 (model.structureType == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
@@ -362,7 +362,7 @@ class OpenApiSchemaGenerator(
 
     private fun createTypeDescriptionWithReferences(type: TypeMirror): ResultScheme =
         context.inContext {
-            val model = type.toClassDefinition()
+            val model = type.toOpenApiType()
             context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
         }
 

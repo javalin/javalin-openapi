@@ -14,7 +14,7 @@ import io.javalin.openapi.OpenApiServer
 import io.javalin.openapi.OpenID
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.generators.toExampleProperty
@@ -25,16 +25,16 @@ import java.util.TreeMap
 import java.util.function.Consumer
 
 fun interface ComponentSchemaResolver {
-    fun resolve(type: ClassDefinition): ResultScheme
+    fun resolve(type: OpenApiType): ResultScheme
 }
 
 class OpenApiSchemaBuilder {
     private val root = createObjectNode()
     private val paths = createObjectNode()
     private val componentSchemas = createObjectNode()
-    internal val componentReferences = mutableMapOf<String, ClassDefinition>()
+    internal val componentReferences = mutableMapOf<String, OpenApiType>()
 
-    private val refCollector: (Set<ClassDefinition>) -> Unit = { refs ->
+    private val refCollector: (Set<OpenApiType>) -> Unit = { refs ->
         componentReferences.putAll(refs.associateBy { it.fullName })
     }
 
@@ -126,7 +126,7 @@ class OpenApiSchemaBuilder {
 
     fun resolveComponentReferences(resolver: ComponentSchemaResolver) {
         val maxIterations = 1000
-        val generatedComponents = TreeMap<String, Pair<ClassDefinition, ObjectNode>?> { a, b -> a.compareTo(b) }
+        val generatedComponents = TreeMap<String, Pair<OpenApiType, ObjectNode>?> { a, b -> a.compareTo(b) }
         var iteration = 0
 
         while (generatedComponents.size < componentReferences.size) {
@@ -242,7 +242,7 @@ class SchemaBuilder {
 @OpenApiSchemaDsl
 class PathItemBuilder(
     private val pathItem: ObjectNode,
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
 ) {
 
     fun operation(method: String, configure: OperationBuilder.() -> Unit) {
@@ -257,7 +257,7 @@ class PathItemBuilder(
 
 @OpenApiSchemaDsl
 class OperationBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -388,7 +388,7 @@ class OperationBuilder(
 
 @OpenApiSchemaDsl
 class ParametersBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ArrayNode? = null,
 ) {
 
@@ -476,7 +476,7 @@ class ParametersBuilder(
 
 @OpenApiSchemaDsl
 class RequestBodyBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -532,7 +532,7 @@ class RequestBodyBuilder(
 
 @OpenApiSchemaDsl
 class ContentBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -563,7 +563,7 @@ interface ExampleHolder {
 
 @OpenApiSchemaDsl
 class MediaTypeBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) : ExampleHolder {
 
@@ -618,7 +618,7 @@ class MediaTypeBuilder(
 
 @OpenApiSchemaDsl
 class ObjectSchemaBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
 ) : ExampleHolder {
 
     private val properties = createObjectNode()
@@ -720,7 +720,7 @@ class ObjectSchemaBuilder(
 
 @OpenApiSchemaDsl
 class ResponsesBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -740,7 +740,7 @@ class ResponsesBuilder(
 
 @OpenApiSchemaDsl
 class ResponseBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -788,7 +788,7 @@ class ResponseBuilder(
 
 @OpenApiSchemaDsl
 class HeadersBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -858,7 +858,7 @@ class HeadersBuilder(
 
 @OpenApiSchemaDsl
 class CallbacksBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 
@@ -890,7 +890,7 @@ class CallbacksBuilder(
 
 @OpenApiSchemaDsl
 class CallbackOperationBuilder(
-    private val refCollector: (Set<ClassDefinition>) -> Unit = {},
+    private val refCollector: (Set<OpenApiType>) -> Unit = {},
     existing: ObjectNode? = null,
 ) {
 

@@ -17,7 +17,7 @@ class JsonSchemaGenerator {
     private fun generate(element: Element): String =
         context.inContext {
             context.typeSchemaGenerator.createTypeSchema(
-                type = element.asType().toClassDefinition(),
+                type = element.asType().toOpenApiType(),
                 inlineRefs = true
             ).toJsonSchemaString()
         }

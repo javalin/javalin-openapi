@@ -1,8 +1,6 @@
 package io.javalin.openapi.experimental
 
-import io.javalin.openapi.experimental.defaults.ArrayEmbeddedTypeProcessor
-import io.javalin.openapi.experimental.defaults.CompositionEmbeddedTypeProcessor
-import io.javalin.openapi.experimental.defaults.DictionaryEmbeddedTypeProcessor
+import io.javalin.openapi.experimental.defaults.createDefaultEmbeddedTypeProcessors
 import io.javalin.openapi.experimental.defaults.createDefaultSimpleTypeMappings
 import javax.lang.model.element.Element
 
@@ -16,11 +14,7 @@ class OpenApiAnnotationProcessorConfiguration {
     var validateWithParser: Boolean = true
     var propertyInSchemeFilter: PropertyInSchemeFilter? = null
     val simpleTypeMappings: MutableMap<String, SimpleType> = createDefaultSimpleTypeMappings()
-    val embeddedTypeProcessors: MutableList<EmbeddedTypeProcessor> = mutableListOf(
-        CompositionEmbeddedTypeProcessor(),
-        ArrayEmbeddedTypeProcessor(),
-        DictionaryEmbeddedTypeProcessor()
-    )
+    val embeddedTypeProcessors: MutableList<EmbeddedTypeProcessor> = createDefaultEmbeddedTypeProcessors()
 
     fun insertEmbeddedTypeProcessor(embeddedTypeProcessor: EmbeddedTypeProcessor) {
         embeddedTypeProcessors.add(0, embeddedTypeProcessor)
@@ -29,5 +23,5 @@ class OpenApiAnnotationProcessorConfiguration {
 }
 
 fun interface PropertyInSchemeFilter {
-    fun filter(context: AnnotationProcessorContext, type: ClassDefinition, property: Element): Boolean
+    fun filter(context: AnnotationProcessorContext, type: OpenApiType, property: Element): Boolean
 }

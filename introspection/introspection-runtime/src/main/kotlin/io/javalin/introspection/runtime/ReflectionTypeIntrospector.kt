@@ -19,6 +19,7 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Array as JavaArray
 import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -131,12 +132,24 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
     }
 
     val members = mutableListOf<Member>()
+    val getterNames = mutableSetOf<String>()
 
+    // public getters (incl. inherited + interface defaults)
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
         if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
-        members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
+        if (getterNames.add(method.name)) {
+            members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
+        }
+    }
+
+    // non-public getters declared up the class hierarchy (clazz.methods only returns public ones),
+    // matching JAP's getAllMembers which also surfaces protected/package-private getters
+    for (method in nonPublicGettersHierarchy(clazz)) {
+        if (getterNames.add(method.name)) {
+            members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
+        }
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {
@@ -183,6 +196,28 @@ private fun declaredFieldsHierarchy(clazz: Class<*>): List<Field> {
         current = current.superclass
     }
     return fields
+}
+
+/** Non-public getters declared up the class hierarchy (leaf-first), with the same inheritance rules as fields. */
+private fun nonPublicGettersHierarchy(clazz: Class<*>): List<Method> {
+    val getters = mutableListOf<Method>()
+    var current: Class<*>? = clazz
+    while (current != null && current != Any::class.java) {
+        for (method in current.declaredMethods) {
+            val modifiers = method.modifiers
+            if (Modifier.isStatic(modifiers) || Modifier.isPublic(modifiers) || method.isBridge || method.isSynthetic) continue
+            if (method.parameterCount != 0 || method.returnType == Void.TYPE || !isGetterName(method.name)) continue
+            val inherited = when {
+                current == clazz -> true
+                Modifier.isPrivate(modifiers) -> false
+                Modifier.isProtected(modifiers) -> true
+                else -> method.declaringClass.packageName == clazz.packageName
+            }
+            if (inherited) getters += method
+        }
+        current = current.superclass
+    }
+    return getters
 }
 
 private class ReflectionAnnotations(private val sources: List<AnnotatedElement>) : Annotations {

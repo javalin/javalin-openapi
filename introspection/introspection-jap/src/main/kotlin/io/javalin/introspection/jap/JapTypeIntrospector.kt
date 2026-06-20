@@ -189,7 +189,7 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
 
         private fun Element.isGetter(): Boolean {
             if (kind != ElementKind.METHOD || this !is ExecutableElement) return false
-            if (Modifier.PUBLIC !in modifiers || Modifier.STATIC in modifiers) return false
+            if (Modifier.STATIC in modifiers) return false
             if (parameters.isNotEmpty() || enclosingElement?.toString() == "java.lang.Object") return false
             if (returnType.kind == TypeKind.VOID) return false
             return isGetterName(simpleName.toString())

@@ -17,20 +17,20 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
     private val processedProperties = mutableMapOf<Property, ResultScheme>()
 
     fun createTypeSchema(
-        type: ClassDefinition,
+        type: OpenApiType,
         inlineRefs: Boolean = false,
         requireNonNullsByDefault: Boolean = true
     ): ResultScheme {
         val annotations = context.annotationsOf(type)
         val isEnum = context.isEnum(type)
-        val definedBy = annotations.resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toClassDefinition(it) }
+        val definedBy = annotations.resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toOpenApiType(it) }
 
         if (definedBy != null && !isEnum) {
             return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
         }
 
         val schema = createObjectNode()
-        val references = mutableSetOf<ClassDefinition>()
+        val references = mutableSetOf<OpenApiType>()
         val composition = findCompositionInElement(context, annotations)
 
         when {
@@ -113,21 +113,21 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
     }
 
     fun createEmbeddedTypeDescription(
-        type: ClassDefinition,
+        type: OpenApiType,
         inlineRefs: Boolean = false,
         requiresNonNulls: Boolean = true,
         composition: PropertyComposition? = null,
         extra: Map<String, Any?> = emptyMap(),
         nullable: Boolean = false,
     ): ResultScheme {
-        val definedBy = context.annotationsOf(type).resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toClassDefinition(it) }
+        val definedBy = context.annotationsOf(type).resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toOpenApiType(it) }
 
         if (definedBy != null && !context.isEnum(type)) {
             return createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra, nullable)
         }
 
         val scheme = createObjectNode()
-        val references = mutableSetOf<ClassDefinition>()
+        val references = mutableSetOf<OpenApiType>()
 
         val handledByCustomProcessor =
             context.embeddedTypeProcessors.firstOrNull {
@@ -194,9 +194,9 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
     fun addType(
         scheme: ObjectNode,
-        type: ClassDefinition,
+        type: OpenApiType,
         inlineRefs: Boolean,
-        references: MutableSet<ClassDefinition>,
+        references: MutableSet<OpenApiType>,
         requiresNonNulls: Boolean
     ) {
         when (val nonRefType = context.simpleTypeMappings[type.fullName]) {
@@ -219,7 +219,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
 }
 
-internal fun SchemaGenerationContext.findAllProperties(type: ClassDefinition, requireNonNulls: Boolean): Collection<Property> {
+internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requireNonNulls: Boolean): Collection<Property> {
     val annotations = annotationsOf(type)
     val byFields = annotations.memberValues(OpenApiByFields::class.java)
     val byFieldsOnly = byFields?.get("only") == true
@@ -268,7 +268,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: ClassDefinition, re
         properties.add(
             Property(
                 name = finalName,
-                type = toClassDefinition(redirect ?: property.type),
+                type = toOpenApiType(redirect ?: property.type),
                 composition = findCompositionInElement(this, property.annotations),
                 required = required,
                 nullable = isExplicitlyNullable,

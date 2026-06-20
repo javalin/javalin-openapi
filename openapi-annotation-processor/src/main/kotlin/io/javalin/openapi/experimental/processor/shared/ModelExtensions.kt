@@ -1,7 +1,6 @@
 package io.javalin.openapi.experimental.processor.shared
 
 import io.javalin.openapi.experimental.AnnotationProcessorContext
-import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.MirroredTypesException
@@ -9,18 +8,7 @@ import javax.lang.model.type.TypeMirror
 import kotlin.reflect.KClass
 
 fun AnnotationProcessorContext.objectType(): TypeElement = forTypeElement(Object::class.java.name)!!
-fun AnnotationProcessorContext.collectionType(): TypeElement = forTypeElement(Collection::class.java.name)!!
 fun AnnotationProcessorContext.mapType(): TypeElement = forTypeElement(Map::class.java.name)!!
-fun AnnotationProcessorContext.recordType(): TypeElement? = forTypeElement("java.lang.Record")
-
-fun TypeMirror.isPrimitive(): Boolean =
-    kind.isPrimitive
-
-fun Element.hasAnnotation(simpleName: String): Boolean =
-    annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
-
-fun Element.getFullName(): String =
-    toString()
 
 fun <A : Annotation> A.getTypeMirrors(supplier: A.() -> Array<out KClass<*>>): Set<TypeMirror> =
     try {
