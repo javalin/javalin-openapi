@@ -1,6 +1,8 @@
 package io.javalin.openapi.ksp
 
 import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.symbol.KSAnnotated
+import io.javalin.introspection.Annotations
 import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.ksp.KspTypeIntrospector
 import io.javalin.openapi.experimental.IntrospectorSchemaContext
@@ -12,6 +14,10 @@ class KspSchemaContext(
     simpleTypeMappings: Map<String, SimpleType> = createDefaultSimpleTypeMappings(),
 ) : IntrospectorSchemaContext(simpleTypeMappings) {
 
-    override val introspector: TypeIntrospector = KspTypeIntrospector(resolver)
+    private val kspTypeIntrospector = KspTypeIntrospector(resolver)
+    override val introspector: TypeIntrospector = kspTypeIntrospector
+
+    fun annotationsOf(annotated: KSAnnotated): Annotations =
+        kspTypeIntrospector.annotationsOf(annotated)
 
 }

@@ -44,6 +44,9 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
         return resolve(declaration.asStarProjectedType())
     }
 
+    fun annotationsOf(annotated: KSAnnotated): Annotations =
+        KspAnnotations(annotated)
+
     private fun resolve(type: KSType, structureType: StructureType = DEFAULT): ClassDefinition {
         val declaration = type.declaration
         if (declaration is KSTypeParameter) {

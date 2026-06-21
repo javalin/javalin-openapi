@@ -3,7 +3,6 @@ package io.javalin.openapi.experimental.processor.generators
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.NULL_STRING
-import io.javalin.openapi.OpenApiExampleProperty
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import io.javalin.openapi.experimental.processor.shared.jsonMapper
@@ -14,14 +13,6 @@ data class ExampleProperty(
     val raw: String?,
     val objects: List<ExampleProperty>?
 )
-
-fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
-    ExampleProperty(
-        name = this.name.takeIf { it != NULL_STRING },
-        value = this.value.takeIf { it != NULL_STRING },
-        raw = this.raw.takeIf { it != NULL_STRING },
-        objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
-    )
 
 fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
     ExampleProperty(

@@ -9,12 +9,25 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import io.javalin.openapi.JsonSchema
+import io.javalin.openapi.OpenApi
+import io.javalin.openapi.OpenApis
+import io.javalin.openapi.experimental.OPENAPI_INFO_TITLE
+import io.javalin.openapi.experimental.OPENAPI_INFO_VERSION
+import io.javalin.openapi.schema.OpenApiSchemaGenerator
 
-class OpenApiSymbolProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+class OpenApiSymbolProcessor(
+    private val codeGenerator: CodeGenerator,
+    private val options: Map<String, String>,
+) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val context = KspSchemaContext(resolver)
+        generateJsonSchemes(resolver, context)
+        generateOpenApiDocuments(resolver, context)
+        return emptyList()
+    }
 
+    private fun generateJsonSchemes(resolver: Resolver, context: KspSchemaContext) {
         val generated = resolver.getSymbolsWithAnnotation(JsonSchema::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
             .mapNotNull { declaration ->
@@ -31,9 +44,46 @@ class OpenApiSymbolProcessor(private val codeGenerator: CodeGenerator) : SymbolP
         if (generated.isNotEmpty()) {
             writeResource("json-schemes/index", generated.joinToString(separator = "\n"))
         }
-
-        return emptyList()
     }
+
+    private fun generateOpenApiDocuments(resolver: Resolver, context: KspSchemaContext) {
+        val routes = (resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) + resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!))
+            .distinct()
+            .flatMap { annotated ->
+                val annotations = context.annotationsOf(annotated)
+                val direct = annotations.memberValuesList(OpenApi::class.java)
+                val viaContainer = (annotations.memberValues(OpenApis::class.java)?.get("value") as? List<*>)
+                    ?.filterIsInstance<Map<String, Any?>>()
+                    .orEmpty()
+                direct + viaContainer
+            }
+            .toList()
+
+        if (routes.isEmpty()) {
+            return
+        }
+
+        val generator = OpenApiSchemaGenerator(
+            context = context,
+            title = options[OPENAPI_INFO_TITLE] ?: "",
+            version = options[OPENAPI_INFO_VERSION] ?: "",
+        )
+
+        val generatedVersions = routes
+            .flatMap { route -> route.versions().map { version -> version to route } }
+            .groupBy { (version, _) -> version }
+            .map { (version, versionedRoutes) ->
+                val json = generator.generateSchema(versionedRoutes.map { it.second }.toSet().toList())
+                val resourceName = "openapi-${version.replace(" ", "-")}.json"
+                writeResource("openapi-plugin/$resourceName", json)
+                resourceName
+            }
+
+        writeResource("openapi-plugin/.index", generatedVersions.joinToString(separator = "\n"))
+    }
+
+    private fun Map<String, Any?>.versions(): List<String> =
+        (this["versions"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
     private fun writeResource(path: String, content: String) =
         codeGenerator.createNewFileByPath(Dependencies(aggregating = true), path, extensionName = "")
@@ -43,5 +93,5 @@ class OpenApiSymbolProcessor(private val codeGenerator: CodeGenerator) : SymbolP
 
 class OpenApiSymbolProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
-        OpenApiSymbolProcessor(environment.codeGenerator)
+        OpenApiSymbolProcessor(environment.codeGenerator, environment.options)
 }

@@ -45,6 +45,9 @@ class AnnotationProcessorContext(
     override fun annotationsOf(type: OpenApiType): Annotations =
         japIntrospector.annotationsOf(type.source)
 
+    fun annotationsOf(element: Element): Annotations =
+        japIntrospector.annotationsOf(element)
+
     override fun propertiesOf(type: OpenApiType): List<PropertyView> =
         japIntrospector.introspect(type.mirror).getProperties()
 

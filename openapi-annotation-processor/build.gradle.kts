@@ -15,10 +15,6 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation(libs.groovy)
 
-    implementation(libs.javalin) {
-        exclude(group = "org.slf4j")
-    }
-
     implementation(libs.swagger.parser) {
         exclude(group = "com.fasterxml.jackson")
         exclude(group = "com.fasterxml.jackson.core")

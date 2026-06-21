@@ -1,6 +1,5 @@
 package io.javalin.openapi.processor.generators
 
-import io.javalin.http.HttpStatus
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.processor.shared.saveResource
@@ -16,35 +15,25 @@ internal class OpenApiGenerator {
 
     private val schemaGenerator = OpenApiSchemaGenerator(
         context = context,
-        defaultStatusDescription = { status ->
-            status.toIntOrNull()?.let { HttpStatus.forStatus(it) }?.message
-        }
+        title = context.parameters.info.title,
+        version = context.parameters.info.version,
     )
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
-            .flatMap { element ->
-                element
-                    .getAnnotation(OpenApis::class.java)!!
-                    .value
-                    .asSequence()
-                    .map { element to it }
-            }
+        val aggregatedRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
+            .flatMap { context.annotationsOf(it).memberValuesList(OpenApi::class.java) }
 
-        val standaloneOpenApiAnnotations =
-            roundEnvironment
-                .getElementsAnnotatedWith(OpenApi::class.java)
-                .map { it to it.getAnnotation(OpenApi::class.java)!! }
+        val standaloneRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
+            .flatMap { context.annotationsOf(it).memberValuesList(OpenApi::class.java) }
 
-        val openApiAnnotationsByVersion = (aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations)
-            .flatMap { it.second.versions.map { version -> version to it } }
+        val routesByVersion = (aggregatedRoutes + standaloneRoutes)
+            .flatMap { route -> route.versions().map { version -> version to route } }
             .groupBy { (version, _) -> version }
-            .mapValues { (_, annotations) -> annotations.map { it.second } }
+            .mapValues { (_, routes) -> routes.map { it.second } }
 
-        openApiAnnotationsByVersion
-            .map { (version, openApiAnnotations) ->
-                val preparedOpenApiAnnotations = openApiAnnotations.toSet()
-                val generatedOpenApiSchema = schemaGenerator.generateSchema(preparedOpenApiAnnotations)
+        routesByVersion
+            .map { (version, routes) ->
+                val generatedOpenApiSchema = schemaGenerator.generateSchema(routes.toSet().toList())
 
                 val resourceName = "openapi-${version.replace(" ", "-")}.json"
                 val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
@@ -69,5 +58,8 @@ internal class OpenApiGenerator {
             .joinToString(separator = "\n")
             .let { context.env.filer.saveResource(context, "openapi-plugin/.index", it) }
     }
+
+    private fun Map<String, Any?>.versions(): List<String> =
+        (this["versions"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
 }

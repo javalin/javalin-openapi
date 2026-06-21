@@ -8,7 +8,6 @@ import io.javalin.openapi.BasicAuth
 import io.javalin.openapi.BearerAuth
 import io.javalin.openapi.CookieAuth
 import io.javalin.openapi.OAuth2
-import io.javalin.openapi.OpenApiExampleProperty
 import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiServer
 import io.javalin.openapi.OpenID
@@ -554,7 +553,7 @@ interface ExampleHolder {
     fun example(value: String)
     fun exampleJson(value: JsonNode)
 
-    fun applyExamples(exampleObjects: List<OpenApiExampleProperty>) {
+    fun applyExamples(exampleObjects: List<Map<String, Any?>>) {
         val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects.map { it.toExampleProperty() })
         generatorResult.simpleValue?.let { example(it) }
             ?: generatorResult.jsonElement?.let { exampleJson(it) }
