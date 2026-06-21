@@ -3,7 +3,6 @@ package io.javalin.openapi.experimental
 import javax.lang.model.element.Element
 import javax.lang.model.type.TypeMirror
 
-/** The annotation-processing token carried in [OpenApiType.handle]. */
 data class OpenApiTypeHandle(
     val mirror: TypeMirror,
     val source: Element

@@ -6,7 +6,6 @@ import io.javalin.openapi.experimental.IntrospectorSchemaContext
 import io.javalin.openapi.experimental.SimpleType
 import io.javalin.openapi.experimental.defaults.createDefaultSimpleTypeMappings
 
-/** Runtime-reflection backend: drives the shared generator over [ReflectionTypeIntrospector]. */
 class ReflectionSchemaContext(
     simpleTypeMappings: Map<String, SimpleType> = createDefaultSimpleTypeMappings(),
 ) : IntrospectorSchemaContext(simpleTypeMappings) {

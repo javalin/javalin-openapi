@@ -10,12 +10,6 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import io.javalin.openapi.JsonSchema
 
-/**
- * KSP backend processor. It only does the backend-specific shell — *scan* annotated symbols via the [Resolver] and
- * *write* resources via the [CodeGenerator]; the actual schema generation is the shared, backend-agnostic engine
- * driven through [KspSchemaContext]. (Currently emits `@JsonSchema` json-schemes; `@OpenApi` documents follow once the
- * operation generator is neutralized onto the shared seam.)
- */
 class OpenApiSymbolProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {

@@ -51,7 +51,6 @@ class AnnotationProcessorContext(
     override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
         japIntrospector.introspect(type.mirror).getEnumConstants() ?: emptyList()
 
-    /** Lift a backend-neutral [RawType] into the OpenAPI [OpenApiType] model; names + handle stay AP-specific. */
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {
         val mirror = raw.source as TypeMirror
@@ -67,7 +66,6 @@ class AnnotationProcessorContext(
         )
     }
 
-    /** Resolve a [TypeMirror] into the OpenAPI model via the shared [JapTypeIntrospector]. */
     fun TypeMirror.toOpenApiType(): OpenApiType =
         toOpenApiType(japIntrospector.introspect(this))
 

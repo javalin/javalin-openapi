@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCompilerApi::class)
 class KspSchemaContextTest {
 
-    /** Runs KSP in-process over a trivial trigger; the block resolves the classpath fixtures via [Resolver]. */
     private fun <R> withResolver(block: (Resolver) -> R): R {
         var result: Result<R>? = null
         val provider = object : SymbolProcessorProvider {

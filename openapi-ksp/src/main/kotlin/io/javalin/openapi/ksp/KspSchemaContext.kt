@@ -7,7 +7,6 @@ import io.javalin.openapi.experimental.IntrospectorSchemaContext
 import io.javalin.openapi.experimental.SimpleType
 import io.javalin.openapi.experimental.defaults.createDefaultSimpleTypeMappings
 
-/** KSP backend: drives the shared generator over [KspTypeIntrospector] — the third backend on the same base. */
 class KspSchemaContext(
     resolver: Resolver,
     simpleTypeMappings: Map<String, SimpleType> = createDefaultSimpleTypeMappings(),

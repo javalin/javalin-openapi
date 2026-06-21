@@ -11,13 +11,6 @@ import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
 import io.javalin.introspection.ClassDefinition as RawType
 
-/**
- * [SchemaGenerationContext] driven entirely by a neutral [TypeIntrospector]: it carries the introspected [RawType]
- * in [OpenApiType.handle] and delegates every navigation call to it. A concrete backend supplies only the
- * [introspector] (runtime reflection, KSP, ...); `@OpenApiName` naming, the default processors, and schema generation
- * are all shared. The annotation processor stays separate because it needs javac-native tokens (round scan, element
- * filtering) that this neutral seam deliberately hides.
- */
 abstract class IntrospectorSchemaContext(
     override val simpleTypeMappings: Map<String, SimpleType> = createDefaultSimpleTypeMappings(),
 ) : SchemaGenerationContext {
@@ -27,15 +20,12 @@ abstract class IntrospectorSchemaContext(
     override val typeSchemaGenerator: TypeSchemaGenerator = TypeSchemaGenerator(this)
     override val embeddedTypeProcessors: List<EmbeddedTypeProcessor> = createDefaultEmbeddedTypeProcessors()
 
-    /** Resolve a backend-native type token (`Class`, `KSType`, ...) into the OpenAPI model. */
     fun introspect(nativeType: Any): OpenApiType =
         toOpenApiType(introspector.introspect(nativeType))
 
-    /** Full component schema for an already-resolved [type] — the body stored under `components/schemas`. */
     fun componentSchema(type: OpenApiType): ResultScheme =
         typeSchemaGenerator.createTypeSchema(type)
 
-    /** Inline schema (`$ref` or structure) for a backend-native type token. */
     fun inlineSchema(nativeType: Any): ResultScheme =
         typeSchemaGenerator.createEmbeddedTypeDescription(introspect(nativeType))
 

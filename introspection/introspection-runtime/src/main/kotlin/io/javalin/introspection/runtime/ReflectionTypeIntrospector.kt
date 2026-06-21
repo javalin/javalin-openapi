@@ -25,7 +25,6 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 
-/** [TypeIntrospector] backed by reflection ([java.lang.reflect.Type]). */
 class ReflectionTypeIntrospector : TypeIntrospector {
 
     override fun introspect(source: Any): ClassDefinition {
@@ -134,7 +133,6 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
     val members = mutableListOf<Member>()
     val getterNames = mutableSetOf<String>()
 
-    // public getters (incl. inherited + interface defaults)
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
@@ -144,8 +142,7 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         }
     }
 
-    // non-public getters declared up the class hierarchy (clazz.methods only returns public ones),
-    // matching JAP's getAllMembers which also surfaces protected/package-private getters
+    // clazz.methods is public-only, so a second pass picks up inherited protected/package-private getters (jap parity)
     for (method in nonPublicGettersHierarchy(clazz)) {
         if (getterNames.add(method.name)) {
             members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
@@ -198,7 +195,6 @@ private fun declaredFieldsHierarchy(clazz: Class<*>): List<Field> {
     return fields
 }
 
-/** Non-public getters declared up the class hierarchy (leaf-first), with the same inheritance rules as fields. */
 private fun nonPublicGettersHierarchy(clazz: Class<*>): List<Method> {
     val getters = mutableListOf<Method>()
     var current: Class<*>? = clazz

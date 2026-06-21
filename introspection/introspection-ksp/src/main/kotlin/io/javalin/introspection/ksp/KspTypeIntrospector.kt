@@ -26,13 +26,8 @@ import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
-/**
- * Prototype [TypeIntrospector] backed by Kotlin Symbol Processing (KSP).
- *
- * KSP works on the *source/symbol* model, so it surfaces a Kotlin `val x` as one logical property (not a private
- * field + `getX()` like the compiled-bytecode backends), names builtins with Kotlin FQNs (`kotlin.Int`), and cannot
- * materialize JVM annotation instances — so annotation access here is purely name/value based.
- */
+// KSP can't materialize JVM annotation instances (annotation access is name/value only) and names builtins with
+// Kotlin FQNs (`kotlin.Int`), which `canonicalName` normalizes to their JVM equivalents to match jap/reflection.
 class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
 
     private val mapType = builtin("kotlin.collections.Map")
@@ -43,7 +38,6 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
         return resolve(source)
     }
 
-    /** Convenience for tests/harness: resolve a type by fully-qualified name. */
     fun introspect(qualifiedName: String): ClassDefinition {
         val declaration = resolver.getClassDeclarationByName(resolver.getKSNameFromString(qualifiedName))
             ?: error("KSP cannot resolve $qualifiedName")
@@ -80,7 +74,6 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
         )
     }
 
-    /** Normalize Kotlin builtin FQNs (kotlin.Int, kotlin.String, kotlin.collections.Map, ...) to their JVM names, matching jap/reflection. */
     @OptIn(KspExperimental::class)
     private fun canonicalName(declaration: KSDeclaration): String {
         val kotlinName = declaration.qualifiedName ?: return declaration.simpleName.asString()

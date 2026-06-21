@@ -57,8 +57,7 @@ fun ObjectNode.createComposition(
 
     val refs = propertyComposition.references.ifEmpty { subtypes.map { it.second } }
 
-    // No explicit refs and no discoverable subtypes (e.g. reflection has no round scan): emitting an empty
-    // `oneOf: []` would be invalid OpenAPI, so skip the composition entirely.
+    // an empty oneOf/anyOf/allOf is invalid OpenAPI, so skip when there are no refs/subtypes
     if (refs.isEmpty()) return
 
     when (inlineRefs) {

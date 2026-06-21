@@ -32,7 +32,6 @@ internal class PropertySelectionTest : OpenApiAnnotationProcessorSpecification()
             .doesNotContainKey("hidden")
     }
 
-    // By default only getters are emitted; @OpenApiByFields additionally pulls in public fields (here the @JvmField one).
     @OpenApiByFields
     private class ByFieldsEntity {
         @JvmField val fieldProperty: String = ""

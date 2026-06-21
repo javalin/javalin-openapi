@@ -1,48 +1,30 @@
 package io.javalin.introspection
 
-/**
- * Backend-agnostic, name/value-based access to annotations. Deliberately avoids handing back typed annotation
- * instances or member lambdas — those can't be honored on KSP (no JVM instances). Class-valued members are read
- * through [memberValues] (resolved to [ClassDefinition]), so [resolveClass]/[resolveClasses] are derived for free.
- */
+// Name/value-based on purpose: typed annotation instances and member lambdas can't be honored on KSP.
 interface Annotations {
 
-    /** True if an annotation with this simple name is present (match e.g. `@NotNull` without depending on it). */
     fun hasNamed(simpleName: String): Boolean
 
-    /**
-     * Members of [annotationType] (with defaults) as a name→value map, or null if absent.
-     * Class members → [ClassDefinition], enum members → constant name, nested annotations → name→value map, arrays → list.
-     */
+    // Members (with defaults), or null if absent. Classes → ClassDefinition, enums → constant name, nested → map, arrays → list.
     fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>?
 
-    /** Each occurrence of a repeatable annotation, as a member value-map. */
     fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>>
 
-    /** Every annotation present, as neutral views — for scanning by meta-annotation without depending on the annotation types. */
     fun all(): List<AnnotationView>
 
-    /** True if an annotation of [annotationType] is present. */
     fun has(annotationType: Class<out Annotation>): Boolean =
         memberValues(annotationType) != null
 
-    /** Resolve a class-valued member to a [ClassDefinition]. */
     fun resolveClass(annotationType: Class<out Annotation>, member: String): ClassDefinition? =
         memberValues(annotationType)?.get(member) as? ClassDefinition
 
-    /** Resolve a class-array-valued member to [ClassDefinition]s. */
     fun resolveClasses(annotationType: Class<out Annotation>, member: String): List<ClassDefinition> =
         (memberValues(annotationType)?.get(member) as? List<*>)?.filterIsInstance<ClassDefinition>() ?: emptyList()
 }
 
 interface AnnotationView {
-
     val qualifiedName: String
-
     val simpleName: String
-
-    /** Annotations on this annotation's own type — e.g. to detect `@CustomAnnotation`. */
     val meta: Annotations
-
     fun values(): Map<String, Any?>
 }

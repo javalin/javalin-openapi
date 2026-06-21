@@ -4,7 +4,6 @@ import io.javalin.openapi.dynamic.ReflectionSchemaContext
 import io.javalin.openapi.plugin.OpenApiHook
 import io.javalin.openapi.plugin.OpenApiHookContext
 
-/** Autogenerates an OpenAPI operation for every registered Javalin route; [OpenApiMetadata] enriches a route when present. */
 class RegisteredRoutesHook : OpenApiHook {
 
     override fun apply(context: OpenApiHookContext) {

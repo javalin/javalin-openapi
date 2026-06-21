@@ -6,7 +6,6 @@ import io.javalin.openapi.dynamic.fixtures.Validated
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-/** Covers the policy the reflection backend gained by routing through the shared generator (composition, validations, redirect). */
 class DynamicCompositionTest {
 
     private val schemaContext = ReflectionSchemaContext()

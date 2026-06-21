@@ -34,7 +34,6 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.SimpleAnnotationValueVisitor8
 import javax.lang.model.util.Types
 
-/** [TypeIntrospector] backed by `javax.lang.model` (Java annotation processing). */
 class JapTypeIntrospector(private val types: Types, private val elements: Elements) : TypeIntrospector {
 
     override fun introspect(source: Any): ClassDefinition {

@@ -2,11 +2,6 @@ package io.javalin.openapi.experimental
 
 import io.javalin.openapi.experimental.StructureType.DEFAULT
 
-/**
- * Opt-in marker for [OpenApiType.handle] — the backend-native token (`OpenApiTypeHandle`, a neutral
- * `io.javalin.introspection.ClassDefinition`, ...). Only the backend that produced an [OpenApiType] may cast it;
- * backend-agnostic generator code must navigate via [SchemaGenerationContext] instead.
- */
 @RequiresOptIn(
     level = RequiresOptIn.Level.ERROR,
     message = "handle is the backend-native token behind OpenApiType; only the producing backend may cast it.",

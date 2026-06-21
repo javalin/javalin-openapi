@@ -146,7 +146,6 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
             }
 
         if (handledByCustomProcessor == null) {
-            // Unwrap Optional<T> as nullable T
             if (type.fullName == "java.util.Optional" && type.generics.size == 1) {
                 return createEmbeddedTypeDescription(type.generics.first(), inlineRefs, requiresNonNulls, composition, extra, nullable = true)
             }
