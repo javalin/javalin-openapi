@@ -5,6 +5,7 @@ include(
     "openapi-generator",
     "openapi-annotation-processor",
     "openapi-dynamic",
+    "openapi-ksp",
     "introspection",
     "introspection:introspection-api",
     "introspection:introspection-runtime",

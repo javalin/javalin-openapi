@@ -1,16 +1,18 @@
-package io.javalin.openapi.dynamic
+package io.javalin.openapi.ksp
 
+import com.google.devtools.ksp.processing.Resolver
 import io.javalin.introspection.TypeIntrospector
-import io.javalin.introspection.runtime.ReflectionTypeIntrospector
+import io.javalin.introspection.ksp.KspTypeIntrospector
 import io.javalin.openapi.experimental.IntrospectorSchemaContext
 import io.javalin.openapi.experimental.SimpleType
 import io.javalin.openapi.experimental.defaults.createDefaultSimpleTypeMappings
 
-/** Runtime-reflection backend: drives the shared generator over [ReflectionTypeIntrospector]. */
-class ReflectionSchemaContext(
+/** KSP backend: drives the shared generator over [KspTypeIntrospector] — the third backend on the same base. */
+class KspSchemaContext(
+    resolver: Resolver,
     simpleTypeMappings: Map<String, SimpleType> = createDefaultSimpleTypeMappings(),
 ) : IntrospectorSchemaContext(simpleTypeMappings) {
 
-    override val introspector: TypeIntrospector = ReflectionTypeIntrospector()
+    override val introspector: TypeIntrospector = KspTypeIntrospector(resolver)
 
 }

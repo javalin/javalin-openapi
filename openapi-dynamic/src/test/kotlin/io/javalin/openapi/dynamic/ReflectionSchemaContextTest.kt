@@ -11,19 +11,19 @@ import io.javalin.openapi.experimental.StructureType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class ReflectiveTypeIntrospectorTest {
+class ReflectionSchemaContextTest {
 
-    private val introspector = ReflectiveTypeIntrospector()
+    private val schemaContext = ReflectionSchemaContext()
 
     private fun schemaOf(type: Class<*>): JsonNode =
-        introspector.typeSchemaGenerator.createTypeSchema(introspector.introspect(type)).json
+        schemaContext.componentSchema(schemaContext.introspect(type)).json
 
     private fun propertyNames(type: Class<*>): List<String> =
         schemaOf(type).path("properties").fieldNames().asSequence().toList()
 
     @Test
-    fun `resolves a class into the shared ClassDefinition model`() {
-        val account = introspector.introspect(Account::class.java)
+    fun `resolves a class into the shared OpenApiType model`() {
+        val account = schemaContext.introspect(Account::class.java)
 
         assertThat(account.simpleName).isEqualTo("Account")
         assertThat(account.fullName).isEqualTo("io.javalin.openapi.dynamic.fixtures.Account")
@@ -59,7 +59,7 @@ class ReflectiveTypeIntrospectorTest {
 
     @Test
     fun `reads enum constants with renames`() {
-        assertThat(introspector.isEnum(introspector.introspect(Role::class.java))).isTrue()
+        assertThat(schemaContext.isEnum(schemaContext.introspect(Role::class.java))).isTrue()
 
         val role = schemaOf(Role::class.java)
         assertThat(role.path("type").asText()).isEqualTo("string")
