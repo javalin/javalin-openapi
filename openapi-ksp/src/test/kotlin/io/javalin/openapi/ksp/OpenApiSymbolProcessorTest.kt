@@ -101,4 +101,67 @@ class OpenApiSymbolProcessorTest {
         assertThat(account.path("properties").path("id").path("type").asText()).isEqualTo("string")
         assertThat(account.path("properties").path("age").path("type").asText()).isEqualTo("integer")
     }
+
+    @Test
+    fun `auto-discovers discriminator subtypes via DiscriminatorMappingName`() {
+        val compilation = KotlinCompilation().apply {
+            useKsp2()
+            sources = listOf(
+                SourceFile.kotlin(
+                    "Shapes.kt",
+                    """
+                    package fixtures
+                    import io.javalin.openapi.Discriminator
+                    import io.javalin.openapi.DiscriminatorMappingName
+                    import io.javalin.openapi.DiscriminatorProperty
+                    import io.javalin.openapi.HttpMethod
+                    import io.javalin.openapi.OneOf
+                    import io.javalin.openapi.OpenApi
+                    import io.javalin.openapi.OpenApiContent
+                    import io.javalin.openapi.OpenApiResponse
+                    import io.javalin.openapi.OpenApiStatus
+
+                    @OneOf(discriminator = Discriminator(property = DiscriminatorProperty(name = "type")))
+                    sealed interface Shape
+
+                    @DiscriminatorMappingName("circle")
+                    data class Circle(val radius: Int) : Shape
+
+                    @DiscriminatorMappingName("square")
+                    data class Square(val side: Int) : Shape
+
+                    class Shapes {
+                        @OpenApi(
+                            path = "/shape",
+                            methods = [HttpMethod.GET],
+                            responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = Shape::class)])]
+                        )
+                        fun shape() {}
+                    }
+                    """.trimIndent()
+                )
+            )
+            symbolProcessorProviders = mutableListOf(OpenApiSymbolProcessorProvider())
+            inheritClassPath = true
+            messageOutputStream = System.out
+        }
+
+        val result = compilation.compile()
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val document = compilation.kspSourcesDir.walkTopDown().firstOrNull { it.name == "openapi-default.json" }
+            ?: error("openapi document not generated. Output tree:\n" + compilation.kspSourcesDir.walkTopDown().joinToString("\n"))
+
+        val shape = jsonMapper.readTree(document.readText()).path("components").path("schemas").path("Shape")
+
+        val refs = shape.path("oneOf").map { it.path("\$ref").asText() }
+        assertThat(refs).containsExactlyInAnyOrder(
+            "#/components/schemas/Circle",
+            "#/components/schemas/Square",
+        )
+
+        assertThat(shape.path("discriminator").path("propertyName").asText()).isEqualTo("type")
+        assertThat(shape.path("discriminator").path("mapping").path("circle").asText()).isEqualTo("#/components/schemas/Circle")
+        assertThat(shape.path("discriminator").path("mapping").path("square").asText()).isEqualTo("#/components/schemas/Square")
+    }
 }

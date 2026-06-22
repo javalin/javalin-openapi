@@ -15,6 +15,7 @@ import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationView
 import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
+import io.javalin.introspection.CompileTimeIntrospector
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
@@ -22,13 +23,12 @@ import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
-import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
 // KSP can't materialize JVM annotation instances (annotation access is name/value only) and names builtins with
 // Kotlin FQNs (`kotlin.Int`), which `canonicalName` normalizes to their JVM equivalents to match jap/reflection.
-class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
+class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospector {
 
     private val mapType = builtin("kotlin.collections.Map")
     private val collectionType = builtin("kotlin.collections.Collection")
@@ -46,6 +46,17 @@ class KspTypeIntrospector(private val resolver: Resolver) : TypeIntrospector {
 
     fun annotationsOf(annotated: KSAnnotated): Annotations =
         KspAnnotations(annotated)
+
+    @OptIn(InternalIntrospectionApi::class)
+    override fun typesAnnotatedWith(annotationType: Class<out Annotation>, assignableTo: ClassDefinition?): List<ClassDefinition> {
+        val target = assignableTo?.source as? KSType
+        return resolver.getSymbolsWithAnnotation(annotationType.name)
+            .filterIsInstance<KSClassDeclaration>()
+            .map { it.asStarProjectedType() }
+            .filter { target == null || target.isAssignableFrom(it) }
+            .map { resolve(it) }
+            .toList()
+    }
 
     private fun resolve(type: KSType, structureType: StructureType = DEFAULT): ClassDefinition {
         val declaration = type.declaration

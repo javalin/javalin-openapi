@@ -4,6 +4,7 @@ import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationView
 import io.javalin.introspection.Annotations
 import io.javalin.introspection.ClassDefinition
+import io.javalin.introspection.CompileTimeIntrospector
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
@@ -11,10 +12,10 @@ import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
-import io.javalin.introspection.TypeIntrospector
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.isGetterName
 import io.javalin.introspection.propertyName
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
@@ -34,7 +35,11 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.SimpleAnnotationValueVisitor8
 import javax.lang.model.util.Types
 
-class JapTypeIntrospector(private val types: Types, private val elements: Elements) : TypeIntrospector {
+class JapTypeIntrospector(
+    private val types: Types,
+    private val elements: Elements,
+    private val roundEnvProvider: () -> RoundEnvironment? = { null },
+) : CompileTimeIntrospector {
 
     override fun introspect(source: Any): ClassDefinition {
         require(source is TypeMirror) { "JapTypeIntrospector expects a javax.lang.model.type.TypeMirror, got ${source::class.java.name}" }
@@ -43,6 +48,16 @@ class JapTypeIntrospector(private val types: Types, private val elements: Elemen
 
     fun annotationsOf(element: Element): Annotations =
         AnnotationsView(listOf(element))
+
+    @OptIn(InternalIntrospectionApi::class)
+    override fun typesAnnotatedWith(annotationType: Class<out Annotation>, assignableTo: ClassDefinition?): List<ClassDefinition> {
+        val roundEnv = roundEnvProvider() ?: return emptyList()
+        val target = assignableTo?.source as? TypeMirror
+        return roundEnv.getElementsAnnotatedWith(annotationType)
+            .filterIsInstance<TypeElement>()
+            .filter { target == null || types.isAssignable(it.asType(), target) }
+            .map { resolve(it.asType()) }
+    }
 
     private fun resolve(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), structureType: StructureType = DEFAULT): ClassDefinition =
         when (mirror) {

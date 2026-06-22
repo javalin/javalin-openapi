@@ -37,7 +37,7 @@ class AnnotationProcessorContext(
     override val simpleTypeMappings: Map<String, SimpleType> get() = configuration.simpleTypeMappings
     override val embeddedTypeProcessors: List<EmbeddedTypeProcessor> get() = configuration.embeddedTypeProcessors
 
-    private val japIntrospector: JapTypeIntrospector by lazy { JapTypeIntrospector(types, env.elementUtils) }
+    private val japIntrospector: JapTypeIntrospector by lazy { JapTypeIntrospector(types, env.elementUtils) { roundEnv } }
 
     override fun isEnum(type: OpenApiType): Boolean =
         type.source.kind == ElementKind.ENUM
@@ -77,12 +77,11 @@ class AnnotationProcessorContext(
         configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
 
     override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> =
-        roundEnv!!.getElementsAnnotatedWith(DiscriminatorMappingName::class.java)
-            .asSequence()
-            .filterIsInstance<TypeElement>()
-            .map { it.getAnnotation(DiscriminatorMappingName::class.java).value to it.asType().toOpenApiType() }
-            .filter { (_, subtype) -> isAssignable(subtype.mirror, type.mirror) }
-            .toList()
+        japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
+            .mapNotNull { subtype ->
+                (subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String)
+                    ?.let { it to toOpenApiType(subtype) }
+            }
 
     fun <R> inContext(body: AnnotationProcessorContext.() -> R): R =
         body()

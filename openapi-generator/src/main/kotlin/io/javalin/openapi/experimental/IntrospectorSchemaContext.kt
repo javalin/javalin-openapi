@@ -1,9 +1,11 @@
 package io.javalin.openapi.experimental
 
 import io.javalin.introspection.Annotations
+import io.javalin.introspection.CompileTimeIntrospector
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.PropertyView
 import io.javalin.introspection.TypeIntrospector
+import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.experimental.defaults.createDefaultEmbeddedTypeProcessors
 import io.javalin.openapi.experimental.defaults.createDefaultSimpleTypeMappings
@@ -56,6 +58,15 @@ abstract class IntrospectorSchemaContext(
 
     override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
         type.raw.getEnumConstants() ?: emptyList()
+
+    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> =
+        (introspector as? CompileTimeIntrospector)
+            ?.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = type.raw)
+            ?.mapNotNull { subtype ->
+                (subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String)
+                    ?.let { it to toOpenApiType(subtype) }
+            }
+            ?: emptyList()
 }
 
 private val OpenApiType.raw: RawType
