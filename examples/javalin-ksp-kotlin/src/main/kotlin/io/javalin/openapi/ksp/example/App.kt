@@ -19,7 +19,6 @@ data class Account(
 )
 
 class AccountHandler : Handler {
-
     @OpenApi(
         path = "/account",
         methods = [HttpMethod.GET],
@@ -33,15 +32,13 @@ class AccountHandler : Handler {
 }
 
 fun main() {
-    val app = Javalin.create { config ->
+    Javalin.start { config ->
         config.registerPlugin(OpenApiPlugin {})
         config.registerPlugin(SwaggerPlugin {})
         config.registerPlugin(ReDocPlugin {})
 
         config.routes.get("/account", AccountHandler())
     }
-
-    app.start(8080)
 
     println("OpenAPI document: http://localhost:8080/openapi")
     println("Swagger UI:       http://localhost:8080/swagger")
