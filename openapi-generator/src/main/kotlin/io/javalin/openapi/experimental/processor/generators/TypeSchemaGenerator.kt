@@ -43,27 +43,35 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
                 val namingStrategy = annotations.namingStrategy()
                 val values = createArrayNode()
+                val descriptions = createArrayNode()
 
                 context.enumConstantsOf(type)
                     .map { constant ->
                         val customName = constant.annotations.memberValues(OpenApiName::class.java)?.get("value") as? String
-                        when {
+                        val description = constant.annotations.memberValues(OpenApiDescription::class.java)?.get("value") as? String
+                        val name = when {
                             customName != null -> customName
                             namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
                             else -> constant.name
                         }
+                        name to (description ?: "")
                     }
-                    .forEach { name ->
+                    .forEach { (name, description) ->
                         if (enumType != null && enumType.type != "string") {
                             values.add(jsonMapper.readTree(name))
                         } else {
                             values.add(name)
                         }
+                        descriptions.add(description)
                     }
 
                 schema.put("type", enumType?.type ?: "string")
                 enumType?.format?.also { schema.put("format", it) }
                 schema.set<JsonNode>("enum", values)
+
+                if (descriptions.any { it.isTextual && it.asText().isNotEmpty() }) {
+                    schema.set<JsonNode>("x-enum-descriptions", descriptions)
+                }
 
                 schema.addExtra(annotations.findExtra())
             }
