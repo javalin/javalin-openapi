@@ -40,6 +40,24 @@ dependencies {
 }
 ```
 
+```kotlin [Gradle (Kotlin) with KSP]
+plugins {
+    // Use a KSP version matching your Kotlin version (e.g. 2.3.9 for Kotlin 2.3.x)
+    id("com.google.devtools.ksp") version "2.3.9"
+}
+
+dependencies {
+    val openapi = "7.2.2"
+
+    ksp(
+        "io.javalin.community.openapi:openapi-ksp:$openapi"
+    )
+    implementation(
+        "io.javalin.community.openapi:openapi-specification:$openapi"
+    )
+}
+```
+
 ```xml [Maven]
 <dependencies>
     <dependency>

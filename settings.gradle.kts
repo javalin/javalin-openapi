@@ -18,5 +18,6 @@ include(
     "javalin-plugins:javalin-redoc-plugin",
     "javalin-plugins:javalin-openapi-dynamic-hook",
     "examples",
-    "examples:javalin-gradle-kotlin"
+    "examples:javalin-gradle-kotlin",
+    "examples:javalin-ksp-kotlin"
 )

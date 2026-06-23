@@ -82,6 +82,13 @@ kapt {
 }
 ```
 
+```kotlin [Gradle (KSP)]
+ksp {
+    arg("openapi.info.title", "My API")
+    arg("openapi.info.version", "1.0.0")
+}
+```
+
 ```xml [Maven]
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -95,6 +102,10 @@ kapt {
 </plugin>
 ```
 
+:::
+
+::: tip
+The KSP backend reads `openapi.info.title` and `openapi.info.version`. The `openapi.groovy.path` script and the custom mappings, filters, and processors below are APT/Kapt-only.
 :::
 
 ## Custom Type Mappings

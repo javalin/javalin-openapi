@@ -219,6 +219,56 @@ val json = schema.toJson()
 
 Reopening an existing operation preserves all fields — only the fields you set are changed. This makes it safe to layer runtime additions on top of compile-time output.
 
+## Auto-generating Docs for Registered Routes
+
+For a springdoc-style experience — documenting routes that are registered programmatically (and that the compile-time processor never sees) — use the **dynamic hook** module. It enumerates every route registered on Javalin at startup and contributes them to the served document.
+
+```kotlin [Gradle (Kotlin)]
+dependencies {
+    val openapi = "7.2.2"
+    implementation("io.javalin.community.openapi:javalin-openapi-dynamic-hook:$openapi")
+}
+```
+
+Register `RegisteredRoutesHook` on the `OpenApiPlugin`:
+
+```kotlin
+Javalin.create { config ->
+    config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
+
+    config.routes.get("/users") { /* ... */ }
+    config.routes.get("/users/{id}") { /* ... */ }
+}
+```
+
+Every registered route is documented with its path, method, path parameters (typed as `string`), and a default `200` response.
+
+### Enriching a Route
+
+Javalin handlers are opaque lambdas, so without extra information the hook can only emit those stubs — it cannot infer request/response bodies. Attach an `OpenApiMetadata` to a route to describe it using the same operation DSL shown above; `schema(Class)` resolves the type through the reflection schema engine (no annotation processing required):
+
+```kotlin
+config.routes.addEndpoint(
+    Endpoint.create(HandlerType.GET, "/users/{id}")
+        .addMetadata(OpenApiMetadata {
+            summary("Get a user")
+            responses {
+                response("200") {
+                    description("The user")
+                    content { mediaType("application/json") { schema(User::class.java) } }
+                }
+            }
+        })
+        .handler { /* ... */ }
+)
+```
+
+The path-parameter skeleton is still auto-added, then your metadata is overlaid on top, and referenced types (e.g. `User`) are emitted into `components/schemas`.
+
+::: warning
+The hook currently documents the `OpenApiPlugin`'s own `/openapi` route (and any Swagger/ReDoc UI routes) alongside your endpoints. Runtime reflection is opt-in: it only happens when you add this module and register the hook, so the compile-time backends stay reflection-free.
+:::
+
 ## Merge Behavior
 
 The builder supports incremental construction. Reopening a path, operation, response, or media type merges with existing data:

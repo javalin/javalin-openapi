@@ -61,6 +61,35 @@ dependencies {
 }
 ```
 
+```kotlin [Gradle (Kotlin) with KSP]
+plugins {
+    // Use a KSP version matching your Kotlin version (e.g. 2.3.9 for Kotlin 2.3.x)
+    id("com.google.devtools.ksp") version "2.3.9"
+}
+
+dependencies {
+    val openapi = "7.2.2"
+
+    ksp(
+        "io.javalin.community.openapi:openapi-ksp:$openapi"
+    )
+    implementation(
+        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
+    )
+    implementation(
+        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
+    )
+    implementation(
+        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
+    )
+}
+
+ksp {
+    arg("openapi.info.title", "My API")
+    arg("openapi.info.version", "1.0.0")
+}
+```
+
 ```xml [Maven]
 <dependencies>
     <dependency>
@@ -101,6 +130,22 @@ dependencies {
 </build>
 ```
 
+:::
+
+## Choosing a Processor
+
+The same generation engine runs on three backends — pick the one that matches your build:
+
+| Backend | Dependency | Sources | Best for |
+|---------|------------|---------|----------|
+| APT (`annotationProcessor`) | `openapi-annotation-processor` | Java | Java projects, or Kotlin via `kapt` |
+| Kapt (`kapt`) | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects |
+| KSP (`ksp`) | `openapi-ksp` *(experimental)* | Kotlin only | Kotlin-only projects wanting faster builds |
+
+All three emit identical `openapi-plugin/openapi-*.json` resources that the `OpenApiPlugin` serves — switching backends does not change the generated specification.
+
+::: warning KSP limitations
+KSP processes **Kotlin sources only** — `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [compile-time configuration](../advanced/configuration) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only.
 :::
 
 ## Register the Plugin
