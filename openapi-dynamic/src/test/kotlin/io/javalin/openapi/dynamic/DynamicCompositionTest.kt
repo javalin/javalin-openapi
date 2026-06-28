@@ -1,8 +1,6 @@
 package io.javalin.openapi.dynamic
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.javalin.openapi.dynamic.fixtures.Shape
-import io.javalin.openapi.dynamic.fixtures.Validated
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

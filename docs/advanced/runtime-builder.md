@@ -41,21 +41,21 @@ The `SchemaBuilder` DSL provides a clean way to define inline schemas without wo
 
 ```kotlin
 schema { type("string") }
-// → { "type": "string" }
+// -> { "type": "string" }
 ```
 
 ### Type with Format
 
 ```kotlin
 schema { type("integer"); format("int32") }
-// → { "type": "integer", "format": "int32" }
+// -> { "type": "integer", "format": "int32" }
 ```
 
 ### Reference
 
 ```kotlin
 schema { ref("#/components/schemas/User") }
-// → { "$ref": "#/components/schemas/User" }
+// -> { "$ref": "#/components/schemas/User" }
 ```
 
 The schema DSL is available on media types, parameters, headers, and object schema properties.

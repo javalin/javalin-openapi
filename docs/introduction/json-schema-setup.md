@@ -140,7 +140,7 @@ Use `OpenApiLoader` to load the generated OpenAPI specifications from your class
 ```kotlin
 val loader = OpenApiLoader()
 
-// version → JSON
+// version -> JSON
 val schemes = loader.loadOpenApiSchemes()
 
 for ((version, json) in schemes) {

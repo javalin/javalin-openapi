@@ -1,7 +1,6 @@
 package io.javalin.openapi.dynamic
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.javalin.openapi.dynamic.fixtures.Account
 import io.javalin.openapi.experimental.processor.shared.jsonMapper
 import io.javalin.openapi.schema.OpenApiSchemaBuilder
 import org.assertj.core.api.Assertions.assertThat

@@ -1,4 +1,4 @@
-package io.javalin.openapi.dynamic.fixtures;
+package io.javalin.openapi.dynamic;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

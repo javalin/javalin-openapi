@@ -6,24 +6,7 @@ import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.runtime.ReflectionTypeIntrospector
-import io.javalin.introspection.test.fixtures.Account
-import io.javalin.introspection.test.fixtures.Address
-import io.javalin.introspection.test.fixtures.Annotated
-import io.javalin.introspection.test.fixtures.Bounded
-import io.javalin.introspection.test.fixtures.Color
-import io.javalin.introspection.test.fixtures.CrossPackageChild
-import io.javalin.introspection.test.fixtures.Derived
-import io.javalin.introspection.test.fixtures.Flagged
-import io.javalin.introspection.test.fixtures.Flags
-import io.javalin.introspection.test.fixtures.Holder
-import io.javalin.introspection.test.fixtures.Outer
-import io.javalin.introspection.test.fixtures.Point
-import io.javalin.introspection.test.fixtures.Ref
-import io.javalin.introspection.test.fixtures.Refs
-import io.javalin.introspection.test.fixtures.Scanned
-import io.javalin.introspection.test.fixtures.Tricky
-import io.javalin.introspection.test.fixtures.WithTransient
-import io.javalin.introspection.test.fixtures.Wrapped
+import io.javalin.introspection.test.sub.PackagePrivateBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import kotlin.reflect.KClass
@@ -209,3 +192,74 @@ private fun ClassDefinition.toShape(): TypeShape =
             .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
             .sortedBy { "${it.accessor}:${it.name}" },
     )
+
+class Address(val city: String, val zip: String)
+
+enum class Color { RED, GREEN }
+
+class Box<T>(val value: T)
+
+class Bounded<T : Address>(val value: T, val many: List<T>)
+
+@JvmRecord
+data class Point(val x: Int, val label: String, val tags: List<String>)
+
+class Account(
+    val id: String,
+    val age: Int,
+    val color: Color,
+    val address: Address?,
+    val tags: List<String>,
+    val meta: Map<String, Int>,
+    val bounded: Box<out Number>,
+)
+
+open class Base(val baseField: String) {
+    val computed: String get() = ""
+    protected val secret: String get() = ""
+}
+
+class Derived(val own: String) : Base("")
+
+class CrossPackageChild : PackagePrivateBase()
+
+class WithTransient(@Transient val skipped: String, val kept: String)
+
+class Tricky {
+    fun getName(): String = ""
+    fun issue(): String = ""
+    fun getaway(): String = ""
+    fun getResult() {}
+}
+
+annotation class Marker
+
+class Annotated(@get:Marker val tagged: String, val plain: String)
+
+annotation class Meta(val note: String)
+
+annotation class Outer(val meta: Meta)
+
+@Outer(Meta("x"))
+class Wrapped
+
+annotation class MetaMarker
+
+@MetaMarker
+annotation class Tagged(val label: String)
+
+@Tagged("x")
+class Scanned
+
+annotation class Flags(val ints: IntArray)
+
+@Flags(ints = [1, 2, 3])
+class Flagged
+
+annotation class Ref(val value: KClass<*>)
+
+annotation class Refs(vararg val value: KClass<*>)
+
+@Ref(Address::class)
+@Refs(Address::class, Color::class)
+class Holder

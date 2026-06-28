@@ -21,7 +21,7 @@ class OpenApiSymbolProcessorTest {
                 SourceFile.kotlin(
                     "Widget.kt",
                     """
-                    package fixtures
+                    package app
                     import io.javalin.openapi.JsonSchema
                     @JsonSchema
                     class Widget(val name: String, val size: Int)
@@ -36,7 +36,7 @@ class OpenApiSymbolProcessorTest {
         val result = compilation.compile()
         check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
 
-        val scheme = compilation.kspSourcesDir.walkTopDown().firstOrNull { it.name == "fixtures.Widget" }
+        val scheme = compilation.kspSourcesDir.walkTopDown().firstOrNull { it.name == "app.Widget" }
             ?: error("json-scheme not generated. Output tree:\n" + compilation.kspSourcesDir.walkTopDown().joinToString("\n"))
 
         val doc = jsonMapper.readTree(scheme.readText())
@@ -54,7 +54,7 @@ class OpenApiSymbolProcessorTest {
                 SourceFile.kotlin(
                     "Routes.kt",
                     """
-                    package fixtures
+                    package app
                     import io.javalin.openapi.HttpMethod
                     import io.javalin.openapi.OpenApiStatus
                     import io.javalin.openapi.OpenApi
@@ -110,7 +110,7 @@ class OpenApiSymbolProcessorTest {
                 SourceFile.kotlin(
                     "Shapes.kt",
                     """
-                    package fixtures
+                    package app
                     import io.javalin.openapi.Discriminator
                     import io.javalin.openapi.DiscriminatorMappingName
                     import io.javalin.openapi.DiscriminatorProperty
@@ -173,7 +173,7 @@ class OpenApiSymbolProcessorTest {
                 SourceFile.kotlin(
                     "Shared.kt",
                     """
-                    package fixtures
+                    package app
                     import io.javalin.openapi.HttpMethod
                     import io.javalin.openapi.JsonSchema
                     import io.javalin.openapi.OpenApi

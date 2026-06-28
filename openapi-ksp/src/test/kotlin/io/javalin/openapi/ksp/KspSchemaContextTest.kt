@@ -43,7 +43,7 @@ class KspSchemaContextTest {
     fun `generates a component schema end-to-end through the shared generator`() {
         withResolver { resolver ->
             val context = KspSchemaContext(resolver)
-            val user = resolver.getClassDeclarationByName(resolver.getKSNameFromString("io.javalin.openapi.ksp.fixtures.User"))!!
+            val user = resolver.getClassDeclarationByName(resolver.getKSNameFromString("io.javalin.openapi.ksp.User"))!!
                 .asStarProjectedType()
 
             val schema = context.componentSchema(context.introspect(user)).json
@@ -58,3 +58,9 @@ class KspSchemaContextTest {
         }
     }
 }
+
+class User(
+    val id: String,
+    val age: Int,
+    val tags: List<String>,
+)

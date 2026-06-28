@@ -1,4 +1,4 @@
-package io.javalin.openapi.dynamic.fixtures;
+package io.javalin.openapi.dynamic;
 
 import io.javalin.openapi.OpenApiByFields;
 

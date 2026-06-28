@@ -1,4 +1,4 @@
-package io.javalin.openapi.dynamic.hook.fixtures;
+package io.javalin.openapi.dynamic.hook;
 
 public class User {
 

@@ -65,8 +65,8 @@ The annotation processor automatically generates OpenAPI component schemas from 
 
 By default, properties are resolved from getter methods following JavaBean conventions. The `get` / `is` prefix is stripped:
 
-- `getName()` → `name`
-- `isActive()` → `active`
+- `getName()` -> `name`
+- `isActive()` -> `active`
 
 ### Java Records
 

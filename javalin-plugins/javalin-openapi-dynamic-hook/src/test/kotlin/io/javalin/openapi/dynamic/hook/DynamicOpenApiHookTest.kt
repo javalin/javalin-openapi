@@ -2,7 +2,6 @@ package io.javalin.openapi.dynamic.hook
 
 import io.javalin.Javalin
 import io.javalin.http.HandlerType
-import io.javalin.openapi.dynamic.hook.fixtures.User
 import io.javalin.openapi.experimental.processor.shared.jsonMapper
 import io.javalin.openapi.plugin.OpenApiPlugin
 import io.javalin.router.Endpoint
@@ -14,13 +13,13 @@ class DynamicOpenApiHookTest {
 
     @Test
     fun `autogenerates docs for all registered Javalin routes`() {
-        val app = Javalin.create { config ->
+        val app = Javalin.start { config ->
+            config.jetty.port = 0
             config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
             config.routes.get("/users") { }
             config.routes.post("/users") { }
             config.routes.get("/users/{id}") { }
         }
-        app.start(0)
 
         try {
             val body = Unirest.get("http://localhost:${app.port()}/openapi").asString().body
@@ -44,7 +43,8 @@ class DynamicOpenApiHookTest {
 
     @Test
     fun `enriches a route from OpenApiMetadata, reusing the operation builder and schema engine`() {
-        val app = Javalin.create { config ->
+        val app = Javalin.start { config ->
+            config.jetty.port = 0
             config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
             config.routes.addEndpoint(
                 Endpoint.create(HandlerType.GET, "/users/{id}")
@@ -60,7 +60,6 @@ class DynamicOpenApiHookTest {
                     .handler { }
             )
         }
-        app.start(0)
 
         try {
             val document = jsonMapper.readTree(Unirest.get("http://localhost:${app.port()}/openapi").asString().body)

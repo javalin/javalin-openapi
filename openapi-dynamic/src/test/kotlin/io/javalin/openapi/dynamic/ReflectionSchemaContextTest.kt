@@ -1,12 +1,6 @@
 package io.javalin.openapi.dynamic
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.javalin.openapi.dynamic.fixtures.Account
-import io.javalin.openapi.dynamic.fixtures.Address
-import io.javalin.openapi.dynamic.fixtures.FieldsDto
-import io.javalin.openapi.dynamic.fixtures.Role
-import io.javalin.openapi.dynamic.fixtures.SnakeCaseDto
-import io.javalin.openapi.dynamic.fixtures.TransientDto
 import io.javalin.openapi.experimental.StructureType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -26,7 +20,7 @@ class ReflectionSchemaContextTest {
         val account = schemaContext.introspect(Account::class.java)
 
         assertThat(account.simpleName).isEqualTo("Account")
-        assertThat(account.fullName).isEqualTo("io.javalin.openapi.dynamic.fixtures.Account")
+        assertThat(account.fullName).isEqualTo("io.javalin.openapi.dynamic.Account")
         assertThat(account.structureType).isEqualTo(StructureType.DEFAULT)
     }
 

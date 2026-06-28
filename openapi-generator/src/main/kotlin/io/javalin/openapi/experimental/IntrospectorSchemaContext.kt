@@ -59,14 +59,14 @@ abstract class IntrospectorSchemaContext(
     override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
         type.raw.getEnumConstants() ?: emptyList()
 
-    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> =
-        (introspector as? CompileTimeIntrospector)
-            ?.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = type.raw)
-            ?.mapNotNull { subtype ->
-                (subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String)
-                    ?.let { it to toOpenApiType(subtype) }
-            }
-            ?: emptyList()
+    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
+        val scanner = introspector as? CompileTimeIntrospector ?: return emptyList()
+        val subtypes = scanner.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = type.raw)
+        return subtypes.mapNotNull { subtype ->
+            val name = subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String
+            if (name == null) null else name to toOpenApiType(subtype)
+        }
+    }
 }
 
 private val OpenApiType.raw: RawType

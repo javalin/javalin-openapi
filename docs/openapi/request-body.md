@@ -52,9 +52,9 @@ Use `@OpenApiRequestBody` and `@OpenApiContent` to describe request bodies.
 
 When `mimeType` is not specified, the content type is auto-detected from the `from` type:
 
-- Object types → `application/json`
-- `String` → `text/plain`
-- `ByteArray`, `InputStream`, `File` → `application/octet-stream`
+- Object types -> `application/json`
+- `String` -> `text/plain`
+- `ByteArray`, `InputStream`, `File` -> `application/octet-stream`
 
 ## Inline Properties
 

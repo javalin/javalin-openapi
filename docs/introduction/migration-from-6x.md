@@ -48,8 +48,8 @@ New `@OpenApiNaming` annotation applies automatic name transformation to propert
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
 class UserResponse(
-    val firstName: String,  // → "first_name"
-    val lastName: String,   // → "last_name"
+    val firstName: String,  // -> "first_name"
+    val lastName: String,   // -> "last_name"
 )
 ```
 
@@ -198,7 +198,7 @@ kapt {
 
 If you don't use a Groovy configuration script, no changes are needed.
 
-### OpenAPI 3.0.3 → 3.1.0 {#openapi-303-310}
+### OpenAPI 3.0.3 -> 3.1.0 {#openapi-303-310}
 
 Generated specs are now **OpenAPI 3.1.0** (was 3.0.3), based on JSON Schema 2020-12. This changes the generated output in several ways.
 
@@ -311,8 +311,8 @@ openApiConfig.withDefinitionConfiguration { version, definition ->
 ```
 
 Key differences:
-- `withInfo(...)` → `info(...)`
-- `withServer(...)` → `server(...)`
+- `withInfo(...)` -> `info(...)`
+- `withServer(...)` -> `server(...)`
 - Security methods (`withBearerAuth`, `withBasicAuth`, `withOAuth2`, etc.) moved from `SecurityComponentConfiguration` to `OpenApiSchemaBuilder` directly - no more `withSecurity(security -> ...)` wrapper
 - `withDefinitionProcessor` moved from `DefinitionConfiguration` to `OpenApiPluginConfiguration`
 

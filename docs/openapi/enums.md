@@ -44,9 +44,9 @@ Apply `@OpenApiNaming` to transform all value names automatically:
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 enum class ErrorCode {
-    NOT_FOUND,     // → "not-found"
-    BAD_REQUEST,   // → "bad-request"
-    SERVER_ERROR   // → "server-error"
+    NOT_FOUND,     // -> "not-found"
+    BAD_REQUEST,   // -> "bad-request"
+    SERVER_ERROR   // -> "server-error"
 }
 ```
 

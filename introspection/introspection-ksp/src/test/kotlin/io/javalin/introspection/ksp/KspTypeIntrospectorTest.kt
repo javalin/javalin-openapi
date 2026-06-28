@@ -10,15 +10,14 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import io.javalin.introspection.ClassDefinition
-import io.javalin.introspection.ksp.fixtures.Ref
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Test
+import kotlin.reflect.KClass
 
 @OptIn(ExperimentalCompilerApi::class)
 class KspTypeIntrospectorTest {
 
-    /** Runs KSP in-process over a trivial trigger; the introspector resolves the classpath fixtures by name. */
     private fun <R> withKsp(block: (KspTypeIntrospector) -> R): R {
         var result: Result<R>? = null
         val provider = object : SymbolProcessorProvider {
@@ -54,9 +53,9 @@ class KspTypeIntrospectorTest {
         )
 
         val snapshot = withKsp { ksp ->
-            val fixtures = "io.javalin.introspection.ksp.fixtures"
-            val account = ksp.introspect("$fixtures.Account")
-            val color = ksp.introspect("$fixtures.Color")
+            val pkg = "io.javalin.introspection.ksp"
+            val account = ksp.introspect("$pkg.Account")
+            val color = ksp.introspect("$pkg.Color")
             Snapshot(
                 properties = account.getProperties().associate { it.name to "${it.type.fullName}:${it.type.structureType}" },
                 isEnum = color.isEnum(),
@@ -92,6 +91,28 @@ class KspTypeIntrospectorTest {
     }
 
     private companion object {
-        const val REF_PKG = "io.javalin.introspection.ksp.fixtures"
+        const val REF_PKG = "io.javalin.introspection.ksp"
     }
 }
+
+enum class Color { RED, GREEN }
+
+annotation class Ref(val value: KClass<*>)
+
+class Address(val city: String, val zip: String)
+
+annotation class MetaMarker
+
+@MetaMarker
+annotation class Tagged(val label: String)
+
+@Ref(Address::class)
+@Tagged("x")
+class Account(
+    val id: String,
+    val age: Int,
+    val color: Color,
+    val address: Address?,
+    val tags: List<String>,
+    val meta: Map<String, Int>,
+)

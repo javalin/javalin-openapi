@@ -74,12 +74,13 @@ class AnnotationProcessorContext(
     override fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean =
         configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
 
-    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> =
-        japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
-            .mapNotNull { subtype ->
-                (subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String)
-                    ?.let { it to toOpenApiType(subtype) }
-            }
+    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
+        val subtypes = japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
+        return subtypes.mapNotNull { subtype ->
+            val name = subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String
+            if (name == null) null else name to toOpenApiType(subtype)
+        }
+    }
 
     fun inDebug(body: (Messager) -> Unit) {
         if (configuration.debug) {
@@ -90,8 +91,11 @@ class AnnotationProcessorContext(
     fun forTypeElement(name: String): TypeElement? =
         env.elementUtils.getTypeElement(name)
 
-    private fun objectType(): TypeElement = forTypeElement(Object::class.java.name)!!
-    private fun mapType(): TypeElement = forTypeElement(Map::class.java.name)!!
+    private fun objectType(): TypeElement =
+        forTypeElement(Object::class.java.name)!!
+
+    private fun mapType(): TypeElement =
+        forTypeElement(Map::class.java.name)!!
 
     fun isAssignable(implementation: TypeMirror, superclass: TypeMirror): Boolean =
         env.typeUtils.isAssignable(implementation, superclass)

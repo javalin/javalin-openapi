@@ -10,7 +10,10 @@ internal class RedocPluginTest {
 
     @Test
     fun `should properly host redoc ui`() {
-        val app = Javalin.create { it.registerPlugin(ReDocPlugin()) }.start(0)
+        val app = Javalin.start {
+            it.jetty.port = 0
+            it.registerPlugin(ReDocPlugin())
+        }
 
         try {
             val response = Unirest.get("http://localhost:${app.port()}/redoc")

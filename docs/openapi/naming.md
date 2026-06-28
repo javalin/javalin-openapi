@@ -9,9 +9,9 @@ Apply `@OpenApiNaming` on a class to transform all property names:
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
 class UserProfile {
-    val firstName: String = ""    // → "first_name"
-    val lastName: String = ""     // → "last_name"
-    val emailAddress: String = "" // → "email_address"
+    val firstName: String = ""    // -> "first_name"
+    val lastName: String = ""     // -> "last_name"
+    val emailAddress: String = "" // -> "email_address"
 }
 ```
 
@@ -30,10 +30,10 @@ class UserProfile {
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
 class UserProfile {
-    val firstName: String = ""  // → "first_name" (from strategy)
+    val firstName: String = ""  // -> "first_name" (from strategy)
 
     @OpenApiName("ID")
-    val id: String = ""         // → "ID" (explicit override)
+    val id: String = ""         // -> "ID" (explicit override)
 }
 ```
 
@@ -44,9 +44,9 @@ class UserProfile {
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 enum class StatusCode {
-    NOT_FOUND,       // → "not-found"
-    BAD_REQUEST,     // → "bad-request"
-    INTERNAL_ERROR   // → "internal-error"
+    NOT_FOUND,       // -> "not-found"
+    BAD_REQUEST,     // -> "bad-request"
+    INTERNAL_ERROR   // -> "internal-error"
 }
 ```
 
@@ -55,12 +55,12 @@ Use `@OpenApiName` on individual values to override specific entries:
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 enum class StatusCode {
-    NOT_FOUND,                       // → "not-found"
+    NOT_FOUND,                       // -> "not-found"
 
     @OpenApiName("custom-value")
-    BAD_REQUEST,                     // → "custom-value"
+    BAD_REQUEST,                     // -> "custom-value"
 
-    INTERNAL_ERROR                   // → "internal-error"
+    INTERNAL_ERROR                   // -> "internal-error"
 }
 ```
 
