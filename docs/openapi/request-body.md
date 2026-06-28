@@ -109,11 +109,11 @@ Generates:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `from` | `KClass<*>` | — | Schema type |
+| `from` | `KClass<*>` | - | Schema type |
 | `mimeType` | `String` | Auto-detect | Content type |
-| `type` | `String` | — | Override type |
-| `format` | `String` | — | Override format |
+| `type` | `String` | - | Override type |
+| `format` | `String` | - | Override format |
 | `properties` | `OpenApiContentProperty[]` | `[]` | Inline properties |
-| `additionalProperties` | `OpenApiAdditionalContent` | — | Map value type |
-| `example` | `String` | — | Example value |
+| `additionalProperties` | `OpenApiAdditionalContent` | - | Map value type |
+| `example` | `String` | - | Example value |
 | `exampleObjects` | `OpenApiExampleProperty[]` | `[]` | Structured example |

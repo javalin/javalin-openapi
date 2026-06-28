@@ -35,7 +35,7 @@ At compile time, this produces a `/json-schemes/com.example.ServerConfig` resour
 }
 ```
 
-All nested types are inlined directly — there are no `$ref` references.
+All nested types are inlined directly - there are no `$ref` references.
 
 ## Loading at Runtime
 
@@ -75,12 +75,12 @@ class InternalEntity
 
 All property-level `@OpenApi*` annotations also apply to JSON Schema output:
 
-- `@OpenApiName` — override property names
-- `@OpenApiDescription` — add descriptions
-- `@OpenApiIgnore` — exclude properties
-- `@OpenApiRequired` — force required
-- `@OpenApiPropertyType` — override types
-- `@OpenApiNullable` — mark nullable
-- `@OpenApiNaming` — naming strategies (snake_case, kebab-case)
-- `@OpenApiByFields` — resolve from fields instead of getters
-- `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation` — validation constraints
+- `@OpenApiName` - override property names
+- `@OpenApiDescription` - add descriptions
+- `@OpenApiIgnore` - exclude properties
+- `@OpenApiRequired` - force required
+- `@OpenApiPropertyType` - override types
+- `@OpenApiNullable` - mark nullable
+- `@OpenApiNaming` - naming strategies (snake_case, kebab-case)
+- `@OpenApiByFields` - resolve from fields instead of getters
+- `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation` - validation constraints

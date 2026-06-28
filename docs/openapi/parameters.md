@@ -83,9 +83,9 @@ Use `@OpenApiParam` to describe path, query, header, and cookie parameters.
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `name` | `String` | — | Parameter name (required) |
+| `name` | `String` | - | Parameter name (required) |
 | `type` | `KClass<*>` | `String::class` | Parameter type |
-| `description` | `String` | — | Description |
+| `description` | `String` | - | Description |
 | `deprecated` | `Boolean` | `false` | Mark as deprecated |
 | `required` | `Boolean` | `false` | Mark as required |
 | `allowEmptyValue` | `Boolean` | `false` | Allow empty values |

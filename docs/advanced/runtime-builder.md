@@ -4,9 +4,9 @@ The `OpenApiSchemaBuilder` provides a Kotlin DSL for building and modifying Open
 
 ## When to Use
 
-- **Extend compile-time schemas** — add servers, security, or extra endpoints at startup
-- **Dynamic endpoints** — describe routes registered at runtime that the annotation processor can't see
-- **Testing** — build expected schemas in tests without JSON strings
+- **Extend compile-time schemas** - add servers, security, or extra endpoints at startup
+- **Dynamic endpoints** - describe routes registered at runtime that the annotation processor can't see
+- **Testing** - build expected schemas in tests without JSON strings
 
 ## Basic Usage
 
@@ -217,11 +217,11 @@ schema.path("/users").operation("get") {
 val json = schema.toJson()
 ```
 
-Reopening an existing operation preserves all fields — only the fields you set are changed. This makes it safe to layer runtime additions on top of compile-time output.
+Reopening an existing operation preserves all fields - only the fields you set are changed. This makes it safe to layer runtime additions on top of compile-time output.
 
 ## Auto-generating Docs for Registered Routes
 
-For a springdoc-style experience — documenting routes that are registered programmatically (and that the compile-time processor never sees) — use the **dynamic hook** module. It enumerates every route registered on Javalin at startup and contributes them to the served document.
+For a springdoc-style experience - documenting routes that are registered programmatically (and that the compile-time processor never sees) - use the **dynamic hook** module. It enumerates every route registered on Javalin at startup and contributes them to the served document.
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
@@ -245,7 +245,7 @@ Every registered route is documented with its path, method, path parameters (typ
 
 ### Enriching a Route
 
-Javalin handlers are opaque lambdas, so without extra information the hook can only emit those stubs — it cannot infer request/response bodies. Attach an `OpenApiMetadata` to a route to describe it using the same operation DSL shown above; `schema(Class)` resolves the type through the reflection schema engine (no annotation processing required):
+Javalin handlers are opaque lambdas, so without extra information the hook can only emit those stubs - it cannot infer request/response bodies. Attach an `OpenApiMetadata` to a route to describe it using the same operation DSL shown above; `schema(Class)` resolves the type through the reflection schema engine (no annotation processing required):
 
 ```kotlin
 config.routes.addEndpoint(

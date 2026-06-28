@@ -14,7 +14,7 @@ class InternalService {
 }
 ```
 
-`@Custom` is repeatable — you can add multiple custom properties to the same element.
+`@Custom` is repeatable - you can add multiple custom properties to the same element.
 
 ## @CustomAnnotation
 

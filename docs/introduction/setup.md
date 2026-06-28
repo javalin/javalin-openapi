@@ -63,7 +63,7 @@ dependencies {
 
 ```kotlin [Gradle (Kotlin) with KSP]
 plugins {
-    // KSP is released against a specific Kotlin version — use the build that matches yours (github.com/google/ksp/releases)
+    // KSP is released against a specific Kotlin version - use the build that matches yours (github.com/google/ksp/releases)
     id("com.google.devtools.ksp") version "2.3.9"
 }
 
@@ -134,7 +134,7 @@ ksp {
 
 ## Choosing a Processor
 
-The same generation engine runs on three backends — pick the one that matches your build:
+The same generation engine runs on three backends - pick the one that matches your build:
 
 | Backend                     | Dependency                     | Sources       | Best for                                   |
 |-----------------------------|--------------------------------|---------------|--------------------------------------------|
@@ -142,10 +142,10 @@ The same generation engine runs on three backends — pick the one that matches 
 | Kapt (`kapt`)               | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects                 |
 | KSP (`ksp`)                 | `openapi-ksp` *(experimental)* | Kotlin only   | Kotlin-only projects wanting faster builds |
 
-All three emit identical `openapi-plugin/openapi-*.json` resources that the `OpenApiPlugin` serves — switching backends does not change the generated specification.
+All three emit identical `openapi-plugin/openapi-*.json` resources that the `OpenApiPlugin` serves - switching backends does not change the generated specification.
 
 ::: warning KSP limitations
-KSP processes **Kotlin sources only** — `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [compile-time configuration](../advanced/configuration) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only.
+KSP processes **Kotlin sources only** - `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [scripting configuration](../advanced/scripting) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only.
 :::
 
 ## Register the Plugin
@@ -251,11 +251,11 @@ openapi.withDefinitionConfiguration { version, builder ->
 }
 ```
 
-`OpenApiPlugin` is repeatable — you can register multiple instances for different configurations.
+`OpenApiPlugin` is repeatable - you can register multiple instances for different configurations.
 
 ## Next Steps
 
-- [Javalin Swagger UI](./swagger) — interactive API explorer
-- [Javalin ReDoc](./redoc) — clean API reference
-- [OpenAPI Getting Started](../openapi/getting-started) — annotate your first endpoint
-- [Runtime Builder DSL](../advanced/runtime-builder) — build or extend specs programmatically at runtime
+- [Javalin Swagger UI](./swagger) - interactive API explorer
+- [Javalin ReDoc](./redoc) - clean API reference
+- [OpenAPI Getting Started](../openapi/getting-started) - annotate your first endpoint
+- [Runtime Builder DSL](../advanced/runtime-builder) - build or extend specs programmatically at runtime

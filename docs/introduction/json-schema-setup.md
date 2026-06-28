@@ -10,7 +10,7 @@ You can serve them with any HTTP server, use them for validation, feed them to c
 
 ## Installation
 
-You only need the annotation processor and the specification module — no Javalin plugins required:
+You only need the annotation processor and the specification module - no Javalin plugins required:
 
 ::: code-group
 
@@ -131,7 +131,7 @@ At compile time, this generates a `/json-schemes/com.example.UserConfig` resourc
 | References    | `$ref`        | All types inlined       |
 | Trigger       | `@OpenApi`    | `@JsonSchema`           |
 
-Both modes are framework-agnostic at the annotation processing level — Javalin is only needed if you want to serve the specs via the Javalin plugins.
+Both modes are framework-agnostic at the annotation processing level - Javalin is only needed if you want to serve the specs via the Javalin plugins.
 
 ## Loading OpenAPI Specs at Runtime
 
@@ -189,17 +189,17 @@ class InternalEntity
 
 Most property-level annotations work in both OpenAPI and JSON Schema modes:
 
-- `@OpenApiName` — override property names
-- `@OpenApiDescription` — add descriptions
-- `@OpenApiIgnore` — exclude properties
-- `@OpenApiRequired` — force required
-- `@OpenApiPropertyType` — override types
-- `@OpenApiNullable` — mark nullable
-- `@OpenApiNaming` — apply naming strategies
-- `@OpenApiByFields` — resolve from fields instead of getters
-- Validation annotations — `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation`
+- `@OpenApiName` - override property names
+- `@OpenApiDescription` - add descriptions
+- `@OpenApiIgnore` - exclude properties
+- `@OpenApiRequired` - force required
+- `@OpenApiPropertyType` - override types
+- `@OpenApiNullable` - mark nullable
+- `@OpenApiNaming` - apply naming strategies
+- `@OpenApiByFields` - resolve from fields instead of getters
+- Validation annotations - `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation`
 
 ## Next Steps
 
-- [Type Composition](../json-schema/getting-started) — `@OneOf`, `@AnyOf`, `@AllOf` with discriminators
-- [Custom Properties](../json-schema/custom-properties) — add custom schema properties with `@Custom`
+- [Type Composition](../json-schema/getting-started) - `@OneOf`, `@AnyOf`, `@AllOf` with discriminators
+- [Custom Properties](../json-schema/custom-properties) - add custom schema properties with `@Custom`
