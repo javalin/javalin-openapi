@@ -9,8 +9,6 @@ import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
-import io.javalin.openapi.experimental.processor.shared.mapType
-import io.javalin.openapi.experimental.processor.shared.objectType
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -83,9 +81,6 @@ class AnnotationProcessorContext(
                     ?.let { it to toOpenApiType(subtype) }
             }
 
-    fun <R> inContext(body: AnnotationProcessorContext.() -> R): R =
-        body()
-
     fun inDebug(body: (Messager) -> Unit) {
         if (configuration.debug) {
             body(env.messager)
@@ -95,8 +90,8 @@ class AnnotationProcessorContext(
     fun forTypeElement(name: String): TypeElement? =
         env.elementUtils.getTypeElement(name)
 
-    fun forTypeElement(mirror: TypeMirror): TypeElement =
-        env.typeUtils.asElement(mirror) as TypeElement
+    private fun objectType(): TypeElement = forTypeElement(Object::class.java.name)!!
+    private fun mapType(): TypeElement = forTypeElement(Map::class.java.name)!!
 
     fun isAssignable(implementation: TypeMirror, superclass: TypeMirror): Boolean =
         env.typeUtils.isAssignable(implementation, superclass)

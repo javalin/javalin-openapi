@@ -23,6 +23,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
 
 class ReflectionTypeIntrospector : TypeIntrospector {
@@ -37,6 +38,7 @@ private fun reflect(type: Type, generics: List<ClassDefinition> = emptyList(), s
     when (type) {
         is GenericArrayType -> reflect(type.genericComponentType, generics, ARRAY)
         is WildcardType -> reflect(type.upperBounds.firstOrNull() ?: Any::class.java, generics, structureType)
+        is TypeVariable<*> -> reflect(type.bounds.firstOrNull() ?: Any::class.java, generics, structureType)
         is ParameterizedType -> parameterized(type, generics, structureType)
         is Class<*> -> raw(type, generics, structureType)
         else -> definition(Any::class.java, emptyList(), structureType)
@@ -101,7 +103,7 @@ private class ReflectionClassDefinition(
     override fun getEnumConstants(): List<EnumConstantView>? =
         erasure.takeIf { it.isEnum }?.enumConstants?.map {
             val name = (it as Enum<*>).name
-            EnumConstantView(name, ReflectionAnnotations(listOf(erasure.getField(name))))
+            EnumConstantView(name, ReflectionAnnotations(listOfNotNull(runCatching { erasure.getDeclaredField(name) }.getOrNull())))
         }
 
     override fun getProperties(): List<PropertyView> =

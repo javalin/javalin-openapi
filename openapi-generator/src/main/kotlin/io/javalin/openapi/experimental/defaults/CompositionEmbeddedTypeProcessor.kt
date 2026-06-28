@@ -11,7 +11,7 @@ class CompositionEmbeddedTypeProcessor : EmbeddedTypeProcessor {
             ?.let {
                 context.scheme.createComposition(
                     context = context.parentContext,
-                    classDefinition = context.type,
+                    type = context.type,
                     propertyComposition = it,
                     references = context.references,
                     inlineRefs = context.inlineRefs,

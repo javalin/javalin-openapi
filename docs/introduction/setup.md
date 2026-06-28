@@ -63,7 +63,7 @@ dependencies {
 
 ```kotlin [Gradle (Kotlin) with KSP]
 plugins {
-    // Use a KSP version matching your Kotlin version (e.g. 2.3.9 for Kotlin 2.3.x)
+    // KSP is released against a specific Kotlin version — use the build that matches yours (github.com/google/ksp/releases)
     id("com.google.devtools.ksp") version "2.3.9"
 }
 
@@ -136,11 +136,11 @@ ksp {
 
 The same generation engine runs on three backends — pick the one that matches your build:
 
-| Backend | Dependency | Sources | Best for |
-|---------|------------|---------|----------|
-| APT (`annotationProcessor`) | `openapi-annotation-processor` | Java | Java projects, or Kotlin via `kapt` |
-| Kapt (`kapt`) | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects |
-| KSP (`ksp`) | `openapi-ksp` *(experimental)* | Kotlin only | Kotlin-only projects wanting faster builds |
+| Backend                     | Dependency                     | Sources       | Best for                                   |
+|-----------------------------|--------------------------------|---------------|--------------------------------------------|
+| APT (`annotationProcessor`) | `openapi-annotation-processor` | Java          | Java projects, or Kotlin via `kapt`        |
+| Kapt (`kapt`)               | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects                 |
+| KSP (`ksp`)                 | `openapi-ksp` *(experimental)* | Kotlin only   | Kotlin-only projects wanting faster builds |
 
 All three emit identical `openapi-plugin/openapi-*.json` resources that the `OpenApiPlugin` serves — switching backends does not change the generated specification.
 

@@ -42,7 +42,7 @@ dependencies {
 
 ```kotlin [Gradle (Kotlin) with KSP]
 plugins {
-    // Use a KSP version matching your Kotlin version (e.g. 2.3.9 for Kotlin 2.3.x)
+    // KSP is released against a specific Kotlin version - use the build that matches yours (github.com/google/ksp/releases)
     id("com.google.devtools.ksp") version "2.3.9"
 }
 
@@ -124,12 +124,12 @@ At compile time, this generates a `/json-schemes/com.example.UserConfig` resourc
 
 ### Differences between the Two Modes
 
-| Aspect | OpenAPI | JSON Schema |
-|--------|---------|-------------|
-| Output format | OpenAPI 3.1.0 | JSON Schema 2020-12 |
-| Scope | Endpoint docs | Standalone type schemas |
-| References | `$ref` | All types inlined |
-| Trigger | `@OpenApi` | `@JsonSchema` |
+| Aspect        | OpenAPI       | JSON Schema             |
+|---------------|---------------|-------------------------|
+| Output format | OpenAPI 3.1.0 | JSON Schema 2020-12     |
+| Scope         | Endpoint docs | Standalone type schemas |
+| References    | `$ref`        | All types inlined       |
+| Trigger       | `@OpenApi`    | `@JsonSchema`           |
 
 Both modes are framework-agnostic at the annotation processing level — Javalin is only needed if you want to serve the specs via the Javalin plugins.
 

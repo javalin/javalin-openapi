@@ -252,13 +252,13 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
 
         val nullability = property.annotations.memberValues(OpenApiPropertyType::class.java)?.get("nullability") as? String
         val redirect = property.annotations.resolveClass(OpenApiPropertyType::class.java, "definedBy")
-        val isPrimitive = redirect == null && !property.nullable
+        val treatedAsNotNull = redirect == null && !property.nullable
 
         val isNotNull = when {
             nullability == Nullability.NOT_NULL.name -> true
             nullability == Nullability.NULLABLE.name -> false
             property.annotations.hasNamed("NotNull") -> true
-            isPrimitive -> true
+            treatedAsNotNull -> true
             property.annotations.hasNamed("Nullable") -> false
             else -> false
         }

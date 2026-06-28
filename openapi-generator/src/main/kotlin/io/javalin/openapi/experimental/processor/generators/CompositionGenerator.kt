@@ -47,13 +47,13 @@ private fun discriminatorInfo(context: SchemaGenerationContext, discriminator: M
 
 fun ObjectNode.createComposition(
     context: SchemaGenerationContext,
-    classDefinition: OpenApiType,
+    type: OpenApiType,
     propertyComposition: PropertyComposition,
     references: MutableSet<OpenApiType>,
     inlineRefs: Boolean = false,
     requiresNonNulls: Boolean = true,
 ) {
-    val subtypes by lazy { context.discriminatorSubtypes(classDefinition) }
+    val subtypes by lazy { context.discriminatorSubtypes(type) }
 
     val refs = propertyComposition.references.ifEmpty { subtypes.map { it.second } }
 

@@ -67,6 +67,12 @@ class OpenApiSchemaGenerator(
         return schema.toJson()
     }
 
+    fun generateVersionedSchemas(routes: List<Map<String, Any?>>): Map<String, String> =
+        routes
+            .flatMap { route -> route.texts("versions").map { version -> version to route } }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, versionRoutes) -> generateSchema(versionRoutes.toSet().toList()) }
+
     private fun OperationBuilder.buildParameters(route: Map<String, Any?>) {
         parameters {
             val parametersByLocation = linkedMapOf(

@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Javalin OpenAPI
   text: Compile-time API Documentation
-  tagline: Generate OpenAPI specifications and JSON Schemas at compile time with zero runtime reflection. Annotation-driven, type-safe, and ready for Swagger UI and ReDoc.
+  tagline: Generate OpenAPI specifications and JSON Schemas at compile time — via Java annotation processing, kapt, or KSP. Annotation-driven, type-safe, and ready for Swagger UI and ReDoc.
   actions:
     - theme: brand
       text: Get Started
@@ -15,9 +15,11 @@ hero:
 
 features:
   - title: Compile-time Generation
-    details: Schemas are generated during compilation using annotation processing. No runtime reflection, no classpath scanning, no startup overhead.
+    details: Schemas are generated during compilation via Java annotation processing, kapt, or KSP. No runtime reflection, no classpath scanning, no startup overhead.
   - title: Two Modes
-    details: Generate OpenAPI 3.1.0 endpoint documentation with @OpenApi, or standalone JSON Schema 2020-12 files with @JsonSchema — using the same annotation processor.
+    details: Generate OpenAPI 3.1.0 endpoint documentation with @OpenApi, or standalone JSON Schema 2020-12 files with @JsonSchema — from the same engine.
+  - title: Optional Runtime Backend
+    details: An opt-in reflection backend documents routes registered programmatically at runtime — for the dynamic cases the compile-time processor can't see.
   - title: Swagger UI & ReDoc
     details: Built-in plugins serve Swagger UI and ReDoc out of the box. Register the plugin and your interactive API documentation is live.
   - title: Schema Customization

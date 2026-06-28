@@ -164,4 +164,57 @@ class OpenApiSymbolProcessorTest {
         assertThat(shape.path("discriminator").path("mapping").path("circle").asText()).isEqualTo("#/components/schemas/Circle")
         assertThat(shape.path("discriminator").path("mapping").path("square").asText()).isEqualTo("#/components/schemas/Square")
     }
+
+    @Test
+    fun `does not leak inlined sub-schemas from the JsonSchema pass into OpenApi refs`() {
+        val compilation = KotlinCompilation().apply {
+            useKsp2()
+            sources = listOf(
+                SourceFile.kotlin(
+                    "Shared.kt",
+                    """
+                    package fixtures
+                    import io.javalin.openapi.HttpMethod
+                    import io.javalin.openapi.JsonSchema
+                    import io.javalin.openapi.OpenApi
+                    import io.javalin.openapi.OpenApiContent
+                    import io.javalin.openapi.OpenApiResponse
+                    import io.javalin.openapi.OpenApiStatus
+
+                    data class Address(val city: String)
+
+                    @JsonSchema
+                    class Profile(val address: Address)
+
+                    data class Account(val address: Address)
+
+                    class Routes {
+                        @OpenApi(
+                            path = "/account",
+                            methods = [HttpMethod.GET],
+                            responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = Account::class)])]
+                        )
+                        fun getAccount() {}
+                    }
+                    """.trimIndent()
+                )
+            )
+            symbolProcessorProviders = mutableListOf(OpenApiSymbolProcessorProvider())
+            inheritClassPath = true
+            messageOutputStream = System.out
+        }
+
+        val result = compilation.compile()
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val document = compilation.kspSourcesDir.walkTopDown().firstOrNull { it.name == "openapi-default.json" }
+            ?: error("openapi document not generated. Output tree:\n" + compilation.kspSourcesDir.walkTopDown().joinToString("\n"))
+
+        val schemas = jsonMapper.readTree(document.readText()).path("components").path("schemas")
+        val addressProperty = schemas.path("Account").path("properties").path("address")
+
+        assertThat(addressProperty.path("\$ref").asText()).isEqualTo("#/components/schemas/Address")
+        assertThat(addressProperty.has("properties")).isFalse()
+        assertThat(schemas.path("Address").path("properties").path("city").path("type").asText()).isEqualTo("string")
+    }
 }

@@ -15,8 +15,8 @@ class JsonSchemaGenerator {
             .run { context.env.filer.saveResource(context, "json-schemes/index", joinToString(separator = "\n")) }
 
     private fun generate(element: Element): String =
-        context.inContext {
-            context.typeSchemaGenerator.createTypeSchema(
+        with(context) {
+            typeSchemaGenerator.createTypeSchema(
                 type = element.asType().toOpenApiType(),
                 inlineRefs = true
             ).toJsonSchemaString()

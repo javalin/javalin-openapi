@@ -8,6 +8,8 @@ enum class Color { RED, GREEN }
 
 class Box<T>(val value: T)
 
+class Bounded<T : Address>(val value: T, val many: List<T>)
+
 @JvmRecord
 data class Point(val x: Int, val label: String, val tags: List<String>)
 

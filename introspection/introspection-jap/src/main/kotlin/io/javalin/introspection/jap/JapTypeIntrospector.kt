@@ -15,6 +15,7 @@ import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.Visibility
 import io.javalin.introspection.isGetterName
 import io.javalin.introspection.propertyName
+import java.lang.annotation.Repeatable as JavaRepeatable
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -234,7 +235,7 @@ class JapTypeIntrospector(
             val mirrors = sources.flatMap { it.annotationMirrors }
             val direct = mirrors.filter { it.named(annotationType.name) }.map { mirrorValues(it) }
             // javac wraps repeated annotations in their @Repeatable container; unwrap its `value` array
-            val containerName = annotationType.getAnnotation(java.lang.annotation.Repeatable::class.java)?.value?.java?.canonicalName
+            val containerName = annotationType.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
             val repeated = containerName
                 ?.let { name -> mirrors.firstOrNull { it.named(name) } }
                 ?.let { mirrorValues(it)["value"] as? List<*> }

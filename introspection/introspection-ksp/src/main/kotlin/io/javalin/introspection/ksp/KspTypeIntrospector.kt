@@ -24,6 +24,7 @@ import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.Visibility
+import java.lang.annotation.Repeatable as JavaRepeatable
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
 // KSP can't materialize JVM annotation instances (annotation access is name/value only) and names builtins with
@@ -161,11 +162,19 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                 ?.firstOrNull { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationType.name }
                 ?.let { argumentValues(it) }
 
-        override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> =
-            element?.annotations
-                ?.filter { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationType.name }
-                ?.map { argumentValues(it) }
-                ?.toList() ?: emptyList()
+        override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> {
+            val annotations = element?.annotations?.toList() ?: return emptyList()
+            val direct = annotations
+                .filter { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationType.name }
+                .map { argumentValues(it) }
+            val containerName = annotationType.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
+            val repeated = containerName
+                ?.let { name -> annotations.firstOrNull { it.annotationType.resolve().declaration.qualifiedName?.asString() == name } }
+                ?.let { argumentValues(it)["value"] as? List<*> }
+                ?.filterIsInstance<Map<String, Any?>>()
+                .orEmpty()
+            return direct + repeated
+        }
 
         override fun all(): List<AnnotationView> =
             element?.annotations?.map { KspAnnotationView(it) }?.toList() ?: emptyList()

@@ -9,6 +9,7 @@ import io.javalin.introspection.runtime.ReflectionTypeIntrospector
 import io.javalin.introspection.test.fixtures.Account
 import io.javalin.introspection.test.fixtures.Address
 import io.javalin.introspection.test.fixtures.Annotated
+import io.javalin.introspection.test.fixtures.Bounded
 import io.javalin.introspection.test.fixtures.Color
 import io.javalin.introspection.test.fixtures.CrossPackageChild
 import io.javalin.introspection.test.fixtures.Derived
@@ -37,17 +38,26 @@ class IntrospectionParityTest {
         assertThat(processedShape).isEqualTo(runtimeShape)
     }
 
-    @Test fun `scalar, collection, map and nested members match across backends`() = assertParity(Account::class)
+    @Test
+    fun `scalar, collection, map and nested members match across backends`() = assertParity(Account::class)
 
-    @Test fun `plain object members match across backends`() = assertParity(Address::class)
+    @Test
+    fun `plain object members match across backends`() = assertParity(Address::class)
 
-    @Test fun `enum constants match across backends`() = assertParity(Color::class)
+    @Test
+    fun `enum constants match across backends`() = assertParity(Color::class)
 
-    @Test fun `inherited getters and private superclass fields match across backends`() = assertParity(Derived::class)
+    @Test
+    fun `inherited getters and private superclass fields match across backends`() = assertParity(Derived::class)
 
-    @Test fun `record components match across backends`() = assertParity(Point::class)
+    @Test
+    fun `record components match across backends`() = assertParity(Point::class)
 
-    @Test fun `cross-package inherited fields match across backends`() = assertParity(CrossPackageChild::class)
+    @Test
+    fun `bounded type variables resolve to their bound across backends`() = assertParity(Bounded::class)
+
+    @Test
+    fun `cross-package inherited fields match across backends`() = assertParity(CrossPackageChild::class)
 
     @Test
     fun `transient fields are flagged on both backends`() {
@@ -136,6 +146,34 @@ class IntrospectionParityTest {
         val runtimeInts = runtime.introspect(Flagged::class.java).getAnnotations().memberValues(Flags::class.java)!!.getValue("ints")
         val processedInts = AnnotationProcessing.introspect(Flagged::class) { it.getAnnotations().memberValues(Flags::class.java)!!.getValue("ints") }
         assertThat(processedInts).isEqualTo(runtimeInts).isEqualTo(listOf(1, 2, 3))
+    }
+
+    @Test
+    fun `KSP reports the same property names and types as reflection`() {
+        fun namesAndTypes(definition: ClassDefinition) =
+            definition.getProperties().map { it.name to it.type.fullName }.toSet()
+        val runtimeProperties = namesAndTypes(runtime.introspect(Address::class.java))
+        val kspProperties = SymbolProcessing.introspect(Address::class) { namesAndTypes(it) }
+        assertThat(kspProperties).isEqualTo(runtimeProperties)
+            .isEqualTo(setOf("city" to String::class.java.name, "zip" to String::class.java.name))
+    }
+
+    @Test
+    fun `KSP collapses each property to a single getter where the JVM backends split field and getter`() {
+        val kspAccessors = SymbolProcessing.introspect(Address::class) { definition ->
+            definition.getProperties().map { it.accessor }
+        }
+        assertThat(kspAccessors).containsExactly(Accessor.GETTER, Accessor.GETTER)
+
+        val runtimeAccessors = runtime.introspect(Address::class.java).getProperties().map { it.accessor }.toSet()
+        assertThat(runtimeAccessors).containsExactlyInAnyOrder(Accessor.GETTER, Accessor.FIELD)
+    }
+
+    @Test
+    fun `KSP enum constants match reflection`() {
+        val runtimeConstants = runtime.introspect(Color::class.java).getEnumConstants()?.map { it.name }?.sorted()
+        val kspConstants = SymbolProcessing.introspect(Color::class) { it.getEnumConstants()?.map { constant -> constant.name }?.sorted() }
+        assertThat(kspConstants).isEqualTo(runtimeConstants).isEqualTo(listOf("GREEN", "RED"))
     }
 }
 
