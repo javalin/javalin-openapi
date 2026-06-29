@@ -16,7 +16,6 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
     @Override
     void configure(OpenApiAnnotationProcessorConfiguration configuration) {
         configuration.validateWithParser = false
-        // configuration.debug = false
 
         // Used by TypeMappersTest
         configuration.simpleTypeMappings['io.javalin.openapi.processor.TypeMappersTest.CustomType'] = new SimpleType("string")

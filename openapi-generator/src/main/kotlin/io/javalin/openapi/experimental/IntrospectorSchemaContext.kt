@@ -1,6 +1,6 @@
 package io.javalin.openapi.experimental
 
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.CompileTimeIntrospector
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.PropertyView
@@ -32,7 +32,7 @@ abstract class IntrospectorSchemaContext(
         typeSchemaGenerator.createEmbeddedTypeDescription(introspect(nativeType))
 
     override fun toOpenApiType(raw: RawType): OpenApiType {
-        val customName = raw.getAnnotations().memberValues(OpenApiName::class.java)?.get("value") as? String
+        val customName = raw.getAnnotations().find(OpenApiName::class.java)?.string("value")
         val packageName = raw.fullName.substringBeforeLast('.', "")
         return OpenApiType(
             simpleName = customName ?: raw.simpleName,
@@ -50,7 +50,7 @@ abstract class IntrospectorSchemaContext(
     override fun isEnum(type: OpenApiType): Boolean =
         type.raw.isEnum()
 
-    override fun annotationsOf(type: OpenApiType): Annotations =
+    override fun annotationsOf(type: OpenApiType): AnnotationSet =
         type.raw.getAnnotations()
 
     override fun propertiesOf(type: OpenApiType): List<PropertyView> =
@@ -63,7 +63,7 @@ abstract class IntrospectorSchemaContext(
         val scanner = introspector as? CompileTimeIntrospector ?: return emptyList()
         val subtypes = scanner.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = type.raw)
         return subtypes.mapNotNull { subtype ->
-            val name = subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String
+            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.string("value")
             if (name == null) null else name to toOpenApiType(subtype)
         }
     }

@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
 /**
  * Runs the annotation-processing backend inside a real in-process `javac` run, so it can be tested like reflection.
  *
- * The backend reads types via `javax.lang.model`, which the compiler only exposes to a running processor — there is
+ * The backend reads types via `javax.lang.model`, which the compiler only exposes to a running processor - there is
  * no such environment at plain runtime. So [introspect] compiles a throwaway source with a processor attached,
  * resolves [type] from inside it, and passes the result to [block]. The compiler discards its model once the run
  * ends, so [block] must finish all introspection (e.g. [ClassDefinition.getProperties]) before returning.

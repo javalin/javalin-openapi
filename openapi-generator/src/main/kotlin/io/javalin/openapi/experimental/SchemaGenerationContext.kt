@@ -1,6 +1,6 @@
 package io.javalin.openapi.experimental
 
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.PropertyView
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
@@ -14,7 +14,7 @@ interface SchemaGenerationContext {
 
     fun isEnum(type: OpenApiType): Boolean
 
-    fun annotationsOf(type: OpenApiType): Annotations
+    fun annotationsOf(type: OpenApiType): AnnotationSet
 
     fun propertiesOf(type: OpenApiType): List<PropertyView>
 

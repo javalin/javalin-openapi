@@ -37,7 +37,7 @@ class OpenApiSchemaGenerator(
 
             for (method in route.texts("methods").sorted()) {
                 pathBuilder.operation(method.lowercase()) {
-                    tags(route.texts("tags"))
+                    setTags(route.texts("tags"))
                     summary(route.text("summary"))
                     description(route.text("description"))
                     operationId(generateOperationId(method, route).takeIf { it != NULL_STRING })

@@ -9,7 +9,7 @@ public class Shape {
         return null;
     }
 
-    /** Composition with no explicit refs — reflection cannot discover subtypes, so this must NOT emit `oneOf: []`. */
+    /** Composition with no explicit refs - reflection cannot discover subtypes, so this must NOT emit `oneOf: []`. */
     @OneOf({})
     public Object getEmpty() {
         return null;

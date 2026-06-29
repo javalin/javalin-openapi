@@ -57,16 +57,16 @@ class DynamicSchemaGeneratorTest {
         assertThat(properties.has("secret")).isFalse()
         assertThat(properties.path("label").path("description").asText()).isEqualTo("Human readable label")
 
-        // Nested object → $ref
+        // Nested object -> $ref
         assertThat(properties.path("address").ref()).isEqualTo("#/components/schemas/Address")
-        // Enum → $ref (resolved to a string enum component)
+        // Enum -> $ref (resolved to a string enum component)
         assertThat(properties.path("role").ref()).isEqualTo("#/components/schemas/Role")
 
-        // Collection → array of items
+        // Collection -> array of items
         assertThat(properties.path("tags").path("type").asText()).isEqualTo("array")
         assertThat(properties.path("tags").path("items").path("type").asText()).isEqualTo("string")
 
-        // Map → object with additionalProperties
+        // Map -> object with additionalProperties
         assertThat(properties.path("meta").path("type").asText()).isEqualTo("object")
         assertThat(properties.path("meta").path("additionalProperties").path("type").asText()).isEqualTo("integer")
 

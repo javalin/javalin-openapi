@@ -1,7 +1,7 @@
 package io.javalin.openapi.experimental
 
 import com.sun.source.util.Trees
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyView
@@ -40,10 +40,10 @@ class AnnotationProcessorContext(
     override fun isEnum(type: OpenApiType): Boolean =
         type.source.kind == ElementKind.ENUM
 
-    override fun annotationsOf(type: OpenApiType): Annotations =
+    override fun annotationsOf(type: OpenApiType): AnnotationSet =
         japIntrospector.annotationsOf(type.source)
 
-    fun annotationsOf(element: Element): Annotations =
+    fun annotationsOf(element: Element): AnnotationSet =
         japIntrospector.annotationsOf(element)
 
     override fun propertiesOf(type: OpenApiType): List<PropertyView> =
@@ -77,7 +77,7 @@ class AnnotationProcessorContext(
     override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
         val subtypes = japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
         return subtypes.mapNotNull { subtype ->
-            val name = subtype.getAnnotations().memberValues(DiscriminatorMappingName::class.java)?.get("value") as? String
+            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.string("value")
             if (name == null) null else name to toOpenApiType(subtype)
         }
     }
@@ -108,13 +108,14 @@ class AnnotationProcessorContext(
             else -> false
         }
 
-    fun getFullName(mirror: TypeMirror): String =
-        env.typeUtils.asElement(mirror)
-            ?.getAnnotation(OpenApiName::class.java)
-            ?.value
-            ?.let { mirror.toString().substringBeforeLast(".") + "." + it }
-            ?: env.typeUtils.asElement(mirror)?.toString()?.substringBefore("<")
-            ?: mirror.toString().substringBefore("<")
+    fun getFullName(mirror: TypeMirror): String {
+        val element = env.typeUtils.asElement(mirror)
+        val customName = element?.getAnnotation(OpenApiName::class.java)?.value
+        if (customName != null) {
+            return mirror.toString().substringBeforeLast(".") + "." + customName
+        }
+        return element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
+    }
 
     /* Extension methods, should be replaced by context receivers in the future */
 

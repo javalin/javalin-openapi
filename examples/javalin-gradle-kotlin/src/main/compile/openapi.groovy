@@ -7,7 +7,6 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
 
     @Override
     void configure(OpenApiAnnotationProcessorConfiguration openApiAnnotationProcessorConfiguration) {
-        // openApiAnnotationProcessorConfiguration.debug = true
     }
 
 }

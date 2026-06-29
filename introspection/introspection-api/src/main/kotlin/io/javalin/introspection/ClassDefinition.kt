@@ -16,7 +16,7 @@ abstract class ClassDefinition(
 
     abstract fun getProperties(): List<PropertyView>
 
-    abstract fun getAnnotations(): Annotations
+    abstract fun getAnnotations(): AnnotationSet
 
     override fun toString(): String =
         if (generics.isEmpty()) fullName else "$fullName<${generics.joinToString(", ")}>"
@@ -24,4 +24,4 @@ abstract class ClassDefinition(
 
 enum class StructureType { DEFAULT, ARRAY, DICTIONARY }
 
-class EnumConstantView(val name: String, val annotations: Annotations)
+class EnumConstantView(val name: String, val annotations: AnnotationSet)

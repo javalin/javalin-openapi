@@ -31,7 +31,7 @@ class OpenApiSymbolProcessor(
             .filterIsInstance<KSClassDeclaration>()
             .mapNotNull { declaration ->
                 val type = context.introspect(declaration.asStarProjectedType())
-                if (context.annotationsOf(type).memberValues(JsonSchema::class.java)?.get("generateResource") == false) {
+                if (context.annotationsOf(type).find(JsonSchema::class.java)?.value("generateResource") == false) {
                     return@mapNotNull null
                 }
                 val json = context.typeSchemaGenerator.createTypeSchema(type, inlineRefs = true).toJsonSchemaString()
@@ -48,7 +48,7 @@ class OpenApiSymbolProcessor(
     private fun generateOpenApiDocuments(resolver: Resolver, context: KspSchemaContext) {
         val routes = (resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) + resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!))
             .distinct()
-            .flatMap { annotated -> context.annotationsOf(annotated).memberValuesList(OpenApi::class.java) }
+            .flatMap { annotated -> context.annotationsOf(annotated).findAll(OpenApi::class.java).map { it.values } }
             .toList()
 
         if (routes.isEmpty()) {

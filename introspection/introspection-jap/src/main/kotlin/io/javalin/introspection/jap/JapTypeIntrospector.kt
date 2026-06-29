@@ -2,7 +2,7 @@ package io.javalin.introspection.jap
 
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationView
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.CompileTimeIntrospector
 import io.javalin.introspection.EnumConstantView
@@ -12,7 +12,7 @@ import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
-import io.javalin.introspection.Visibility
+import io.javalin.introspection.MemberVisibility
 import io.javalin.introspection.isGetterName
 import io.javalin.introspection.propertyName
 import java.lang.annotation.Repeatable as JavaRepeatable
@@ -47,7 +47,7 @@ class JapTypeIntrospector(
         return resolve(source)
     }
 
-    fun annotationsOf(element: Element): Annotations =
+    fun annotationsOf(element: Element): AnnotationSet =
         AnnotationsView(listOf(element))
 
     @OptIn(InternalIntrospectionApi::class)
@@ -144,7 +144,7 @@ class JapTypeIntrospector(
                 ?.filter { it.kind == ElementKind.ENUM_CONSTANT }
                 ?.map { EnumConstantView(it.simpleName.toString(), AnnotationsView(listOf(it))) }
 
-        override fun getAnnotations(): Annotations =
+        override fun getAnnotations(): AnnotationSet =
             AnnotationsView(listOfNotNull(typeElement()))
 
         override fun getProperties(): List<PropertyView> {
@@ -157,7 +157,7 @@ class JapTypeIntrospector(
                         type = resolve(component.asType()),
                         accessor = Accessor.RECORD_COMPONENT,
                         nullable = component.asType().nullable(),
-                        visibility = Visibility.PUBLIC,
+                        visibility = MemberVisibility.PUBLIC,
                         transient = false,
                         source = component,
                         annotations = AnnotationsView(listOf(component)),
@@ -213,33 +213,33 @@ class JapTypeIntrospector(
         private fun Element.isInstanceField(): Boolean =
             kind == ElementKind.FIELD && this is VariableElement && Modifier.STATIC !in modifiers
 
-        private fun Element.visibility(): Visibility =
+        private fun Element.visibility(): MemberVisibility =
             when {
-                Modifier.PUBLIC in modifiers -> Visibility.PUBLIC
-                Modifier.PROTECTED in modifiers -> Visibility.PROTECTED
-                Modifier.PRIVATE in modifiers -> Visibility.PRIVATE
-                else -> Visibility.PACKAGE_PRIVATE
+                Modifier.PUBLIC in modifiers -> MemberVisibility.PUBLIC
+                Modifier.PROTECTED in modifiers -> MemberVisibility.PROTECTED
+                Modifier.PRIVATE in modifiers -> MemberVisibility.PRIVATE
+                else -> MemberVisibility.PACKAGE_PRIVATE
             }
     }
 
-    private inner class AnnotationsView(private val sources: List<Element>) : Annotations {
+    private inner class AnnotationsView(private val sources: List<Element>) : AnnotationSet {
 
-        override fun hasNamed(simpleName: String): Boolean =
+        override fun contains(simpleName: String): Boolean =
             sources.any { source -> source.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) } }
 
-        override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
-            sources.firstNotNullOfOrNull { source -> source.annotationMirrors.firstOrNull { it.named(annotationType.name) } }
-                ?.let { mirrorValues(it) }
+        override fun find(type: Class<out Annotation>): AnnotationView? =
+            sources.firstNotNullOfOrNull { source -> source.annotationMirrors.firstOrNull { it.named(type.name) } }
+                ?.let { JapAnnotationView(it) }
 
-        override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> {
+        override fun findAll(type: Class<out Annotation>): List<AnnotationView> {
             val mirrors = sources.flatMap { it.annotationMirrors }
-            val direct = mirrors.filter { it.named(annotationType.name) }.map { mirrorValues(it) }
+            val direct = mirrors.filter { it.named(type.name) }.map { JapAnnotationView(it) }
             // javac wraps repeated annotations in their @Repeatable container; unwrap its `value` array
-            val containerName = annotationType.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
-            val repeated = containerName
-                ?.let { name -> mirrors.firstOrNull { it.named(name) } }
-                ?.let { mirrorValues(it)["value"] as? List<*> }
+            val containerName = type.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
+            val container = containerName?.let { name -> mirrors.firstOrNull { it.named(name) } }
+            val repeated = (container?.let { mirrorValues(it)["value"] } as? List<*>)
                 ?.filterIsInstance<Map<String, Any?>>()
+                ?.map { AnnotationView.of(type.simpleName, it) }
                 .orEmpty()
             return direct + repeated
         }
@@ -252,13 +252,11 @@ class JapTypeIntrospector(
     }
 
     private inner class JapAnnotationView(private val mirror: AnnotationMirror) : AnnotationView {
-        override val qualifiedName: String
-            get() = (mirror.annotationType.asElement() as? TypeElement)?.qualifiedName?.toString() ?: simpleName
         override val simpleName: String
             get() = mirror.annotationType.asElement().simpleName.toString()
-        override val meta: Annotations
+        override val meta: AnnotationSet
             get() = AnnotationsView(listOf(mirror.annotationType.asElement()))
-        override fun values(): Map<String, Any?> =
-            mirrorValues(mirror)
+        override val values: Map<String, Any?>
+            get() = mirrorValues(mirror)
     }
 }

@@ -21,10 +21,10 @@ internal class OpenApiGenerator {
 
     fun generate(roundEnvironment: RoundEnvironment) {
         val aggregatedRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
-            .flatMap { context.annotationsOf(it).memberValuesList(OpenApi::class.java) }
+            .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
 
         val standaloneRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
-            .flatMap { context.annotationsOf(it).memberValuesList(OpenApi::class.java) }
+            .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
 
         schemaGenerator.generateVersionedSchemas(aggregatedRoutes + standaloneRoutes)
             .map { (version, generatedOpenApiSchema) ->

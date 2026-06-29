@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.introspection.Accessor
-import io.javalin.introspection.Annotations
-import io.javalin.introspection.Visibility as RawVisibility
+import io.javalin.introspection.AnnotationSet
+import io.javalin.introspection.MemberVisibility
 import io.javalin.openapi.*
 import io.javalin.openapi.experimental.*
 import io.javalin.openapi.experimental.processor.shared.*
@@ -23,7 +23,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
     ): ResultScheme {
         val annotations = context.annotationsOf(type)
         val isEnum = context.isEnum(type)
-        val definedBy = annotations.resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toOpenApiType(it) }
+        val definedBy = annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")?.let { context.toOpenApiType(it) }
 
         if (definedBy != null && !isEnum) {
             return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
@@ -47,8 +47,8 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
                 context.enumConstantsOf(type)
                     .map { constant ->
-                        val customName = constant.annotations.memberValues(OpenApiName::class.java)?.get("value") as? String
-                        val description = constant.annotations.memberValues(OpenApiDescription::class.java)?.get("value") as? String
+                        val customName = constant.annotations.find(OpenApiName::class.java)?.string("value")
+                        val description = constant.annotations.find(OpenApiDescription::class.java)?.string("value")
                         val name = when {
                             customName != null -> customName
                             namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
@@ -83,7 +83,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                 val propertiesObject = createObjectNode()
                 schema.set<JsonNode>("properties", propertiesObject)
 
-                val requireNonNulls = (annotations.memberValues(JsonSchema::class.java)?.get("requireNonNulls") as? Boolean)
+                val requireNonNulls = (annotations.find(JsonSchema::class.java)?.boolean("requireNonNulls"))
                     ?: requireNonNullsByDefault
 
                 val properties = context.findAllProperties(type, requireNonNulls)
@@ -128,7 +128,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         extra: Map<String, Any?> = emptyMap(),
         nullable: Boolean = false,
     ): ResultScheme {
-        val definedBy = context.annotationsOf(type).resolveClass(OpenApiPropertyType::class.java, "definedBy")?.let { context.toOpenApiType(it) }
+        val definedBy = context.annotationsOf(type).find(OpenApiPropertyType::class.java)?.classValue("definedBy")?.let { context.toOpenApiType(it) }
 
         if (definedBy != null && !context.isEnum(type)) {
             return createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra, nullable)
@@ -228,7 +228,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
 internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requireNonNulls: Boolean): Collection<Property> {
     val annotations = annotationsOf(type)
-    val byFields = annotations.memberValues(OpenApiByFields::class.java)
+    val byFields = annotations.find(OpenApiByFields::class.java)?.values
     val byFieldsOnly = byFields?.get("only") == true
     val byFieldsVisibility = (byFields?.get("value") as? String)?.let { Visibility.valueOf(it) }
     val namingStrategy = annotations.namingStrategy()
@@ -244,31 +244,31 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
             Accessor.RECORD_COMPONENT -> {}
         }
         if (byFieldsVisibility != null && byFieldsVisibility.priority > property.visibility.toOpenApi().priority) continue
-        if (property.annotations.has(OpenApiIgnore::class.java) || property.transient) continue
+        if (property.annotations.contains(OpenApiIgnore::class.java) || property.transient) continue
 
-        val customName = property.annotations.memberValues(OpenApiName::class.java)?.get("value") as? String
+        val customName = property.annotations.find(OpenApiName::class.java)?.string("value")
         val name = customName ?: property.name
         val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, name) else name
 
-        val nullability = property.annotations.memberValues(OpenApiPropertyType::class.java)?.get("nullability") as? String
-        val redirect = property.annotations.resolveClass(OpenApiPropertyType::class.java, "definedBy")
+        val nullability = property.annotations.find(OpenApiPropertyType::class.java)?.string("nullability")
+        val redirect = property.annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")
         val treatedAsNotNull = redirect == null && !property.nullable
 
         val isNotNull = when {
             nullability == Nullability.NOT_NULL.name -> true
             nullability == Nullability.NULLABLE.name -> false
-            property.annotations.hasNamed("NotNull") -> true
+            property.annotations.contains("NotNull") -> true
             treatedAsNotNull -> true
-            property.annotations.hasNamed("Nullable") -> false
+            property.annotations.contains("Nullable") -> false
             else -> false
         }
-        val required = property.annotations.has(OpenApiRequired::class.java) || (requireNonNulls && isNotNull)
+        val required = property.annotations.contains(OpenApiRequired::class.java) || (requireNonNulls && isNotNull)
 
-        val explicitNullable = property.annotations.memberValues(OpenApiNullable::class.java)?.get("nullable") as? Boolean
+        val explicitNullable = property.annotations.find(OpenApiNullable::class.java)?.boolean("nullable")
         val isExplicitlyNullable = when {
             explicitNullable != null -> explicitNullable
             nullability == Nullability.NULLABLE.name -> true
-            property.annotations.hasNamed("Nullable") -> true
+            property.annotations.contains("Nullable") -> true
             else -> false
         }
 
@@ -299,15 +299,15 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
     return properties
 }
 
-private fun Annotations.namingStrategy(): OpenApiNamingStrategy? =
-    (memberValues(OpenApiNaming::class.java)?.get("value") as? String)?.let { OpenApiNamingStrategy.valueOf(it) }
+private fun AnnotationSet.namingStrategy(): OpenApiNamingStrategy? =
+    (find(OpenApiNaming::class.java)?.string("value"))?.let { OpenApiNamingStrategy.valueOf(it) }
 
-private fun Annotations.findExtra(): Map<String, Any?> {
+private fun AnnotationSet.findExtra(): Map<String, Any?> {
     val extra = mutableMapOf<String, Any?>(
-        "description" to memberValues(OpenApiDescription::class.java)?.get("value")
+        "description" to find(OpenApiDescription::class.java)?.value("value")
     )
 
-    memberValues(OpenApiExample::class.java)?.also { example ->
+    find(OpenApiExample::class.java)?.values?.also { example ->
         val value = example.notNull("value")
         val raw = example.notNull("raw")
         val objects = (example["objects"] as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
@@ -321,7 +321,7 @@ private fun Annotations.findExtra(): Map<String, Any?> {
         }
     }
 
-    memberValues(OpenApiNumberValidation::class.java)?.also {
+    find(OpenApiNumberValidation::class.java)?.values?.also {
         extra["minimum"] = it.notNull("minimum")?.toBigDecimal()
         extra["maximum"] = it.notNull("maximum")?.toBigDecimal()
         extra["exclusiveMinimum"] = it.notNull("exclusiveMinimum")?.toBigDecimal()
@@ -329,42 +329,42 @@ private fun Annotations.findExtra(): Map<String, Any?> {
         extra["multipleOf"] = it.notNull("multipleOf")?.toBigDecimal()
     }
 
-    memberValues(OpenApiStringValidation::class.java)?.also {
+    find(OpenApiStringValidation::class.java)?.values?.also {
         extra["minLength"] = it.notNull("minLength")?.toInt()
         extra["maxLength"] = it.notNull("maxLength")?.toInt()
         extra["format"] = it.notNull("format")
         extra["pattern"] = it.notNull("pattern")
     }
 
-    memberValues(OpenApiArrayValidation::class.java)?.also {
+    find(OpenApiArrayValidation::class.java)?.values?.also {
         extra["minItems"] = it.notNull("minItems")?.toInt()
         extra["maxItems"] = it.notNull("maxItems")?.toInt()
         extra["uniqueItems"] = (it["uniqueItems"] as? Boolean)?.takeIf { unique -> unique }
     }
 
-    memberValues(OpenApiObjectValidation::class.java)?.also {
+    find(OpenApiObjectValidation::class.java)?.values?.also {
         extra["minProperties"] = it.notNull("minProperties")?.toInt()
         extra["maxProperties"] = it.notNull("maxProperties")?.toInt()
     }
 
-    memberValuesList(Custom::class.java).forEach { custom ->
-        extra[custom["name"] as String] = custom["value"]
+    findAll(Custom::class.java).forEach { custom ->
+        extra[custom.value("name") as String] = custom.value("value")
     }
 
     all()
-        .filter { it.meta.has(CustomAnnotation::class.java) }
-        .flatMap { it.values().entries }
+        .filter { it.meta.contains(CustomAnnotation::class.java) }
+        .flatMap { it.values.entries }
         .forEach { (name, value) -> extra[name] = customAnnotationValue(value) }
 
     return extra
 }
 
-private fun RawVisibility.toOpenApi(): Visibility =
+private fun MemberVisibility.toOpenApi(): Visibility =
     when (this) {
-        RawVisibility.PUBLIC -> Visibility.PUBLIC
-        RawVisibility.PROTECTED -> Visibility.PROTECTED
-        RawVisibility.PRIVATE -> Visibility.PRIVATE
-        RawVisibility.PACKAGE_PRIVATE -> Visibility.DEFAULT
+        MemberVisibility.PUBLIC -> Visibility.PUBLIC
+        MemberVisibility.PROTECTED -> Visibility.PROTECTED
+        MemberVisibility.PRIVATE -> Visibility.PRIVATE
+        MemberVisibility.PACKAGE_PRIVATE -> Visibility.DEFAULT
     }
 
 private fun Map<String, Any?>.notNull(key: String): String? =

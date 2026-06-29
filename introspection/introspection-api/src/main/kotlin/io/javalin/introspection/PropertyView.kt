@@ -5,15 +5,15 @@ class PropertyView(
     val type: ClassDefinition,
     val accessor: Accessor,
     val nullable: Boolean,
-    val visibility: Visibility,
+    val visibility: MemberVisibility,
     val transient: Boolean,
     @property:InternalIntrospectionApi val source: Any,
-    val annotations: Annotations,
+    val annotations: AnnotationSet,
 )
 
 enum class Accessor { FIELD, GETTER, RECORD_COMPONENT }
 
-enum class Visibility { PUBLIC, PROTECTED, PACKAGE_PRIVATE, PRIVATE }
+enum class MemberVisibility { PUBLIC, PROTECTED, PACKAGE_PRIVATE, PRIVATE }
 
 fun isGetterName(name: String): Boolean =
     (name.startsWith("get") && name.length > 3 && name[3].isUpperCase()) ||

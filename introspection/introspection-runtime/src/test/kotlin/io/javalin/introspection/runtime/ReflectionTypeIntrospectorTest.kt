@@ -51,9 +51,9 @@ class ReflectionTypeIntrospectorTest {
     @Test
     fun `exposes annotations without applying policy`() {
         val id = props(Account::class.java).getValue("id")
-        assertThat(id.annotations.has(Nn::class.java)).isTrue()
-        assertThat(id.annotations.hasNamed("Nn")).isTrue()
-        assertThat(props(Account::class.java).getValue("name").annotations.has(Nn::class.java)).isFalse()
+        assertThat(id.annotations.contains(Nn::class.java)).isTrue()
+        assertThat(id.annotations.contains("Nn")).isTrue()
+        assertThat(props(Account::class.java).getValue("name").annotations.contains(Nn::class.java)).isFalse()
     }
 
     @Test
@@ -80,8 +80,8 @@ class ReflectionTypeIntrospectorTest {
     fun `resolves Class-valued annotation members into ClassDefinitions`() {
         val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        assertThat(annotations.resolveClass(Ref::class.java, "value")?.fullName).isEqualTo(Address::class.java.name)
-        assertThat(annotations.resolveClasses(Refs::class.java, "value").map { it.fullName })
+        assertThat(annotations.find(Ref::class.java)?.classValue("value")?.fullName).isEqualTo(Address::class.java.name)
+        assertThat(annotations.find(Refs::class.java)?.classValues("value").orEmpty().map { it.fullName })
             .containsExactly(Address::class.java.name, Color::class.java.name)
     }
 
@@ -89,12 +89,12 @@ class ReflectionTypeIntrospectorTest {
     fun `reads all annotation members into a neutral value map`() {
         val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        val values = annotations.memberValues(Mixed::class.java)!!
+        val values = annotations.find(Mixed::class.java)?.values!!
         assertThat(values["name"]).isEqualTo("x")
         assertThat(values["count"]).isEqualTo(3)
         assertThat((values["type"] as io.javalin.introspection.ClassDefinition).fullName).isEqualTo(Address::class.java.name)
         assertThat(values["shade"]).isEqualTo("RED")
-        assertThat(annotations.memberValues(java.lang.Deprecated::class.java)).isNull()
+        assertThat(annotations.find(java.lang.Deprecated::class.java)?.values).isNull()
     }
 }
 
@@ -105,7 +105,8 @@ private enum class Color { RED, GREEN }
 private annotation class Nn
 
 private class Account {
-    @Nn fun getId(): String = ""
+    @Nn
+    fun getId(): String = ""
     fun getAge(): Int = 0
     fun getName(): String = ""
     fun getColor(): Color = Color.RED

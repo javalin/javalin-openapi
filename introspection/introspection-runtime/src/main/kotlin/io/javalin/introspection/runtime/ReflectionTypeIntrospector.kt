@@ -2,7 +2,7 @@ package io.javalin.introspection.runtime
 
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationView
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.EnumConstantView
 import io.javalin.introspection.InternalIntrospectionApi
@@ -12,7 +12,7 @@ import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.TypeIntrospector
-import io.javalin.introspection.Visibility
+import io.javalin.introspection.MemberVisibility
 import io.javalin.introspection.isGetterName
 import io.javalin.introspection.propertyName
 import java.lang.reflect.AnnotatedElement
@@ -120,7 +120,7 @@ private class ReflectionClassDefinition(
             )
         }
 
-    override fun getAnnotations(): Annotations =
+    override fun getAnnotations(): AnnotationSet =
         ReflectionAnnotations(listOf(erasure))
 }
 
@@ -128,7 +128,7 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
     if (clazz.isRecord) {
         return clazz.recordComponents.map { component ->
             val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
-            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, Visibility.PUBLIC, false, component.accessor, listOfNotNull(component.accessor, backingField, component))
+            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, MemberVisibility.PUBLIC, false, component.accessor, listOfNotNull(component.accessor, backingField, component))
         }
     }
 
@@ -163,18 +163,18 @@ private class Member(
     val name: String,
     val genericType: Type,
     val accessor: Accessor,
-    val visibility: Visibility,
+    val visibility: MemberVisibility,
     val transient: Boolean,
     val source: AnnotatedElement,
     val sources: List<AnnotatedElement>,
 )
 
-private fun visibilityOf(modifiers: Int): Visibility =
+private fun visibilityOf(modifiers: Int): MemberVisibility =
     when {
-        Modifier.isPublic(modifiers) -> Visibility.PUBLIC
-        Modifier.isProtected(modifiers) -> Visibility.PROTECTED
-        Modifier.isPrivate(modifiers) -> Visibility.PRIVATE
-        else -> Visibility.PACKAGE_PRIVATE
+        Modifier.isPublic(modifiers) -> MemberVisibility.PUBLIC
+        Modifier.isProtected(modifiers) -> MemberVisibility.PROTECTED
+        Modifier.isPrivate(modifiers) -> MemberVisibility.PRIVATE
+        else -> MemberVisibility.PACKAGE_PRIVATE
     }
 
 private fun declaredFieldsHierarchy(clazz: Class<*>): List<Field> {
@@ -218,26 +218,28 @@ private fun nonPublicGettersHierarchy(clazz: Class<*>): List<Method> {
     return getters
 }
 
-private class ReflectionAnnotations(private val sources: List<AnnotatedElement>) : Annotations {
+private class ReflectionAnnotations(private val sources: List<AnnotatedElement>) : AnnotationSet {
 
-    override fun hasNamed(simpleName: String): Boolean =
+    override fun contains(simpleName: String): Boolean =
         sources.any { source -> source.annotations.any { it.annotationClass.simpleName == simpleName } }
 
-    override fun memberValues(annotationType: Class<out Annotation>): Map<String, Any?>? =
-        sources.firstNotNullOfOrNull { it.getAnnotation(annotationType) }?.let { annotationToMap(it) }
+    override fun find(type: Class<out Annotation>): AnnotationView? =
+        sources.firstNotNullOfOrNull { it.getAnnotation(type) }?.let { ReflectionAnnotationView(it) }
 
-    override fun memberValuesList(annotationType: Class<out Annotation>): List<Map<String, Any?>> =
-        sources.flatMap { it.getAnnotationsByType(annotationType).toList() }.map { annotationToMap(it) }
+    override fun findAll(type: Class<out Annotation>): List<AnnotationView> =
+        sources.flatMap { it.getAnnotationsByType(type).toList() }.map { ReflectionAnnotationView(it) }
 
     override fun all(): List<AnnotationView> =
         sources.flatMap { it.annotations.toList() }.distinctBy { it.annotationClass }.map { ReflectionAnnotationView(it) }
 }
 
 private class ReflectionAnnotationView(private val annotation: Annotation) : AnnotationView {
-    override val qualifiedName: String get() = annotation.annotationClass.java.name
-    override val simpleName: String get() = annotation.annotationClass.java.simpleName
-    override val meta: Annotations get() = ReflectionAnnotations(listOf(annotation.annotationClass.java))
-    override fun values(): Map<String, Any?> = annotationToMap(annotation)
+    override val simpleName: String
+        get() = annotation.annotationClass.java.simpleName
+    override val meta: AnnotationSet
+        get() = ReflectionAnnotations(listOf(annotation.annotationClass.java))
+    override val values: Map<String, Any?>
+        get() = annotationToMap(annotation)
 }
 
 private fun annotationToMap(annotation: Annotation): Map<String, Any?> =

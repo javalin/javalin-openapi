@@ -36,7 +36,7 @@ class RegisteredRoutesHook : OpenApiHook {
         context.builder.resolveComponentReferences { type -> schemaContext.componentSchema(type) }
     }
 
-    /** Javalin `<slashParam>` → OpenAPI `{slashParam}`; `{param}` kept as-is. */
+    /** Javalin `<slashParam>` -> OpenAPI `{slashParam}`; `{param}` kept as-is. */
     private fun toOpenApiPath(path: String): String =
         path.replace(ANGLE_PARAM) { "{${it.groupValues[1]}}" }
 

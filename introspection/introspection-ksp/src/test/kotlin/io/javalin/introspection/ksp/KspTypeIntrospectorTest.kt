@@ -60,9 +60,9 @@ class KspTypeIntrospectorTest {
                 properties = account.getProperties().associate { it.name to "${it.type.fullName}:${it.type.structureType}" },
                 isEnum = color.isEnum(),
                 enumConstants = color.getEnumConstants()?.map { it.name },
-                hasRef = account.getAnnotations().hasNamed("Ref"),
-                refValue = (account.getAnnotations().memberValues(Ref::class.java)?.getValue("value") as? ClassDefinition)?.fullName,
-                scannedLabel = account.getAnnotations().all().first { it.meta.hasNamed("MetaMarker") }.values()["label"],
+                hasRef = account.getAnnotations().contains("Ref"),
+                refValue = (account.getAnnotations().find(Ref::class.java)?.classValue("value"))?.fullName,
+                scannedLabel = account.getAnnotations().all().first { it.meta.contains("MetaMarker") }.values["label"],
             )
         }
 

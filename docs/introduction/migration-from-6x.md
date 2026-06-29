@@ -20,7 +20,7 @@ The new `openapi-generator` module provides a Kotlin DSL for building or extendi
 
 ```kotlin
 spec.path("/users/{id}").operation("get") {
-    tags("users")
+    setTags("users")
     summary("Get user by ID")
     parameters {
         parameter("id", "path", required = true) { type("string") }

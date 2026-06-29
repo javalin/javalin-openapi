@@ -2,7 +2,7 @@ package io.javalin.openapi.experimental.processor.generators
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.javalin.introspection.Annotations
+import io.javalin.introspection.AnnotationSet
 import io.javalin.openapi.AllOf
 import io.javalin.openapi.AnyOf
 import io.javalin.openapi.Composition
@@ -20,15 +20,15 @@ import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toJsonObject
 import io.javalin.introspection.ClassDefinition as RawType
 
-fun findCompositionInElement(context: SchemaGenerationContext, annotations: Annotations): PropertyComposition? =
+fun findCompositionInElement(context: SchemaGenerationContext, annotations: AnnotationSet): PropertyComposition? =
     compositionOf(context, annotations, OneOf::class.java, ONE_OF)
         ?: compositionOf(context, annotations, AnyOf::class.java, ANY_OF)
         ?: compositionOf(context, annotations, AllOf::class.java, ALL_OF)
 
-private fun compositionOf(context: SchemaGenerationContext, annotations: Annotations, annotationType: Class<out Annotation>, composition: Composition): PropertyComposition? {
-    val values = annotations.memberValues(annotationType) ?: return null
-    val references = annotations.resolveClasses(annotationType, "value").map { context.toOpenApiType(it) }.toSet()
-    val discriminator = (values["discriminator"] as? Map<*, *>)?.let { discriminatorInfo(context, it) }
+private fun compositionOf(context: SchemaGenerationContext, annotations: AnnotationSet, annotationType: Class<out Annotation>, composition: Composition): PropertyComposition? {
+    val annotation = annotations.find(annotationType) ?: return null
+    val references = annotation.classValues("value").map { context.toOpenApiType(it) }.toSet()
+    val discriminator = (annotation.value("discriminator") as? Map<*, *>)?.let { discriminatorInfo(context, it) }
     return PropertyComposition(composition, references, discriminator)
 }
 
