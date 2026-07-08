@@ -60,8 +60,8 @@ class ReflectionTypeIntrospectorTest {
     fun `reads enum constants raw`() {
         val color = introspector.introspect(Color::class.java)
         assertThat(color.isEnum()).isTrue()
-        assertThat(color.getEnumConstants()?.map { it.name }).containsExactly("RED", "GREEN")
-        assertThat(introspector.introspect(Account::class.java).getEnumConstants()).isNull()
+        assertThat(color.getEnumConstants().map { it.name }).containsExactly("RED", "GREEN")
+        assertThat(introspector.introspect(Account::class.java).getEnumConstants()).isEmpty()
     }
 
     @Test

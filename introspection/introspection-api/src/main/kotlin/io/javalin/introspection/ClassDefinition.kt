@@ -12,7 +12,7 @@ abstract class ClassDefinition(
 
     abstract fun isEnum(): Boolean
 
-    abstract fun getEnumConstants(): List<EnumConstantView>?
+    abstract fun getEnumConstants(): List<EnumConstantView>
 
     abstract fun getProperties(): List<PropertyView>
 

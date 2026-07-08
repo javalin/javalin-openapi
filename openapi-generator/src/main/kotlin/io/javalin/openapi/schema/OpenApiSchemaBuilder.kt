@@ -14,9 +14,7 @@ import io.javalin.openapi.OpenID
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
 import io.javalin.openapi.experimental.OpenApiType
-import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
-import io.javalin.openapi.experimental.processor.generators.toExampleProperty
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import io.javalin.openapi.experimental.processor.shared.jsonMapper
@@ -288,12 +286,12 @@ class OperationBuilder(
         private val MANAGED_FIELDS = setOf("tags", "parameters", "requestBody", "responses", "callbacks", "security", "deprecated")
     }
 
-    fun setTags(vararg tags: String) {
+    fun tags(vararg tags: String) {
         tagsArray = createArrayNode()
         tags.forEach { tagsArray.add(it) }
     }
 
-    fun setTags(tags: Collection<String>) {
+    fun tags(tags: Collection<String>) {
         tagsArray = createArrayNode()
         tags.forEach { tagsArray.add(it) }
     }
@@ -573,12 +571,6 @@ class ContentBuilder(
 interface ExampleHolder {
     fun example(value: String)
     fun exampleJson(value: JsonNode)
-
-    fun applyExamples(exampleObjects: List<Map<String, Any?>>) {
-        val generatorResult = ExampleGenerator.generateFromExamples(exampleObjects.map { it.toExampleProperty() })
-        generatorResult.simpleValue?.let { example(it) }
-            ?: generatorResult.jsonElement?.let { exampleJson(it) }
-    }
 }
 
 @OpenApiSchemaDsl

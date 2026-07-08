@@ -137,12 +137,13 @@ class JapTypeIntrospector(
         override fun isEnum(): Boolean =
             typeElement()?.kind == ElementKind.ENUM
 
-        override fun getEnumConstants(): List<EnumConstantView>? =
+        override fun getEnumConstants(): List<EnumConstantView> =
             typeElement()
                 ?.takeIf { it.kind == ElementKind.ENUM }
                 ?.enclosedElements
                 ?.filter { it.kind == ElementKind.ENUM_CONSTANT }
                 ?.map { EnumConstantView(it.simpleName.toString(), AnnotationsView(listOf(it))) }
+                .orEmpty()
 
         override fun getAnnotations(): AnnotationSet =
             AnnotationsView(listOfNotNull(typeElement()))

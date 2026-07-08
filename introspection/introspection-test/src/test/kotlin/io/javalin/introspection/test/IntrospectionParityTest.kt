@@ -154,8 +154,8 @@ class IntrospectionParityTest {
 
     @Test
     fun `KSP enum constants match reflection`() {
-        val runtimeConstants = runtime.introspect(Color::class.java).getEnumConstants()?.map { it.name }?.sorted()
-        val kspConstants = SymbolProcessing.introspect(Color::class) { it.getEnumConstants()?.map { constant -> constant.name }?.sorted() }
+        val runtimeConstants = runtime.introspect(Color::class.java).getEnumConstants().map { it.name }.sorted()
+        val kspConstants = SymbolProcessing.introspect(Color::class) { it.getEnumConstants().map { constant -> constant.name }.sorted() }
         assertThat(kspConstants).isEqualTo(runtimeConstants).isEqualTo(listOf("GREEN", "RED"))
     }
 }
@@ -165,7 +165,7 @@ private data class TypeShape(
     val simpleName: String,
     val structure: StructureType,
     val isEnum: Boolean,
-    val enumConstants: List<String>?,
+    val enumConstants: List<String>,
     val properties: List<PropertyShape>,
 )
 
@@ -187,7 +187,7 @@ private fun ClassDefinition.toShape(): TypeShape =
         simpleName = simpleName,
         structure = structureType,
         isEnum = isEnum(),
-        enumConstants = getEnumConstants()?.map { it.name }?.sorted(),
+        enumConstants = getEnumConstants().map { it.name }.sorted(),
         properties = if (isEnum()) emptyList() else getProperties()
             .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
             .sortedBy { "${it.accessor}:${it.name}" },

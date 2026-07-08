@@ -50,7 +50,7 @@ class AnnotationProcessorContext(
         japIntrospector.introspect(type.mirror).getProperties()
 
     override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
-        japIntrospector.introspect(type.mirror).getEnumConstants() ?: emptyList()
+        japIntrospector.introspect(type.mirror).getEnumConstants()
 
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {

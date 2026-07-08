@@ -9,7 +9,9 @@ import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.SchemaGenerationContext
 import io.javalin.openapi.experimental.StructureType.ARRAY
+import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
+import io.javalin.openapi.experimental.processor.generators.toExampleProperty
 import java.util.Locale
 import java.util.TreeMap
 
@@ -37,7 +39,7 @@ class OpenApiSchemaGenerator(
 
             for (method in route.texts("methods").sorted()) {
                 pathBuilder.operation(method.lowercase()) {
-                    setTags(route.texts("tags"))
+                    tags(route.texts("tags"))
                     summary(route.text("summary"))
                     description(route.text("description"))
                     operationId(generateOperationId(method, route).takeIf { it != NULL_STRING })
@@ -264,7 +266,11 @@ class OpenApiSchemaGenerator(
 
     private fun ExampleHolder.applyExample(content: Map<String, Any?>) {
         content.text("example")?.let { example(it) }
-        content.maps("exampleObjects").takeIf { it.isNotEmpty() }?.let { applyExamples(it) }
+        content.maps("exampleObjects").takeIf { it.isNotEmpty() }?.let { exampleMaps ->
+            val result = ExampleGenerator.generateFromExamples(exampleMaps.map { it.toExampleProperty() })
+            result.simpleValue?.let { example(it) }
+            result.jsonElement?.let { exampleJson(it) }
+        }
     }
 
     private fun ObjectSchemaBuilder.buildProperties(properties: List<Map<String, Any?>>) {

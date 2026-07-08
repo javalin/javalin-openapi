@@ -122,7 +122,7 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         override fun isEnum(): Boolean =
             declaration?.classKind == ClassKind.ENUM_CLASS
 
-        override fun getEnumConstants(): List<EnumConstantView>? =
+        override fun getEnumConstants(): List<EnumConstantView> =
             declaration
                 ?.takeIf { it.classKind == ClassKind.ENUM_CLASS }
                 ?.declarations
@@ -130,6 +130,7 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                 ?.filter { it.classKind == ClassKind.ENUM_ENTRY }
                 ?.map { EnumConstantView(it.simpleName.asString(), KspAnnotations(it)) }
                 ?.toList()
+                .orEmpty()
 
         override fun getAnnotations(): AnnotationSet =
             KspAnnotations(declaration)

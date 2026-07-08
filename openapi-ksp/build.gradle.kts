@@ -3,7 +3,7 @@ description = "Javalin OpenAPI KSP | Kotlin Symbol Processing backend for OpenAP
 dependencies {
     api(project(":openapi-generator"))
     api(project(":introspection:introspection-ksp"))
-    api(libs.ksp.symbol.processing.api) // KspSchemaContext's constructor exposes a KSP Resolver
+    api(libs.ksp.symbol.processing.api) // OpenApiSymbolProcessorProvider/Processor are public KSP SymbolProcessor types (ServiceLoader entry point)
 
     testImplementation(libs.kctfork.core)
     testImplementation(libs.kctfork.ksp)

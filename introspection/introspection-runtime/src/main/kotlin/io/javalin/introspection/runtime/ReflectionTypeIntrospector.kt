@@ -100,11 +100,11 @@ private class ReflectionClassDefinition(
     override fun isEnum(): Boolean =
         erasure.isEnum
 
-    override fun getEnumConstants(): List<EnumConstantView>? =
+    override fun getEnumConstants(): List<EnumConstantView> =
         erasure.takeIf { it.isEnum }?.enumConstants?.map {
             val name = (it as Enum<*>).name
             EnumConstantView(name, ReflectionAnnotations(listOfNotNull(runCatching { erasure.getDeclaredField(name) }.getOrNull())))
-        }
+        }.orEmpty()
 
     override fun getProperties(): List<PropertyView> =
         collectMembers(erasure).map { member ->

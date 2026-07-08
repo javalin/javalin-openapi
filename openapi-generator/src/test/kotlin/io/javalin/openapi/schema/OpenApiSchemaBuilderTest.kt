@@ -178,7 +178,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should build path with operation`() {
             val schema = builder()
             schema.path("/users").operation("get") {
-                setTags("users", "admin")
+                tags("users", "admin")
                 summary("Get all users")
                 description("Returns a list of users")
                 operationId("getUsers")
@@ -216,7 +216,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should preserve field ordering in operation`() {
             val schema = builder()
             schema.path("/test").operation("get") {
-                setTags("test")
+                tags("test")
                 summary("Test")
                 description("Desc")
                 operationId("testOp")
@@ -949,7 +949,7 @@ internal class OpenApiSchemaBuilderTest {
         fun `should preserve all fields when reopening operation with empty lambda`() {
             val schema = builder()
             schema.path("/users").operation("get") {
-                setTags("users")
+                tags("users")
                 summary("List users")
                 description("Returns all users")
                 operationId("getUsers")
@@ -1016,8 +1016,8 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should replace tags when explicitly called`() {
             val schema = builder()
-            schema.path("/users").operation("get") { setTags("users", "admin") }
-            schema.path("/users").operation("get") { setTags("public") }
+            schema.path("/users").operation("get") { tags("users", "admin") }
+            schema.path("/users").operation("get") { tags("public") }
 
             assertThatJson(schema.toJson()).inPath("$.paths['/users'].get.tags").isArray.containsExactly("public")
         }
@@ -1025,7 +1025,7 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should append tags with addTag`() {
             val schema = builder()
-            schema.path("/users").operation("get") { setTags("users") }
+            schema.path("/users").operation("get") { tags("users") }
             schema.path("/users").operation("get") { addTag("admin") }
 
             assertThatJson(schema.toJson()).inPath("$.paths['/users'].get.tags").isArray
@@ -1035,7 +1035,7 @@ internal class OpenApiSchemaBuilderTest {
         @Test
         fun `should append tags with addTags`() {
             val schema = builder()
-            schema.path("/users").operation("get") { setTags("users") }
+            schema.path("/users").operation("get") { tags("users") }
             schema.path("/users").operation("get") { addTags(listOf("admin", "public")) }
 
             assertThatJson(schema.toJson()).inPath("$.paths['/users'].get.tags").isArray

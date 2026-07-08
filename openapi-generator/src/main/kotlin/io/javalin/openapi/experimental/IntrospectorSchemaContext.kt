@@ -57,7 +57,7 @@ abstract class IntrospectorSchemaContext(
         type.raw.getProperties()
 
     override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
-        type.raw.getEnumConstants() ?: emptyList()
+        type.raw.getEnumConstants()
 
     override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
         val scanner = introspector as? CompileTimeIntrospector ?: return emptyList()

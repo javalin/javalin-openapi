@@ -16,7 +16,7 @@ val spec = OpenApiSchemaBuilder()
     .info { it.title("My API").version("1.0") }
 
 spec.path("/users").operation("get") {
-    setTags("users")
+    tags("users")
     summary("List users")
     responses {
         response("200") {
@@ -64,7 +64,7 @@ The schema DSL is available on media types, parameters, headers, and object sche
 
 ```kotlin
 spec.path("/users/{id}").operation("get") {
-    setTags("users")
+    tags("users")
     summary("Get user by ID")
     description("Returns a single user")
     operationId("getUserById")
@@ -277,4 +277,4 @@ The builder supports incremental construction. Reopening a path, operation, resp
 - **Parameters**: same name + location replaces; different name or location appends
 - **Responses**: new status codes are added; same status code merges content and headers
 - **Content types**: new media types are added; same media type merges schema and example
-- **Tags**: `setTags(...)` replaces; `addTag(...)` / `addTags(...)` appends
+- **Tags**: `tags(...)` replaces; `addTag(...)` / `addTags(...)` appends
