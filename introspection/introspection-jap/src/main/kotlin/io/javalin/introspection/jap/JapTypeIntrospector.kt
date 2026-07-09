@@ -49,7 +49,7 @@ class JapTypeIntrospector(
     }
 
     fun annotationsOf(element: Element): AnnotationSet =
-        AnnotationsView(listOf(element))
+        AnnotationsView(listOf(element), includeInherited = element is TypeElement)
 
     @OptIn(InternalIntrospectionApi::class)
     override fun typesAnnotatedWith(annotationType: Class<out Annotation>, assignableTo: ClassDefinition?): List<ClassDefinition> {
@@ -294,7 +294,7 @@ class JapTypeIntrospector(
                 .takeWhile { it.qualifiedName.toString() != Object::class.java.name }
                 .flatMap { supertype ->
                     supertype.annotationMirrors
-                        .filter { it.annotationType.asElement().getAnnotation(Inherited::class.java) != null }
+                        .filter { it.annotationType.asElement().hasAnnotation(Inherited::class.java) }
                 }
                 .toList()
 
@@ -329,6 +329,9 @@ class JapTypeIntrospector(
 
         private fun AnnotationMirror.named(type: Class<out Annotation>): Boolean =
             named(type.name) || type.canonicalName?.let { named(it) } == true
+
+        private fun Element.hasAnnotation(type: Class<out Annotation>): Boolean =
+            annotationMirrors.any { it.named(type) }
     }
 
     private inner class JapAnnotationView(private val mirror: AnnotationMirror) : AnnotationView {
