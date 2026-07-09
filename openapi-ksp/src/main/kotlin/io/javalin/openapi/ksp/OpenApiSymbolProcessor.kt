@@ -2,6 +2,7 @@ package io.javalin.openapi.ksp
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -17,12 +18,15 @@ import io.javalin.openapi.schema.OpenApiSchemaGenerator
 
 class OpenApiSymbolProcessor(
     private val codeGenerator: CodeGenerator,
+    private val logger: KSPLogger,
     private val options: Map<String, String>,
 ) : SymbolProcessor {
 
+    private val writtenResources = mutableSetOf<String>()
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        generateJsonSchemes(resolver, KspSchemaContext(resolver))
-        generateOpenApiDocuments(resolver, KspSchemaContext(resolver))
+        generateJsonSchemes(resolver, KspSchemaContext(resolver, logger))
+        generateOpenApiDocuments(resolver, KspSchemaContext(resolver, logger))
         return emptyList()
     }
 
@@ -71,13 +75,18 @@ class OpenApiSymbolProcessor(
         writeResource("openapi-plugin/.index", generatedVersions.joinToString(separator = "\n"))
     }
 
-    private fun writeResource(path: String, content: String) =
+    private fun writeResource(path: String, content: String) {
+        if (!writtenResources.add(path)) {
+            return
+        }
+
         codeGenerator.createNewFileByPath(Dependencies(aggregating = true), path, extensionName = "")
             .use { it.write(content.toByteArray()) }
+    }
 
 }
 
 class OpenApiSymbolProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
-        OpenApiSymbolProcessor(environment.codeGenerator, environment.options)
+        OpenApiSymbolProcessor(environment.codeGenerator, environment.logger, environment.options)
 }

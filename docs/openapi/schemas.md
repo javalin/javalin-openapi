@@ -86,6 +86,8 @@ class Config {
 
 The `value` parameter controls the minimum field visibility. Use `only = true` to ignore methods entirely.
 
+`only = true` is supported by the APT/Kapt backend. KSP does not expose the Java-style field model needed for this mode yet, so the KSP backend fails the build with a clear error if it sees `@OpenApiByFields(only = true)`.
+
 ## Property Annotations
 
 ### @OpenApiIgnore

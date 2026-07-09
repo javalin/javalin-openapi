@@ -158,6 +158,35 @@ class IntrospectionParityTest {
         val kspConstants = SymbolProcessing.introspect(Color::class) { it.getEnumConstants().map { constant -> constant.name }.sorted() }
         assertThat(kspConstants).isEqualTo(runtimeConstants).isEqualTo(listOf("GREEN", "RED"))
     }
+
+    @Test
+    fun `self-bounded type variables do not recurse forever across backends`() {
+        fun childType(definition: ClassDefinition): Pair<String, List<String>> {
+            val child = definition.getProperties().first { it.name == "child" }.type
+            return child.fullName to child.generics.map { it.fullName }
+        }
+
+        val runtimeChild = childType(runtime.introspect(SelfBounded::class.java))
+        val processedChild = AnnotationProcessing.introspect(SelfBounded::class) { childType(it) }
+        val kspChild = SymbolProcessing.introspect(SelfBounded::class) { childType(it) }
+
+        assertThat(processedChild).isEqualTo(runtimeChild)
+        assertThat(kspChild.first).isEqualTo(SelfBounded::class.java.name)
+        assertThat(kspChild.second).containsExactly(Any::class.java.name)
+    }
+
+    @Test
+    fun `nested annotation classes can be found by class across backends`() {
+        fun value(definition: ClassDefinition): String? =
+            definition.getAnnotations().find(AnnotationContainer.Nested::class.java)?.string("value")
+
+        val runtimeValue = value(runtime.introspect(NestedAnnotated::class.java))
+        val processedValue = AnnotationProcessing.introspect(NestedAnnotated::class) { value(it) }
+        val kspValue = SymbolProcessing.introspect(NestedAnnotated::class) { value(it) }
+
+        assertThat(processedValue).isEqualTo(runtimeValue).isEqualTo("nested")
+        assertThat(kspValue).isEqualTo(runtimeValue)
+    }
 }
 
 private data class TypeShape(
@@ -263,3 +292,12 @@ annotation class Refs(vararg val value: KClass<*>)
 @Ref(Address::class)
 @Refs(Address::class, Color::class)
 class Holder
+
+class SelfBounded<T : SelfBounded<T>>(val child: T?)
+
+class AnnotationContainer {
+    annotation class Nested(val value: String)
+}
+
+@AnnotationContainer.Nested("nested")
+class NestedAnnotated

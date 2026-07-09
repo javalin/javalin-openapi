@@ -225,7 +225,7 @@ For a springdoc-style experience - documenting routes that are registered progra
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
     implementation("io.javalin.community.openapi:javalin-openapi-dynamic-hook:$openapi")
 }
 ```

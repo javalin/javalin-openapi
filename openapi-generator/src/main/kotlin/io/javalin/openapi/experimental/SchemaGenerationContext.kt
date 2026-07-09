@@ -25,4 +25,6 @@ interface SchemaGenerationContext {
     fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean = true
 
     fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> = emptyList()
+
+    fun reportWarning(message: String) {}
 }

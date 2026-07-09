@@ -16,8 +16,10 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
+import javax.tools.Diagnostic.Kind.WARNING
 import io.javalin.introspection.ClassDefinition as RawType
 import io.javalin.introspection.StructureType as RawStructureType
 
@@ -54,7 +56,8 @@ class AnnotationProcessorContext(
 
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {
-        val mirror = raw.source as TypeMirror
+        val rawMirror = raw.source as TypeMirror
+        val mirror = if (rawMirror.kind.isPrimitive) types.boxedClass(rawMirror as PrimitiveType).asType() else rawMirror
         return OpenApiType(
             simpleName = mirror.getSimpleName(),
             fullName = mirror.getFullName(),
@@ -65,6 +68,10 @@ class AnnotationProcessorContext(
                 source = if (raw.structureType == RawStructureType.DICTIONARY) mapType() else (types.asElement(mirror) ?: objectType())
             )
         )
+    }
+
+    override fun reportWarning(message: String) {
+        env.messager.printMessage(WARNING, message)
     }
 
     fun TypeMirror.toOpenApiType(): OpenApiType =

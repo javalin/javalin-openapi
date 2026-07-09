@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
     annotationProcessor(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -44,7 +44,7 @@ plugins {
 }
 
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
     kapt(
         "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
@@ -68,7 +68,7 @@ plugins {
 }
 
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
     ksp(
         "io.javalin.community.openapi:openapi-ksp:$openapi"
@@ -95,19 +95,19 @@ ksp {
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-openapi-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
     <!-- Optional: Swagger UI -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-swagger-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
     <!-- Optional: ReDoc -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-redoc-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
 </dependencies>
 
@@ -121,7 +121,7 @@ ksp {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.2.2</version>
+                        <version>7.3.0-RC.1</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -142,10 +142,10 @@ The same generation engine runs on three backends - pick the one that matches yo
 | Kapt (`kapt`)               | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects                 |
 | KSP (`ksp`)                 | `openapi-ksp` *(experimental)* | Kotlin only   | Kotlin-only projects wanting faster builds |
 
-All three emit identical `openapi-plugin/openapi-*.json` resources that the `OpenApiPlugin` serves - switching backends does not change the generated specification.
+All three emit the same `openapi-plugin/openapi-*.json` resource format that the `OpenApiPlugin` serves. APT/Kapt remain the reference backends; KSP is experimental and has the limitations listed below.
 
 ::: warning KSP limitations
-KSP processes **Kotlin sources only** - `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [scripting configuration](../advanced/scripting) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only.
+KSP processes **Kotlin sources only** - `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [scripting configuration](../advanced/scripting) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only. `@OpenApiByFields(only = true)` is also APT/Kapt-only; the KSP backend fails the build with a clear error instead of generating an empty schema.
 :::
 
 ## Register the Plugin

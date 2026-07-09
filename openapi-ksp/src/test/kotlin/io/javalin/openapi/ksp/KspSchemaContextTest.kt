@@ -1,6 +1,7 @@
 package io.javalin.openapi.ksp
 
 import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
@@ -16,13 +17,13 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCompilerApi::class)
 class KspSchemaContextTest {
 
-    private fun <R> withResolver(block: (Resolver) -> R): R {
+    private fun <R> withResolver(block: (Resolver, KSPLogger) -> R): R {
         var result: Result<R>? = null
         val provider = object : SymbolProcessorProvider {
             override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
                 object : SymbolProcessor {
                     override fun process(resolver: Resolver): List<KSAnnotated> {
-                        if (result == null) result = runCatching { block(resolver) }
+                        if (result == null) result = runCatching { block(resolver, environment.logger) }
                         return emptyList()
                     }
                 }
@@ -41,8 +42,8 @@ class KspSchemaContextTest {
 
     @Test
     fun `generates a component schema end-to-end through the shared generator`() {
-        withResolver { resolver ->
-            val context = KspSchemaContext(resolver)
+        withResolver { resolver, logger ->
+            val context = KspSchemaContext(resolver, logger)
             val user = resolver.getClassDeclarationByName(resolver.getKSNameFromString("io.javalin.openapi.ksp.User"))!!
                 .asStarProjectedType()
 

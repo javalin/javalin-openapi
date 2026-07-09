@@ -1,5 +1,13 @@
 package io.javalin.openapi.ksp
 
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.tschuchort.compiletesting.CompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
@@ -216,5 +224,235 @@ class OpenApiSymbolProcessorTest {
         assertThat(addressProperty.path("\$ref").asText()).isEqualTo("#/components/schemas/Address")
         assertThat(addressProperty.has("properties")).isFalse()
         assertThat(schemas.path("Address").path("properties").path("city").path("type").asText()).isEqualTo("string")
+    }
+
+    @Test
+    fun `fails loudly for OpenApiByFields only true`() {
+        val (_, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "FieldsOnly.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+                import io.javalin.openapi.OpenApiByFields
+
+                @JsonSchema
+                @OpenApiByFields(only = true)
+                class FieldsOnly(val value: String)
+                """.trimIndent()
+            )
+        )
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("KSP does not support @OpenApiByFields(only = true)")
+    }
+
+    @Test
+    fun `honors getter-site OpenApiIgnore annotations`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "GetterIgnored.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+                import io.javalin.openapi.OpenApiIgnore
+
+                @JsonSchema
+                class GetterIgnored(@get:OpenApiIgnore val secret: String, val kept: String)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val properties = compilation.generatedJson("app.GetterIgnored").path("properties")
+        assertThat(properties.has("kept")).isTrue()
+        assertThat(properties.has("secret")).isFalse()
+    }
+
+    @Test
+    fun `does not publish private Kotlin vals as schema properties`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "PrivateDto.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+
+                @JsonSchema
+                class PrivateDto(val visible: String, private val secret: String)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val properties = compilation.generatedJson("app.PrivateDto").path("properties")
+        assertThat(properties.has("visible")).isTrue()
+        assertThat(properties.has("secret")).isFalse()
+    }
+
+    @Test
+    fun `maps ByteArray to binary string schema`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "BytesDto.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+
+                @JsonSchema
+                class BytesDto(val payload: ByteArray)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val payload = compilation.generatedJson("app.BytesDto").path("properties").path("payload")
+        assertThat(payload.path("type").asText()).isEqualTo("string")
+        assertThat(payload.path("format").asText()).isEqualTo("binary")
+    }
+
+    @Test
+    fun `does not fail when another processor creates OpenApi routes in a later KSP round`() {
+        val (_, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "InitialRoutes.kt",
+                """
+                package app
+                import io.javalin.openapi.HttpMethod
+                import io.javalin.openapi.OpenApi
+
+                class InitialRoutes {
+                    @OpenApi(path = "/initial", methods = [HttpMethod.GET])
+                    fun initial() {}
+                }
+                """.trimIndent()
+            ),
+            providers = mutableListOf(OpenApiSymbolProcessorProvider(), LaterRoundRouteProcessorProvider())
+        )
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result.messages).doesNotContain("FileAlreadyExistsException")
+    }
+
+    @Test
+    fun `honors JsonSchema requireNonNulls false`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "OptionalSchema.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+
+                @JsonSchema(requireNonNulls = false)
+                class OptionalSchema(val name: String, val age: Int)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val document = compilation.generatedJson("app.OptionalSchema")
+        assertThat(document.path("\$schema").asText()).isEqualTo("https://json-schema.org/draft/2020-12/schema")
+        assertThat(document.has("required")).isFalse()
+        assertThat(document.path("properties").path("name").path("type").asText()).isEqualTo("string")
+        assertThat(document.path("properties").path("age").path("type").asText()).isEqualTo("integer")
+    }
+
+    @Test
+    fun `honors JsonSchema generateResource false`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "DisabledSchema.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+
+                @JsonSchema(generateResource = false)
+                class DisabledSchema(val ignored: String)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val generatedNames = compilation.kspSourcesDir.walkTopDown().map { it.name }.toList()
+        assertThat(generatedNames).doesNotContain("app.DisabledSchema")
+    }
+
+    @Test
+    fun `inlines nested types in standalone JsonSchema resources`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "NestedSchema.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+
+                class NestedChild(val value: String)
+
+                @JsonSchema
+                class NestedSchema(val child: NestedChild)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val child = compilation.generatedJson("app.NestedSchema").path("properties").path("child")
+        assertThat(child.path("type").asText()).isEqualTo("object")
+        assertThat(child.path("properties").path("value").path("type").asText()).isEqualTo("string")
+        assertThat(child.path("required").map { it.asText() }).containsExactly("value")
+    }
+
+    private fun compileWithKsp(
+        vararg sources: SourceFile,
+        providers: MutableList<SymbolProcessorProvider> = mutableListOf(OpenApiSymbolProcessorProvider()),
+    ): Pair<KotlinCompilation, CompilationResult> {
+        val compilation = KotlinCompilation().apply {
+            useKsp2()
+            this.sources = sources.toList()
+            symbolProcessorProviders = providers
+            inheritClassPath = true
+            messageOutputStream = System.out
+        }
+
+        return compilation to compilation.compile()
+    }
+
+    private fun KotlinCompilation.generatedJson(name: String) =
+        jsonMapper.readTree(generatedFile(name).readText())
+
+    private fun KotlinCompilation.generatedFile(name: String) =
+        kspSourcesDir.walkTopDown().firstOrNull { it.name == name }
+            ?: error("generated file $name not found. Output tree:\n" + kspSourcesDir.walkTopDown().joinToString("\n"))
+}
+
+private class LaterRoundRouteProcessorProvider : SymbolProcessorProvider {
+    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
+        LaterRoundRouteProcessor(environment.codeGenerator)
+}
+
+private class LaterRoundRouteProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+    private var generated = false
+
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        if (!generated) {
+            generated = true
+            codeGenerator.createNewFile(Dependencies(aggregating = true), "app", "GeneratedRoutes")
+                .use {
+                    it.write(
+                        """
+                        package app
+
+                        import io.javalin.openapi.HttpMethod
+                        import io.javalin.openapi.OpenApi
+
+                        class GeneratedRoutes {
+                            @OpenApi(path = "/generated", methods = [HttpMethod.GET])
+                            fun generated() {}
+                        }
+                        """.trimIndent().toByteArray()
+                    )
+                }
+        }
+
+        return emptyList()
     }
 }

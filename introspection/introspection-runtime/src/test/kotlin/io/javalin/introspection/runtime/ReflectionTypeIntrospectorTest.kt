@@ -96,6 +96,23 @@ class ReflectionTypeIntrospectorTest {
         assertThat(values["shade"]).isEqualTo("RED")
         assertThat(annotations.find(java.lang.Deprecated::class.java)?.values).isNull()
     }
+
+    @Test
+    fun `skips synthetic fields from inner classes`() {
+        val properties = introspector.introspect(RuntimeOuter.Inner::class.java).getProperties().map { it.name }
+
+        assertThat(properties).contains("visible")
+        assertThat(properties).doesNotContain("this\$0")
+    }
+
+    @Test
+    fun `reads values from package-private runtime annotations`() {
+        val annotation = introspector.introspect(PackagePrivateAnnotated::class.java)
+            .getAnnotations()
+            .find(PackagePrivateAnnotation::class.java)
+
+        assertThat(annotation?.string("value")).isEqualTo("package-private")
+    }
 }
 
 private class Address
@@ -123,3 +140,9 @@ private annotation class Mixed(val name: String, val count: Int, val type: KClas
 @Refs(Address::class, Color::class)
 @Mixed(name = "x", count = 3, type = Address::class, shade = Color.RED)
 private class Holder
+
+private class RuntimeOuter {
+    inner class Inner {
+        val visible: String = ""
+    }
+}

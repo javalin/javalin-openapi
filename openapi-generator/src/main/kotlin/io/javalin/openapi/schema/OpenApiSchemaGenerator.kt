@@ -233,6 +233,13 @@ class OpenApiSchemaGenerator(
         }
 
         if (mimeType == null) {
+            context.reportWarning(
+                """
+                OpenApi generator cannot find matching mime type defined.
+                Content:
+                    $content
+                """.trimIndent()
+            )
             return null
         }
 

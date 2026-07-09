@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationSet
+import io.javalin.introspection.ClassDefinition as RawType
+import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.MemberVisibility
 import io.javalin.openapi.*
 import io.javalin.openapi.experimental.*
@@ -252,7 +254,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
 
         val nullability = property.annotations.find(OpenApiPropertyType::class.java)?.string("nullability")
         val redirect = property.annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")
-        val treatedAsNotNull = redirect == null && !property.nullable
+        val treatedAsNotNull = (redirect == null && !property.nullable) || redirect?.hasPrimitiveSource() == true
 
         val isNotNull = when {
             nullability == Nullability.NOT_NULL.name -> true
@@ -370,10 +372,34 @@ private fun MemberVisibility.toOpenApi(): Visibility =
 private fun Map<String, Any?>.notNull(key: String): String? =
     (this[key] as? String)?.takeIf { it != NULL_STRING }
 
+private val primitiveSourceNames = setOf("boolean", "byte", "short", "int", "long", "float", "double", "char")
+
+@OptIn(InternalIntrospectionApi::class)
+private fun RawType.hasPrimitiveSource(): Boolean =
+    source.toString() in primitiveSourceNames
+
 private fun customAnnotationValue(value: Any?): Any? =
     when (value) {
         is String -> value.trimIndent()
         is io.javalin.introspection.ClassDefinition -> value.fullName
+        is Map<*, *> -> createObjectNode().also { node ->
+            value.forEach { (key, nestedValue) ->
+                val field = key as? String ?: return@forEach
+                when (val resolved = customAnnotationValue(nestedValue)) {
+                    is Boolean -> node.put(field, resolved)
+                    is Int -> node.put(field, resolved)
+                    is Long -> node.put(field, resolved)
+                    is Double -> node.put(field, resolved)
+                    is Float -> node.put(field, resolved)
+                    is Short -> node.put(field, resolved.toInt())
+                    is Byte -> node.put(field, resolved.toInt())
+                    is String -> node.put(field, resolved)
+                    is JsonNode -> node.set<JsonNode>(field, resolved)
+                    null -> {}
+                    else -> node.put(field, resolved.toString())
+                }
+            }
+        }
         is List<*> -> createArrayNode().also { array ->
             value.forEach {
                 when (val element = customAnnotationValue(it)) {
