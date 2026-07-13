@@ -930,6 +930,17 @@ internal class OpenApiSchemaBuilderTest {
         }
 
         @Test
+        fun `should identify operations after fromJson`() {
+            val original = builder()
+            original.path("/users").operation("get") { }
+
+            val schema = OpenApiSchemaBuilder.fromJson(original.toJson())
+
+            assert(schema.hasOperation("/users", "get"))
+            assert(!schema.hasOperation("/users", "post"))
+        }
+
+        @Test
         fun `should modify schema after fromJson`() {
             val original = """{"openapi":"3.1.0","info":{"title":"API","version":"1.0"},"paths":{},"components":{"schemas":{}}}"""
             val schema = OpenApiSchemaBuilder.fromJson(original)

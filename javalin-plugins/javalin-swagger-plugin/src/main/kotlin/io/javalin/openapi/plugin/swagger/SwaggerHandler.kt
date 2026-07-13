@@ -3,6 +3,7 @@ package io.javalin.openapi.plugin.swagger
 import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.http.HandlerType
+import io.javalin.openapi.OpenApiPluginRouteHandler
 import io.javalin.router.Endpoint
 import io.javalin.security.Roles
 import io.javalin.security.RouteRole
@@ -40,7 +41,7 @@ class SwaggerHandler(
     private val operationsSorter: String,
     private val customStylesheetFiles: List<Pair<String, String>>,
     private val customJavaScriptFiles: List<Pair<String, String>>
-) : Handler {
+) : Handler, OpenApiPluginRouteHandler {
 
     private val swaggerUiHtml = createSwaggerUiHtml()
 

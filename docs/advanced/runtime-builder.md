@@ -221,7 +221,7 @@ Reopening an existing operation preserves all fields - only the fields you set a
 
 ## Auto-generating Docs for Registered Routes
 
-For a springdoc-style experience - documenting routes that are registered programmatically (and that the compile-time processor never sees) - use the **dynamic hook** module. It enumerates every route registered on Javalin at startup and contributes them to the served document.
+For a springdoc-style experience - documenting routes that are registered programmatically (and that the compile-time processor never sees) - use the **dynamic hook** module. It adds undocumented Javalin routes to the served document.
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
@@ -233,7 +233,7 @@ dependencies {
 Register `RegisteredRoutesHook` on the `OpenApiPlugin`:
 
 ```kotlin
-Javalin.create { config ->
+Javalin.start { config ->
     config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
 
     config.routes.get("/users") { /* ... */ }
@@ -241,7 +241,17 @@ Javalin.create { config ->
 }
 ```
 
-Every registered route is documented with its path, method, path parameters (typed as `string`), and a default `200` response.
+Every newly discovered route is documented with its path, method, path parameters (typed as `string`), and a default `200` response. Existing operations from compile-time documentation are left unchanged unless the route carries runtime metadata.
+
+Routes registered by `OpenApiPlugin`, `SwaggerPlugin`, and `ReDocPlugin` are excluded by default, including custom UI and WebJar paths. Add prefix exclusions for your own non-API routes:
+
+```kotlin
+RegisteredRoutesHook { routes ->
+    routes.withIgnoredPathPrefixes("/assets", "/internal")
+}
+```
+
+Each prefix matches the path itself and its descendants, so `/assets` excludes `/assets/logo.svg` but not `/assets-admin`. A trailing `/*` is accepted as an equivalent spelling. To include the default excluded plugin routes, call `clearDefaultIgnoredRoutes()`.
 
 ### Enriching a Route
 
@@ -263,10 +273,10 @@ config.routes.addEndpoint(
 )
 ```
 
-The path-parameter skeleton is still auto-added, then your metadata is overlaid on top, and referenced types (e.g. `User`) are emitted into `components/schemas`.
+For newly discovered operations, the path-parameter skeleton is auto-added before your metadata is applied. Existing operations retain their parameters, and referenced types (e.g. `User`) are emitted into `components/schemas`.
 
 ::: warning
-The hook currently documents the `OpenApiPlugin`'s own `/openapi` route (and any Swagger/ReDoc UI routes) alongside your endpoints. Runtime reflection is opt-in: it only happens when you add this module and register the hook, so the compile-time backends stay reflection-free.
+The document is built on its first request, so routes registered after that request are not included. Runtime reflection cannot see CLASS-retention annotations or automatically discover discriminator subtypes. Runtime reflection is opt-in: it only happens when you add this module and register the hook, so the compile-time backends stay reflection-free.
 :::
 
 ## Merge Behavior

@@ -312,6 +312,38 @@ class OpenApiSymbolProcessorTest {
     }
 
     @Test
+    fun `deduplicates custom annotation extras across KSP property and getter sources`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "DuplicateCustomAnnotationDto.kt",
+                """
+                package app
+                import io.javalin.openapi.CustomAnnotation
+                import io.javalin.openapi.JsonSchema
+
+                @CustomAnnotation
+                @Target(AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER)
+                annotation class KspExtra(val xDeduped: String)
+
+                @JsonSchema
+                class DuplicateCustomAnnotationDto(
+                    @KspExtra("property")
+                    @get:KspExtra("getter")
+                    val value: String
+                )
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val value = compilation.generatedJson("app.DuplicateCustomAnnotationDto")
+            .path("properties")
+            .path("value")
+
+        assertThat(value.path("xDeduped").asText()).isEqualTo("property")
+    }
+
+    @Test
     fun `does not fail when another processor creates OpenApi routes in a later KSP round`() {
         val (_, result) = compileWithKsp(
             SourceFile.kotlin(

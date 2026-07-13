@@ -19,6 +19,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
+import javax.tools.Diagnostic.Kind.NOTE
 import javax.tools.Diagnostic.Kind.WARNING
 import io.javalin.introspection.ClassDefinition as RawType
 import io.javalin.introspection.StructureType as RawStructureType
@@ -72,6 +73,10 @@ class AnnotationProcessorContext(
 
     override fun reportWarning(message: String) {
         env.messager.printMessage(WARNING, message)
+    }
+
+    override fun reportDebug(message: String) {
+        inDebug { it.printMessage(NOTE, message) }
     }
 
     fun TypeMirror.toOpenApiType(): OpenApiType =

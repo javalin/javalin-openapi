@@ -37,36 +37,36 @@ class OpenApiSchemaBuilder {
 
     fun openApiVersion(version: String): OpenApiSchemaBuilder =
         apply {
-        root.put("openapi", version)
-    }
+            root.put("openapi", version)
+        }
 
     fun info(configure: Consumer<OpenApiInfo>): OpenApiSchemaBuilder =
         apply {
-        val infoJson = jsonMapper.convertValue(OpenApiInfo().also { configure.accept(it) }, JsonNode::class.java)
-        val existingInfo = root.get("info")
-        val updatedInfo: JsonNode =
-            if (existingInfo != null) {
-                jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
-            } else {
-                infoJson
-            }
-        root.set<JsonNode>("info", updatedInfo)
-    }
+            val infoJson = jsonMapper.convertValue(OpenApiInfo().also { configure.accept(it) }, JsonNode::class.java)
+            val existingInfo = root.get("info")
+            val updatedInfo: JsonNode =
+                if (existingInfo != null) {
+                    jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
+                } else {
+                    infoJson
+                }
+            root.set<JsonNode>("info", updatedInfo)
+        }
 
     fun server(configure: Consumer<OpenApiServer>): OpenApiSchemaBuilder =
         apply {
-        val serversArray = root.get("servers") as? ArrayNode ?: createArrayNode()
-        serversArray.add(jsonMapper.convertValue(OpenApiServer().also { configure.accept(it) }, JsonNode::class.java))
-        root.set<JsonNode>("servers", serversArray)
-    }
+            val serversArray = root.get("servers") as? ArrayNode ?: createArrayNode()
+            serversArray.add(jsonMapper.convertValue(OpenApiServer().also { configure.accept(it) }, JsonNode::class.java))
+            root.set<JsonNode>("servers", serversArray)
+        }
 
     /** Add a named security scheme */
     fun withSecurityScheme(name: String, scheme: SecurityScheme): OpenApiSchemaBuilder =
         apply {
-        val components = root.get("components") as? ObjectNode ?: createObjectNode().also { root.set<JsonNode>("components", it) }
-        val schemes = components.get("securitySchemes") as? ObjectNode ?: createObjectNode().also { components.set<JsonNode>("securitySchemes", it) }
-        schemes.set<JsonNode>(name, jsonMapper.convertValue(scheme, JsonNode::class.java))
-    }
+            val components = root.get("components") as? ObjectNode ?: createObjectNode().also { root.set<JsonNode>("components", it) }
+            val schemes = components.get("securitySchemes") as? ObjectNode ?: createObjectNode().also { components.set<JsonNode>("securitySchemes", it) }
+            schemes.set<JsonNode>(name, jsonMapper.convertValue(scheme, JsonNode::class.java))
+        }
 
     /** Add HTTP Basic authentication scheme */
     @JvmOverloads
@@ -116,6 +116,9 @@ class OpenApiSchemaBuilder {
         }
         return PathItemBuilder(paths.get(path) as ObjectNode, refCollector)
     }
+
+    fun hasOperation(path: String, method: String): Boolean =
+        (paths.get(path) as? ObjectNode)?.has(method) == true
 
     fun addComponentSchema(name: String, schema: ResultScheme) {
         refCollector(schema.references)

@@ -27,4 +27,6 @@ interface SchemaGenerationContext {
     fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> = emptyList()
 
     fun reportWarning(message: String) {}
+
+    fun reportDebug(message: String) {}
 }

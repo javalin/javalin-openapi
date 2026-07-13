@@ -14,6 +14,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.nio.file.Files
+import javax.annotation.processing.ProcessingEnvironment
 import javax.tools.Diagnostic
 import javax.tools.DiagnosticCollector
 import javax.tools.JavaFileObject
@@ -178,5 +179,67 @@ internal class RegressionNetTest : OpenApiAnnotationProcessorSpecification() {
             .anySatisfy {
                 assertThat(it.getMessage(null)).contains("OpenApi generator cannot find matching mime type defined")
             }
+    }
+
+    @Test
+    fun should_emit_compact_debug_trace() {
+        val compiler = requireNotNull(ToolProvider.getSystemJavaCompiler()) { "A JDK is required (no system Java compiler)" }
+        val diagnostics = DiagnosticCollector<JavaFileObject>()
+        val output = Files.createTempDirectory("openapi-debug")
+        val source = object : SimpleJavaFileObject(URI.create("string:///app/DebugRoute.java"), JavaFileObject.Kind.SOURCE) {
+            override fun getCharContent(ignoreEncodingErrors: Boolean): CharSequence =
+                """
+                package app;
+
+                import io.javalin.openapi.OpenApi;
+                import io.javalin.openapi.OpenApiContent;
+                import io.javalin.openapi.OpenApiResponse;
+
+                class DebugRoute {
+                    @OpenApi(
+                        path = "/debug",
+                        responses = {
+                            @OpenApiResponse(status = "200", content = { @OpenApiContent(from = DebugDto.class) })
+                        }
+                    )
+                    public void route() {
+                    }
+                }
+
+                class DebugDto {
+                    public String getName() {
+                        return "";
+                    }
+                }
+                """.trimIndent()
+        }
+
+        val options = listOf(
+            "-classpath", System.getProperty("java.class.path"),
+            "-d", output.toString(),
+            "-s", output.resolve("generated").toString(),
+        )
+        val task = compiler.getTask(null, null, diagnostics, options, null, listOf(source))
+        task.setProcessors(
+            listOf(
+                object : OpenApiAnnotationProcessor() {
+                    override fun init(processingEnv: ProcessingEnvironment) {
+                        super.init(processingEnv)
+                        context.configuration.debug = true
+                    }
+                }
+            )
+        )
+
+        assertThat(task.call()).isTrue()
+        val notes = diagnostics.diagnostics
+            .filter { it.kind == Diagnostic.Kind.NOTE }
+            .map { it.getMessage(null) }
+        assertThat(notes)
+            .contains(
+                "OpenApi | Debug mode enabled",
+                "OpenApi | Generating schema for app.DebugDto",
+                "OpenApi | Resolved 1 properties for app.DebugDto: name",
+            )
     }
 }

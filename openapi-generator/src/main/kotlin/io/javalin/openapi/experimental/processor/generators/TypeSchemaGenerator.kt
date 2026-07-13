@@ -23,6 +23,8 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         inlineRefs: Boolean = false,
         requireNonNullsByDefault: Boolean = true
     ): ResultScheme {
+        context.reportDebug("OpenApi | Generating schema for ${type.fullName}")
+
         val annotations = context.annotationsOf(type)
         val isEnum = context.isEnum(type)
         val definedBy = annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")?.let { context.toOpenApiType(it) }
@@ -298,6 +300,8 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
             )
         }
 
+    reportDebug("OpenApi | Resolved ${properties.size} properties for ${type.fullName}: ${properties.joinToString { it.name }}")
+
     return properties
 }
 
@@ -381,7 +385,7 @@ private fun RawType.hasPrimitiveSource(): Boolean =
 private fun customAnnotationValue(value: Any?): Any? =
     when (value) {
         is String -> value.trimIndent()
-        is io.javalin.introspection.ClassDefinition -> value.fullName
+        is RawType -> value.fullName
         is Map<*, *> -> createObjectNode().also { node ->
             value.forEach { (key, nestedValue) ->
                 val field = key as? String ?: return@forEach

@@ -20,13 +20,14 @@ internal class OpenApiGenerator {
     )
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val aggregatedRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
+        val routes = listOf(
+            roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java),
+            roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java),
+        )
+            .flatten()
             .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
 
-        val standaloneRoutes = roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java)
-            .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
-
-        schemaGenerator.generateVersionedSchemas(aggregatedRoutes + standaloneRoutes)
+        schemaGenerator.generateVersionedSchemas(routes)
             .map { (version, generatedOpenApiSchema) ->
                 val resourceName = "openapi-${version.replace(" ", "-")}.json"
                 val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)

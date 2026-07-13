@@ -4,8 +4,9 @@ import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.http.Header
+import io.javalin.openapi.OpenApiPluginRouteHandler
 
-internal class OpenApiHandler(private val documentation: Lazy<Map<String, String>>) : Handler {
+internal class OpenApiHandler(private val documentation: Lazy<Map<String, String>>) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
         context
