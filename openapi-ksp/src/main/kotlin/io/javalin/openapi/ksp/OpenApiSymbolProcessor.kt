@@ -25,6 +25,7 @@ class OpenApiSymbolProcessor(
     private val writtenResources = mutableSetOf<String>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        // JsonSchema inlines references; its cache must not leak into OpenAPI component references.
         generateJsonSchemes(resolver, KspSchemaContext(resolver, logger))
         generateOpenApiDocuments(resolver, KspSchemaContext(resolver, logger))
         return emptyList()
