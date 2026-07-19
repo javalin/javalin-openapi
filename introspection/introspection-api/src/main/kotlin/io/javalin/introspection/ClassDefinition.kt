@@ -12,9 +12,9 @@ abstract class ClassDefinition(
 
     abstract fun isEnum(): Boolean
 
-    abstract fun getEnumConstants(): List<EnumConstantView>
+    abstract fun getEnumConstants(): List<EnumConstant>
 
-    abstract fun getProperties(): List<PropertyView>
+    abstract fun getProperties(): List<PropertyProjection>
 
     abstract fun getAnnotations(): AnnotationSet
 
@@ -22,6 +22,13 @@ abstract class ClassDefinition(
         if (generics.isEmpty()) fullName else "$fullName<${generics.joinToString(", ")}>"
 }
 
-enum class StructureType { DEFAULT, ARRAY, DICTIONARY }
+enum class StructureType {
+    DEFAULT,
+    ARRAY,
+    DICTIONARY,
+}
 
-class EnumConstantView(val name: String, val annotations: AnnotationSet)
+data class EnumConstant(
+    val name: String,
+    val annotations: AnnotationSet,
+)

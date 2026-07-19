@@ -18,6 +18,13 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
     // ~ https://github.com/javalin/javalin-openapi/issues/230
     private val processedProperties = mutableMapOf<Property, ResultScheme>()
 
+    private fun OpenApiType.definedBy(): OpenApiType? =
+        context.annotationsOf(this)
+            .find(OpenApiPropertyType::class.java)
+            ?.get("definedBy")
+            ?.asClassDefinition()
+            ?.let(context::toOpenApiType)
+
     fun createTypeSchema(
         type: OpenApiType,
         inlineRefs: Boolean = false,
@@ -27,7 +34,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
         val annotations = context.annotationsOf(type)
         val isEnum = context.isEnum(type)
-        val definedBy = annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")?.let { context.toOpenApiType(it) }
+        val definedBy = type.definedBy()
 
         if (definedBy != null && !isEnum) {
             return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
@@ -51,8 +58,8 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
                 context.enumConstantsOf(type)
                     .map { constant ->
-                        val customName = constant.annotations.find(OpenApiName::class.java)?.string("value")
-                        val description = constant.annotations.find(OpenApiDescription::class.java)?.string("value")
+                        val customName = constant.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
+                        val description = constant.annotations.find(OpenApiDescription::class.java)?.get("value")?.asString()
                         val name = when {
                             customName != null -> customName
                             namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
@@ -87,7 +94,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                 val propertiesObject = createObjectNode()
                 schema.set<JsonNode>("properties", propertiesObject)
 
-                val requireNonNulls = (annotations.find(JsonSchema::class.java)?.boolean("requireNonNulls"))
+                val requireNonNulls = (annotations.find(JsonSchema::class.java)?.get("requireNonNulls")?.asBoolean())
                     ?: requireNonNullsByDefault
 
                 val properties = context.findAllProperties(type, requireNonNulls)
@@ -132,7 +139,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         extra: Map<String, Any?> = emptyMap(),
         nullable: Boolean = false,
     ): ResultScheme {
-        val definedBy = context.annotationsOf(type).find(OpenApiPropertyType::class.java)?.classValue("definedBy")?.let { context.toOpenApiType(it) }
+        val definedBy = type.definedBy()
 
         if (definedBy != null && !context.isEnum(type)) {
             return createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra, nullable)
@@ -232,9 +239,9 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
 internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requireNonNulls: Boolean): Collection<Property> {
     val annotations = annotationsOf(type)
-    val byFields = annotations.find(OpenApiByFields::class.java)?.values
-    val byFieldsOnly = byFields?.get("only") == true
-    val byFieldsVisibility = (byFields?.get("value") as? String)?.let { Visibility.valueOf(it) }
+    val byFields = annotations.find(OpenApiByFields::class.java)
+    val byFieldsOnly = byFields?.get("only")?.asBoolean() == true
+    val byFieldsVisibility = byFields?.get("value")?.asString()?.let { Visibility.valueOf(it) }
     val namingStrategy = annotations.namingStrategy()
 
     val properties = mutableListOf<Property>()
@@ -250,12 +257,12 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
         if (byFieldsVisibility != null && byFieldsVisibility.priority > property.visibility.toOpenApi().priority) continue
         if (property.annotations.contains(OpenApiIgnore::class.java) || property.transient) continue
 
-        val customName = property.annotations.find(OpenApiName::class.java)?.string("value")
+        val customName = property.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
         val name = customName ?: property.name
         val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, name) else name
 
-        val nullability = property.annotations.find(OpenApiPropertyType::class.java)?.string("nullability")
-        val redirect = property.annotations.find(OpenApiPropertyType::class.java)?.classValue("definedBy")
+        val nullability = property.annotations.find(OpenApiPropertyType::class.java)?.get("nullability")?.asString()
+        val redirect = property.annotations.find(OpenApiPropertyType::class.java)?.get("definedBy")?.asClassDefinition()
         val treatedAsNotNull = (redirect == null && !property.nullable) || redirect?.hasPrimitiveSource() == true
 
         val isNotNull = when {
@@ -268,7 +275,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
         }
         val required = property.annotations.contains(OpenApiRequired::class.java) || (requireNonNulls && isNotNull)
 
-        val explicitNullable = property.annotations.find(OpenApiNullable::class.java)?.boolean("nullable")
+        val explicitNullable = property.annotations.find(OpenApiNullable::class.java)?.get("nullable")?.asBoolean()
         val isExplicitlyNullable = when {
             explicitNullable != null -> explicitNullable
             nullability == Nullability.NULLABLE.name -> true
@@ -306,11 +313,11 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
 }
 
 private fun AnnotationSet.namingStrategy(): OpenApiNamingStrategy? =
-    (find(OpenApiNaming::class.java)?.string("value"))?.let { OpenApiNamingStrategy.valueOf(it) }
+    (find(OpenApiNaming::class.java)?.get("value")?.asString())?.let { OpenApiNamingStrategy.valueOf(it) }
 
 private fun AnnotationSet.findExtra(): Map<String, Any?> {
     val extra = mutableMapOf<String, Any?>(
-        "description" to find(OpenApiDescription::class.java)?.value("value")
+        "description" to find(OpenApiDescription::class.java)?.get("value")?.asString()
     )
 
     find(OpenApiExample::class.java)?.values?.also { example ->
@@ -354,11 +361,11 @@ private fun AnnotationSet.findExtra(): Map<String, Any?> {
     }
 
     findAll(Custom::class.java).forEach { custom ->
-        extra[custom.value("name") as String] = custom.value("value")
+        extra[requireNotNull(custom.get("name").asString())] = custom.get("value").raw()
     }
 
     all()
-        .filter { it.meta.contains(CustomAnnotation::class.java) }
+        .filter { it.metadata.contains(CustomAnnotation::class.java) }
         .flatMap { it.values.entries }
         .forEach { (name, value) -> extra[name] = customAnnotationValue(value) }
 

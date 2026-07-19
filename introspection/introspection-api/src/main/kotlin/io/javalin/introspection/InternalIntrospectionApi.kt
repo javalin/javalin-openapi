@@ -2,7 +2,7 @@ package io.javalin.introspection
 
 @RequiresOptIn(
     level = RequiresOptIn.Level.ERROR,
-    message = "source is a backend-native token; only the producing backend may read/cast it. Agnostic code must not touch it.",
+    message = "Target agnostic code must not touch that part of the API.",
 )
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.PROPERTY)

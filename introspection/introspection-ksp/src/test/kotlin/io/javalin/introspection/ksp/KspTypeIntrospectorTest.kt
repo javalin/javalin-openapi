@@ -9,7 +9,6 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
-import io.javalin.introspection.ClassDefinition
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Test
@@ -61,8 +60,8 @@ class KspTypeIntrospectorTest {
                 isEnum = color.isEnum(),
                 enumConstants = color.getEnumConstants().map { it.name },
                 hasRef = account.getAnnotations().contains("Ref"),
-                refValue = (account.getAnnotations().find(Ref::class.java)?.classValue("value"))?.fullName,
-                scannedLabel = account.getAnnotations().all().first { it.meta.contains("MetaMarker") }.values["label"],
+                refValue = account.getAnnotations().find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName,
+                scannedLabel = account.getAnnotations().all().first { it.metadata.contains("MetaMarker") }.values["label"],
             )
         }
 

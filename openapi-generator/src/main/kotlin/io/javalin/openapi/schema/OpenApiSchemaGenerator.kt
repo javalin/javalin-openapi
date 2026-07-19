@@ -1,17 +1,14 @@
 package io.javalin.openapi.schema
 
 import io.javalin.introspection.ClassDefinition
-import io.javalin.openapi.ContentType
-import io.javalin.openapi.OpenApiStatus
-import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.NULL_STRING
+import io.javalin.openapi.OpenApiStatus
 import io.javalin.openapi.OpenApiOperation.AUTO_GENERATE
 import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.SchemaGenerationContext
 import io.javalin.openapi.experimental.StructureType.ARRAY
 import io.javalin.openapi.experimental.processor.generators.ExampleGenerator
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
-import io.javalin.openapi.experimental.processor.generators.toExampleProperty
 import java.util.Locale
 import java.util.TreeMap
 
@@ -22,42 +19,44 @@ class OpenApiSchemaGenerator(
     private val defaultStatusDescription: (String) -> String? = { OpenApiStatus.reasonPhrase(it) },
 ) {
 
-    private val nullClassName = NULL_CLASS::class.java.name
-
     fun generateSchema(routes: List<Map<String, Any?>>): String {
+        return generateRouteSchema(routes.map(OpenApiRouteDefinition::from))
+    }
+
+    private fun generateRouteSchema(routes: List<OpenApiRouteDefinition>): String {
         val schema =
             OpenApiSchemaBuilder()
                 .openApiVersion("3.1.0")
                 .info { it.title(title).version(version) }
 
-        for (route in routes.sortedBy { it.formattedPath() }) {
-            if (route["ignore"] as? Boolean == true) {
+        for (route in routes.sortedBy { it.formattedPath }) {
+            if (route.ignore) {
                 continue
             }
 
-            val pathBuilder = schema.path(route.formattedPath())
+            val pathBuilder = schema.path(route.formattedPath)
 
-            for (method in route.texts("methods").sorted()) {
+            for (method in route.methods.sorted()) {
                 pathBuilder.operation(method.lowercase()) {
-                    tags(route.texts("tags"))
-                    summary(route.text("summary"))
-                    description(route.text("description"))
+                    tags(route.tags)
+                    summary(route.summary)
+                    description(route.description)
                     operationId(generateOperationId(method, route).takeIf { it != NULL_STRING })
 
                     buildParameters(route)
-                    buildRequestBody(route.child("requestBody"))
-                    buildResponses(route.maps("responses"))
-                    buildCallbacks(route.maps("callbacks"))
+                    buildRequestBody(route.requestBody)
+                    buildResponses(route.responses)
+                    buildCallbacks(route.callbacks)
 
-                    if (route["deprecated"] as? Boolean == true) {
+                    if (route.deprecated) {
                         deprecated(true)
                     }
 
-                    val securities = route.maps("security")
+                    val securities = route.security
                     if (securities.isNotEmpty()) {
                         security {
-                            for (security in securities.sortedBy { it["name"] as String }) {
-                                securityRequirement(security["name"] as String, *security.texts("scopes").toTypedArray())
+                            for (security in securities.sortedBy { it.name }) {
+                                securityRequirement(security.name, *security.scopes.toTypedArray())
                             }
                         }
                     }
@@ -70,64 +69,67 @@ class OpenApiSchemaGenerator(
     }
 
     fun generateVersionedSchemas(routes: List<Map<String, Any?>>): Map<String, String> =
-        routes
-            .flatMap { route -> route.texts("versions").map { version -> version to route } }
-            .groupBy({ it.first }, { it.second })
-            .mapValues { (_, versionRoutes) -> generateSchema(versionRoutes.toSet().toList()) }
+        generateVersionedRouteSchemas(routes.map(OpenApiRouteDefinition::from))
 
-    private fun OperationBuilder.buildParameters(route: Map<String, Any?>) {
+    private fun generateVersionedRouteSchemas(routes: List<OpenApiRouteDefinition>): Map<String, String> =
+        routes
+            .flatMap { route -> route.versions.map { version -> version to route } }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, versionRoutes) -> generateRouteSchema(versionRoutes.toSet().toList()) }
+
+    private fun OperationBuilder.buildParameters(route: OpenApiRouteDefinition) {
         parameters {
             val parametersByLocation = linkedMapOf(
-                In.COOKIE to route.maps("cookies"),
-                In.HEADER to route.maps("headers"),
-                In.PATH to route.maps("pathParams"),
-                In.QUERY to route.maps("queryParams"),
+                In.COOKIE to route.cookies,
+                In.HEADER to route.headers,
+                In.PATH to route.pathParameters,
+                In.QUERY to route.queryParameters,
             )
 
             parametersByLocation.forEach { (location, parameters) ->
                 parameters.forEach { parameter ->
                     parameter(
-                        name = parameter["name"] as String,
+                        name = parameter.name,
                         location = location.identifier,
-                        schema = createTypeDescriptionWithReferences(parameter["type"] as ClassDefinition),
-                        description = parameter.text("description"),
-                        required = (parameter["required"] as? Boolean ?: false) || location == In.PATH,
-                        deprecated = parameter["deprecated"] as? Boolean ?: false,
-                        allowEmptyValue = parameter["allowEmptyValue"] as? Boolean ?: false,
-                        example = parameter.exampleText(),
+                        schema = createTypeDescriptionWithReferences(parameter.type),
+                        description = parameter.description,
+                        required = parameter.required || location == In.PATH,
+                        deprecated = parameter.deprecated,
+                        allowEmptyValue = parameter.allowEmptyValue,
+                        example = parameter.example,
                     )
                 }
             }
         }
     }
 
-    private fun OperationBuilder.buildRequestBody(requestBody: Map<String, Any?>?) {
+    private fun OperationBuilder.buildRequestBody(requestBody: OpenApiRequestBodyDefinition?) {
         if (requestBody == null) {
             return
         }
         requestBody {
-            description(requestBody.text("description"))
-            content { addResolvedContent(requestBody.maps("content")) }
-            if (requestBody["required"] as? Boolean == true) { required(true) }
+            description(requestBody.description)
+            content { addResolvedContent(requestBody.content) }
+            if (requestBody.required) { required(true) }
         }
     }
 
-    private fun OperationBuilder.buildResponses(responses: List<Map<String, Any?>>) {
+    private fun OperationBuilder.buildResponses(responses: List<OpenApiResponseDefinition>) {
         responses {
-            for (response in responses.sortedBy { it["status"] as String }) {
-                response(response["status"] as String) {
+            for (response in responses.sortedBy { it.status }) {
+                response(response.status) {
                     description(descriptionOf(response))
-                    content { addResolvedContent(response.maps("content")) }
+                    content { addResolvedContent(response.content) }
                     headers {
-                        response.maps("headers").forEach { header ->
+                        response.headers.forEach { header ->
                             header(
-                                name = header["name"] as String,
-                                schema = createTypeDescriptionWithReferences(header["type"] as ClassDefinition),
-                                description = header.text("description"),
-                                required = header["required"] as? Boolean ?: false,
-                                deprecated = header["deprecated"] as? Boolean ?: false,
-                                allowEmptyValue = header["allowEmptyValue"] as? Boolean ?: false,
-                                example = header.exampleText(),
+                                name = header.name,
+                                schema = createTypeDescriptionWithReferences(header.type),
+                                description = header.description,
+                                required = header.required,
+                                deprecated = header.deprecated,
+                                allowEmptyValue = header.allowEmptyValue,
+                                example = header.example,
                             )
                         }
                     }
@@ -136,7 +138,7 @@ class OpenApiSchemaGenerator(
         }
     }
 
-    private fun OperationBuilder.buildCallbacks(callbacks: List<Map<String, Any?>>) {
+    private fun OperationBuilder.buildCallbacks(callbacks: List<OpenApiCallbackDefinition>) {
         if (callbacks.isEmpty()) {
             return
         }
@@ -144,23 +146,23 @@ class OpenApiSchemaGenerator(
         callbacks {
             callbacks.forEach { callback ->
                 callback(
-                    name = callback["name"] as String,
-                    url = callback["url"] as String,
-                    method = (callback["method"] as String).lowercase()
+                    name = callback.name,
+                    url = callback.url,
+                    method = callback.method.lowercase()
                 ) {
-                    summary(callback.text("summary"))
-                    description(callback.text("description"))
-                    val callbackBody = callback.child("requestBody")
+                    summary(callback.summary)
+                    description(callback.description)
+                    val callbackBody = callback.requestBody
                     requestBody {
-                        description(callbackBody?.text("description"))
-                        content { addResolvedContent(callbackBody?.maps("content").orEmpty()) }
-                        if (callbackBody?.get("required") as? Boolean == true) { required(true) }
+                        description(callbackBody?.description)
+                        content { addResolvedContent(callbackBody?.content.orEmpty()) }
+                        if (callbackBody?.required == true) { required(true) }
                     }
                     responses {
-                        for (response in callback.maps("responses").sortedBy { it["status"] as String }) {
-                            response(response["status"] as String) {
+                        for (response in callback.responses.sortedBy { it.status }) {
+                            response(response.status) {
                                 description(descriptionOf(response))
-                                content { addResolvedContent(response.maps("content")) }
+                                content { addResolvedContent(response.content) }
                             }
                         }
                     }
@@ -169,7 +171,7 @@ class OpenApiSchemaGenerator(
         }
     }
 
-    private fun ContentBuilder.addResolvedContent(contents: List<Map<String, Any?>>) {
+    private fun ContentBuilder.addResolvedContent(contents: List<OpenApiContentDefinition>) {
         val resolvedEntries = TreeMap<String, MediaTypeBuilder.() -> Unit>()
 
         for (content in contents) {
@@ -187,14 +189,10 @@ class OpenApiSchemaGenerator(
         COOKIE("cookie"),
     }
 
-    private fun generateOperationId(
-        method: String,
-        route: Map<String, Any?>,
-        pathParamPrefix: String = "By"
-    ): String =
-        when (val operationId = route["operationId"] as String) {
+    private fun generateOperationId(method: String, route: OpenApiRouteDefinition, pathParamPrefix: String = "By"): String =
+        when (val operationId = route.operationId) {
             AUTO_GENERATE ->
-                method.lowercase() + (route["path"] as String).split('/')
+                method.lowercase() + route.path.split('/')
                     .map { pathPart ->
                         if (pathPart.startsWith('{') || pathPart.startsWith('<')) {
                             val pathParam = pathPart
@@ -217,11 +215,11 @@ class OpenApiSchemaGenerator(
         it.titlecase(Locale.getDefault())
     }
 
-    private fun resolveMediaType(content: Map<String, Any?>): Pair<String, MediaTypeBuilder.() -> Unit>? {
-        val from = content["from"] as? ClassDefinition
-        val fromIsNull = from == null || from.fullName == nullClassName
-        var type = content.text("type")
-        var mimeType = (content["mimeType"] as? String)?.takeIf { it != ContentType.AUTODETECT }
+    private fun resolveMediaType(content: OpenApiContentDefinition): Pair<String, MediaTypeBuilder.() -> Unit>? {
+        val from = content.from
+        val fromIsNull = !content.hasResolvedSource
+        var type = content.type
+        var mimeType = content.mimeType
 
         if (mimeType == null) {
             if (fromIsNull) {
@@ -244,9 +242,9 @@ class OpenApiSchemaGenerator(
         }
 
         val resolvedType = type
-        val format = content.text("format")
-        val properties = content.maps("properties").takeIf { it.isNotEmpty() }
-        val additionalProperties = content.child("additionalProperties")?.takeIf { it["_ignored"] != true }
+        val format = content.format
+        val properties = content.properties.takeIf { it.isNotEmpty() }
+        val additionalProperties = content.additionalProperties
 
         val configure: MediaTypeBuilder.() -> Unit = {
             when {
@@ -271,44 +269,42 @@ class OpenApiSchemaGenerator(
         return mimeType to configure
     }
 
-    private fun ExampleHolder.applyExample(content: Map<String, Any?>) {
-        content.text("example")?.let { example(it) }
-        content.maps("exampleObjects").takeIf { it.isNotEmpty() }?.let { exampleMaps ->
-            val result = ExampleGenerator.generateFromExamples(exampleMaps.map { it.toExampleProperty() })
+    private fun ExampleHolder.applyExample(content: OpenApiContentDefinition) {
+        content.example?.let { example(it) }
+        content.exampleObjects.takeIf { it.isNotEmpty() }?.let { examples ->
+            val result = ExampleGenerator.generateFromExamples(examples)
             result.simpleValue?.let { example(it) }
             result.jsonElement?.let { exampleJson(it) }
         }
     }
 
-    private fun ObjectSchemaBuilder.buildProperties(properties: List<Map<String, Any?>>) {
+    private fun ObjectSchemaBuilder.buildProperties(properties: List<OpenApiContentPropertyDefinition>) {
         for (property in properties) {
-            val propertyFormat = property.text("format")
-            val from = property["from"] as? ClassDefinition
-            val isResolved = from != null && from.fullName != nullClassName
+            val from = property.from?.takeIf { property.hasResolvedSource }
 
-            if (property["isArray"] as? Boolean == true) {
-                if (isResolved) {
-                    arrayProperty(property["name"] as String, createTypeDescriptionWithReferences(from!!))
+            if (property.isArray) {
+                if (from != null) {
+                    arrayProperty(property.name, createTypeDescriptionWithReferences(from))
                 } else {
-                    arrayProperty(property["name"] as String, property["type"] as String, propertyFormat)
+                    arrayProperty(property.name, property.type, property.format)
                 }
             } else {
-                if (isResolved) {
-                    property(property["name"] as String, createTypeDescriptionWithReferences(from!!))
+                if (from != null) {
+                    property(property.name, createTypeDescriptionWithReferences(from))
                 } else {
-                    property(property["name"] as String, property["type"] as String, propertyFormat)
+                    property(property.name, property.type, property.format)
                 }
             }
         }
     }
 
-    private fun ObjectSchemaBuilder.buildAdditionalProperties(additionalProperties: Map<String, Any?>) {
-        val from = additionalProperties["from"] as? ClassDefinition
+    private fun ObjectSchemaBuilder.buildAdditionalProperties(additionalProperties: OpenApiContentDefinition) {
+        val from = additionalProperties.from?.takeIf { additionalProperties.hasResolvedSource }
 
-        if (from != null && from.fullName != nullClassName) {
+        if (from != null) {
             additionalProperties(createTypeDescriptionWithReferences(from))
         } else {
-            additionalProperties(additionalProperties.text("type"), additionalProperties.text("format"))
+            additionalProperties(additionalProperties.type, additionalProperties.format)
         }
 
         applyExample(additionalProperties)
@@ -330,29 +326,9 @@ class OpenApiSchemaGenerator(
         return context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
     }
 
-    private fun descriptionOf(response: Map<String, Any?>): String =
-        response.text("description")
-            ?: defaultStatusDescription(response["status"] as String)
+    private fun descriptionOf(response: OpenApiResponseDefinition): String =
+        response.description
+            ?: defaultStatusDescription(response.status)
             ?: ""
 
 }
-
-private fun Map<String, Any?>.formattedPath(): String =
-    (this["path"] as String).let { if (it.startsWith("/")) it else "/$it" }
-
-private fun Map<String, Any?>.text(key: String): String? =
-    (this[key] as? String)?.takeIf { it != NULL_STRING }
-
-private fun Map<String, Any?>.exampleText(): String? =
-    (this["example"] as? String)?.takeIf { it.isNotEmpty() }
-
-private fun Map<String, Any?>.texts(key: String): List<String> =
-    (this[key] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-
-private fun Map<String, Any?>.child(key: String): Map<String, Any?>? {
-    @Suppress("UNCHECKED_CAST")
-    return this[key] as? Map<String, Any?>
-}
-
-private fun Map<String, Any?>.maps(key: String): List<Map<String, Any?>> =
-    (this[key] as? List<*>)?.filterIsInstance<Map<String, Any?>>() ?: emptyList()

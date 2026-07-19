@@ -1,7 +1,7 @@
 package io.javalin.introspection.runtime
 
 import io.javalin.introspection.Accessor
-import io.javalin.introspection.PropertyView
+import io.javalin.introspection.PropertyProjection
 import io.javalin.introspection.StructureType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -11,7 +11,7 @@ class ReflectionTypeIntrospectorTest {
 
     private val introspector = ReflectionTypeIntrospector()
 
-    private fun props(type: Class<*>): Map<String, PropertyView> =
+    private fun props(type: Class<*>): Map<String, PropertyProjection> =
         introspector.introspect(type).getProperties().associateBy { it.name }
 
     @Test
@@ -80,8 +80,8 @@ class ReflectionTypeIntrospectorTest {
     fun `resolves Class-valued annotation members into ClassDefinitions`() {
         val annotations = introspector.introspect(Holder::class.java).getAnnotations()
 
-        assertThat(annotations.find(Ref::class.java)?.classValue("value")?.fullName).isEqualTo(Address::class.java.name)
-        assertThat(annotations.find(Refs::class.java)?.classValues("value").orEmpty().map { it.fullName })
+        assertThat(annotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName).isEqualTo(Address::class.java.name)
+        assertThat(annotations.find(Refs::class.java)?.get("value")?.asClassDefinitions().orEmpty().map { it.fullName })
             .containsExactly(Address::class.java.name, Color::class.java.name)
     }
 
@@ -111,7 +111,7 @@ class ReflectionTypeIntrospectorTest {
             .getAnnotations()
             .find(PackagePrivateAnnotation::class.java)
 
-        assertThat(annotation?.string("value")).isEqualTo("package-private")
+        assertThat(annotation?.get("value")?.asString()).isEqualTo("package-private")
     }
 }
 

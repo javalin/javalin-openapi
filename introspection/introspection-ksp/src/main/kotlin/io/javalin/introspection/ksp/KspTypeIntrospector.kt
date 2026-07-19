@@ -12,13 +12,14 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Modifier
 import io.javalin.introspection.Accessor
-import io.javalin.introspection.AnnotationView
+import io.javalin.introspection.AnnotationProjection
 import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.CompileTimeIntrospector
-import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.EnumConstant
 import io.javalin.introspection.InternalIntrospectionApi
-import io.javalin.introspection.PropertyView
+import io.javalin.introspection.PropertyProjection
+import io.javalin.introspection.RepeatableAnnotationProjection
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
@@ -142,26 +143,26 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         override fun isEnum(): Boolean =
             declaration?.classKind == ClassKind.ENUM_CLASS
 
-        override fun getEnumConstants(): List<EnumConstantView> =
+        override fun getEnumConstants(): List<EnumConstant> =
             declaration
                 ?.takeIf { it.classKind == ClassKind.ENUM_CLASS }
                 ?.declarations
                 ?.filterIsInstance<KSClassDeclaration>()
                 ?.filter { it.classKind == ClassKind.ENUM_ENTRY }
-                ?.map { EnumConstantView(it.simpleName.asString(), KspAnnotations(it)) }
+                ?.map { EnumConstant(it.simpleName.asString(), KspAnnotations(it)) }
                 ?.toList()
                 .orEmpty()
 
         override fun getAnnotations(): AnnotationSet =
             KspAnnotations(declaration)
 
-        override fun getProperties(): List<PropertyView> {
+        override fun getProperties(): List<PropertyProjection> {
             val declaration = declaration ?: return emptyList()
             return declaration.getAllProperties().filter { property ->
                 property.getVisibility() !in setOf(KspVisibility.PRIVATE, KspVisibility.LOCAL)
             }.map { property ->
                 val propertyType = property.type.resolve()
-                PropertyView(
+                PropertyProjection(
                     name = property.simpleName.asString(),
                     type = resolve(propertyType),
                     accessor = Accessor.GETTER,
@@ -185,28 +186,28 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         override fun contains(simpleName: String): Boolean =
             annotations().any { it.shortName.asString() == simpleName }
 
-        override fun find(type: Class<out Annotation>): AnnotationView? =
+        override fun find(type: Class<out Annotation>): AnnotationProjection? =
             annotations()
                 .firstOrNull { it.named(type) }
-                ?.let { KspAnnotationView(it) }
+                ?.let { KspAnnotationProjection(it) }
 
-        override fun findAll(type: Class<out Annotation>): List<AnnotationView> {
+        override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> {
             val annotations = annotations()
             val direct = annotations
                 .filter { it.named(type) }
-                .map { KspAnnotationView(it) }
+                .map { KspAnnotationProjection(it) }
             val containerName = type.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
             val repeated = containerName
                 ?.let { name -> annotations.firstOrNull { it.qualifiedName() == name } }
                 ?.let { argumentValues(it)["value"] as? List<*> }
                 ?.filterIsInstance<Map<String, Any?>>()
-                ?.map { AnnotationView.of(type.simpleName, it) }
+                ?.map { RepeatableAnnotationProjection(type.simpleName, it) }
                 .orEmpty()
             return direct + repeated
         }
 
-        override fun all(): List<AnnotationView> =
-            annotations().distinctBy { it.annotationType.resolve().declaration }.map { KspAnnotationView(it) }
+        override fun all(): List<AnnotationProjection> =
+            annotations().distinctBy { it.annotationType.resolve().declaration }.map { KspAnnotationProjection(it) }
 
         private fun KSAnnotation.named(type: Class<out Annotation>): Boolean {
             val qualifiedName = qualifiedName()
@@ -217,10 +218,10 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
             annotationType.resolve().declaration.qualifiedName?.asString()
     }
 
-    private inner class KspAnnotationView(private val annotation: KSAnnotation) : AnnotationView {
+    private inner class KspAnnotationProjection(private val annotation: KSAnnotation) : AnnotationProjection {
         override val simpleName: String
             get() = annotation.shortName.asString()
-        override val meta: AnnotationSet
+        override val metadata: AnnotationSet
             get() = KspAnnotations(annotation.annotationType.resolve().declaration)
         override val values: Map<String, Any?>
             get() = argumentValues(annotation)

@@ -1,12 +1,12 @@
 package io.javalin.introspection.runtime
 
 import io.javalin.introspection.Accessor
-import io.javalin.introspection.AnnotationView
+import io.javalin.introspection.AnnotationProjection
 import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition
-import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.EnumConstant
 import io.javalin.introspection.InternalIntrospectionApi
-import io.javalin.introspection.PropertyView
+import io.javalin.introspection.PropertyProjection
 import io.javalin.introspection.StructureType
 import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
@@ -120,15 +120,15 @@ private class ReflectionClassDefinition(
     override fun isEnum(): Boolean =
         erasure.isEnum
 
-    override fun getEnumConstants(): List<EnumConstantView> =
+    override fun getEnumConstants(): List<EnumConstant> =
         erasure.takeIf { it.isEnum }?.enumConstants?.map {
             val name = (it as Enum<*>).name
-            EnumConstantView(name, ReflectionAnnotations(listOfNotNull(runCatching { erasure.getDeclaredField(name) }.getOrNull())))
+            EnumConstant(name, ReflectionAnnotations(listOfNotNull(runCatching { erasure.getDeclaredField(name) }.getOrNull())))
         }.orEmpty()
 
-    override fun getProperties(): List<PropertyView> =
+    override fun getProperties(): List<PropertyProjection> =
         collectMembers(erasure).map { member ->
-            PropertyView(
+            PropertyProjection(
                 name = if (member.accessor == Accessor.GETTER) propertyName(member.name) else member.name,
                 type = reflect(member.genericType),
                 accessor = member.accessor,
@@ -243,20 +243,20 @@ private class ReflectionAnnotations(private val sources: List<AnnotatedElement>)
     override fun contains(simpleName: String): Boolean =
         sources.any { source -> source.annotations.any { it.annotationClass.simpleName == simpleName } }
 
-    override fun find(type: Class<out Annotation>): AnnotationView? =
-        sources.firstNotNullOfOrNull { it.getAnnotation(type) }?.let { ReflectionAnnotationView(it) }
+    override fun find(type: Class<out Annotation>): AnnotationProjection? =
+        sources.firstNotNullOfOrNull { it.getAnnotation(type) }?.let { ReflectionAnnotationProjection(it) }
 
-    override fun findAll(type: Class<out Annotation>): List<AnnotationView> =
-        sources.flatMap { it.getAnnotationsByType(type).toList() }.map { ReflectionAnnotationView(it) }
+    override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> =
+        sources.flatMap { it.getAnnotationsByType(type).toList() }.map { ReflectionAnnotationProjection(it) }
 
-    override fun all(): List<AnnotationView> =
-        sources.flatMap { it.annotations.toList() }.distinctBy { it.annotationClass }.map { ReflectionAnnotationView(it) }
+    override fun all(): List<AnnotationProjection> =
+        sources.flatMap { it.annotations.toList() }.distinctBy { it.annotationClass }.map { ReflectionAnnotationProjection(it) }
 }
 
-private class ReflectionAnnotationView(private val annotation: Annotation) : AnnotationView {
+private class ReflectionAnnotationProjection(private val annotation: Annotation) : AnnotationProjection {
     override val simpleName: String
         get() = annotation.annotationClass.java.simpleName
-    override val meta: AnnotationSet
+    override val metadata: AnnotationSet
         get() = ReflectionAnnotations(listOf(annotation.annotationClass.java))
     override val values: Map<String, Any?>
         get() = annotationToMap(annotation)

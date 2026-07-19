@@ -1,62 +1,63 @@
 package io.javalin.introspection
 
-/** The annotations on a single element. Name/value-based: KSP can't honor typed annotation instances. */
 interface AnnotationSet {
 
-    fun all(): List<AnnotationView>
+    fun all(): List<AnnotationProjection>
 
-    fun find(type: Class<out Annotation>): AnnotationView?
+    fun find(type: Class<out Annotation>): AnnotationProjection?
 
-    fun findAll(type: Class<out Annotation>): List<AnnotationView>
+    fun findAll(type: Class<out Annotation>): List<AnnotationProjection>
 
     fun contains(simpleName: String): Boolean
 
-    fun contains(type: Class<out Annotation>): Boolean =
-        find(type) != null
+    fun contains(type: Class<out Annotation>): Boolean = find(type) != null
 
-    companion object {
-        val EMPTY: AnnotationSet = object : AnnotationSet {
-            override fun all(): List<AnnotationView> = emptyList()
-            override fun find(type: Class<out Annotation>): AnnotationView? = null
-            override fun findAll(type: Class<out Annotation>): List<AnnotationView> = emptyList()
-            override fun contains(simpleName: String): Boolean = false
-        }
-    }
 }
 
-interface AnnotationView {
+interface AnnotationProjection {
 
     val simpleName: String
 
-    val meta: AnnotationSet
+    val metadata: AnnotationSet
 
     val values: Map<String, Any?>
 
-    fun value(member: String): Any? =
-        values[member]
+    operator fun get(member: String): AnnotationValue = AnnotationValue(values[member])
 
-    fun string(member: String): String? =
-        value(member) as? String
-
-    fun boolean(member: String): Boolean? =
-        value(member) as? Boolean
-
-    fun classValue(member: String): ClassDefinition? =
-        value(member) as? ClassDefinition
-
-    fun classValues(member: String): List<ClassDefinition> =
-        (value(member) as? List<*>)?.filterIsInstance<ClassDefinition>().orEmpty()
-
-    companion object {
-        fun of(simpleName: String, values: Map<String, Any?>): AnnotationView =
-            ValuesAnnotationView(simpleName, values)
-    }
 }
 
-private class ValuesAnnotationView(
+data class AnnotationValue(private val value: Any?) {
+
+    fun raw(): Any? = value
+
+    fun asString(): String? = value as? String
+
+    fun asBoolean(): Boolean? = value as? Boolean
+
+    fun asClassDefinition(): ClassDefinition? = value as? ClassDefinition
+
+    fun asClassDefinitions(): List<ClassDefinition> =
+        asList().filterIsInstance<ClassDefinition>()
+
+    fun asList(): List<*> = value as? List<*> ?: emptyList<Any?>()
+
+    fun asMap(): Map<*, *>? = value as? Map<*, *>
+
+}
+
+class RepeatableAnnotationProjection(
     override val simpleName: String,
     override val values: Map<String, Any?>,
-) : AnnotationView {
-    override val meta: AnnotationSet
-        get() = AnnotationSet.EMPTY
+) : AnnotationProjection {
+    private companion object {
+        val EMPTY: AnnotationSet = object : AnnotationSet {
+            override fun all(): List<AnnotationProjection> = emptyList()
+            override fun find(type: Class<out Annotation>): AnnotationProjection? = null
+            override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> = emptyList()
+            override fun contains(simpleName: String): Boolean = false
+        }
+    }
+
+    override val metadata: AnnotationSet
+        get() = EMPTY
 }

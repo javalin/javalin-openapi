@@ -76,7 +76,7 @@ class IntrospectionParityTest {
     @Test
     fun `annotation enumeration with meta-annotations matches across backends`() {
         fun scan(annotations: AnnotationSet): Pair<String, Any?> {
-            val tagged = annotations.all().first { it.meta.contains("MetaMarker") }
+            val tagged = annotations.all().first { it.metadata.contains("MetaMarker") }
             return tagged.simpleName to tagged.values["label"]
         }
         val runtimeScan = scan(runtime.introspect(Scanned::class.java).getAnnotations())
@@ -86,7 +86,7 @@ class IntrospectionParityTest {
 
     @Test
     fun `repeatable annotations enumerate identically across backends`() {
-        fun notes(annotations: AnnotationSet) = annotations.findAll(Note::class.java).map { it.value("value") }
+        fun notes(annotations: AnnotationSet) = annotations.findAll(Note::class.java).map { it.get("value").asString() }
         val runtimeNotes = notes(runtime.introspect(Noted::class.java).getAnnotations())
         val processedNotes = AnnotationProcessing.introspect(Noted::class) { notes(it.getAnnotations()) }
         assertThat(processedNotes).isEqualTo(runtimeNotes)
@@ -95,20 +95,20 @@ class IntrospectionParityTest {
 
     @Test
     fun `nested annotation members normalize to maps identically across backends`() {
-        val runtimeMeta = runtime.introspect(Wrapped::class.java).getAnnotations().find(Outer::class.java)!!.value("meta")
-        val processedMeta = AnnotationProcessing.introspect(Wrapped::class) { it.getAnnotations().find(Outer::class.java)!!.value("meta") }
+        val runtimeMeta = runtime.introspect(Wrapped::class.java).getAnnotations().find(Outer::class.java)!!.get("meta").asMap()
+        val processedMeta = AnnotationProcessing.introspect(Wrapped::class) { it.getAnnotations().find(Outer::class.java)!!.get("meta").asMap() }
         assertThat(processedMeta).isEqualTo(runtimeMeta).isEqualTo(mapOf("note" to "x"))
     }
 
     @Test
     fun `Class-valued annotation members resolve identically across backends`() {
         val runtimeAnnotations = runtime.introspect(Holder::class.java).getAnnotations()
-        val runtimeRef = runtimeAnnotations.find(Ref::class.java)?.classValue("value")?.fullName
-        val runtimeRefs = runtimeAnnotations.find(Refs::class.java)?.classValues("value").orEmpty().map { it.fullName }
+        val runtimeRef = runtimeAnnotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName
+        val runtimeRefs = runtimeAnnotations.find(Refs::class.java)?.get("value")?.asClassDefinitions().orEmpty().map { it.fullName }
 
         val (processedRef, processedRefs) = AnnotationProcessing.introspect(Holder::class) {
             val annotations = it.getAnnotations()
-            annotations.find(Ref::class.java)?.classValue("value")?.fullName to annotations.find(Refs::class.java)?.classValues("value").orEmpty().map { it.fullName }
+            annotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName to annotations.find(Refs::class.java)?.get("value")?.asClassDefinitions().orEmpty().map { it.fullName }
         }
 
         assertThat(processedRef).isEqualTo(runtimeRef).isEqualTo(Address::class.java.name)
@@ -117,17 +117,17 @@ class IntrospectionParityTest {
 
     @Test
     fun `annotation value maps match across backends`() {
-        val runtimeValue = runtime.introspect(Holder::class.java).getAnnotations().find(Ref::class.java)!!.value("value")
-        val processedValue = AnnotationProcessing.introspect(Holder::class) { it.getAnnotations().find(Ref::class.java)!!.value("value") }
-        assertThat((processedValue as ClassDefinition).fullName)
-            .isEqualTo((runtimeValue as ClassDefinition).fullName)
+        val runtimeValue = runtime.introspect(Holder::class.java).getAnnotations().find(Ref::class.java)!!.get("value").asClassDefinition()
+        val processedValue = AnnotationProcessing.introspect(Holder::class) { it.getAnnotations().find(Ref::class.java)!!.get("value").asClassDefinition() }
+        assertThat(processedValue?.fullName)
+            .isEqualTo(runtimeValue?.fullName)
             .isEqualTo(Address::class.java.name)
     }
 
     @Test
     fun `primitive array annotation members normalize identically across backends`() {
-        val runtimeInts = runtime.introspect(Flagged::class.java).getAnnotations().find(Flags::class.java)!!.value("ints")
-        val processedInts = AnnotationProcessing.introspect(Flagged::class) { it.getAnnotations().find(Flags::class.java)!!.value("ints") }
+        val runtimeInts = runtime.introspect(Flagged::class.java).getAnnotations().find(Flags::class.java)!!.get("ints").asList()
+        val processedInts = AnnotationProcessing.introspect(Flagged::class) { it.getAnnotations().find(Flags::class.java)!!.get("ints").asList() }
         assertThat(processedInts).isEqualTo(runtimeInts).isEqualTo(listOf(1, 2, 3))
     }
 
@@ -178,7 +178,7 @@ class IntrospectionParityTest {
     @Test
     fun `nested annotation classes can be found by class across backends`() {
         fun value(definition: ClassDefinition): String? =
-            definition.getAnnotations().find(AnnotationContainer.Nested::class.java)?.string("value")
+            definition.getAnnotations().find(AnnotationContainer.Nested::class.java)?.get("value")?.asString()
 
         val runtimeValue = value(runtime.introspect(NestedAnnotated::class.java))
         val processedValue = AnnotationProcessing.introspect(NestedAnnotated::class) { value(it) }

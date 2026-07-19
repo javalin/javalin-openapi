@@ -27,8 +27,8 @@ fun findCompositionInElement(context: SchemaGenerationContext, annotations: Anno
 
 private fun compositionOf(context: SchemaGenerationContext, annotations: AnnotationSet, annotationType: Class<out Annotation>, composition: Composition): PropertyComposition? {
     val annotation = annotations.find(annotationType) ?: return null
-    val references = annotation.classValues("value").map { context.toOpenApiType(it) }.toSet()
-    val discriminator = (annotation.value("discriminator") as? Map<*, *>)?.let { discriminatorInfo(context, it) }
+    val references = annotation.get("value").asClassDefinitions().map { context.toOpenApiType(it) }.toSet()
+    val discriminator = annotation.get("discriminator").asMap()?.let { discriminatorInfo(context, it) }
     return PropertyComposition(composition, references, discriminator)
 }
 

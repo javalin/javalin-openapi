@@ -1,14 +1,14 @@
 package io.javalin.introspection
 
-class PropertyView(
+class PropertyProjection(
     val name: String,
     val type: ClassDefinition,
     val accessor: Accessor,
     val nullable: Boolean,
     val visibility: MemberVisibility,
     val transient: Boolean,
-    @property:InternalIntrospectionApi val source: Any,
     val annotations: AnnotationSet,
+    @property:InternalIntrospectionApi val source: Any,
 )
 
 enum class Accessor { FIELD, GETTER, RECORD_COMPONENT }

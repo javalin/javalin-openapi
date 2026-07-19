@@ -1,8 +1,8 @@
 package io.javalin.openapi.experimental
 
 import io.javalin.introspection.AnnotationSet
-import io.javalin.introspection.EnumConstantView
-import io.javalin.introspection.PropertyView
+import io.javalin.introspection.EnumConstant
+import io.javalin.introspection.PropertyProjection
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
 import io.javalin.introspection.ClassDefinition as RawType
 
@@ -16,13 +16,13 @@ interface SchemaGenerationContext {
 
     fun annotationsOf(type: OpenApiType): AnnotationSet
 
-    fun propertiesOf(type: OpenApiType): List<PropertyView>
+    fun propertiesOf(type: OpenApiType): List<PropertyProjection>
 
-    fun enumConstantsOf(type: OpenApiType): List<EnumConstantView>
+    fun enumConstantsOf(type: OpenApiType): List<EnumConstant>
 
     fun toOpenApiType(raw: RawType): OpenApiType
 
-    fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean = true
+    fun acceptsProperty(type: OpenApiType, property: PropertyProjection): Boolean = true
 
     fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> = emptyList()
 

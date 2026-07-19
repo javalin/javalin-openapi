@@ -36,7 +36,7 @@ class OpenApiSymbolProcessor(
             .filterIsInstance<KSClassDeclaration>()
             .mapNotNull { declaration ->
                 val type = context.introspect(declaration.asStarProjectedType())
-                if (context.annotationsOf(type).find(JsonSchema::class.java)?.value("generateResource") == false) {
+                if (context.annotationsOf(type).find(JsonSchema::class.java)?.get("generateResource")?.asBoolean() == false) {
                     return@mapNotNull null
                 }
                 val json = context.typeSchemaGenerator.createTypeSchema(type, inlineRefs = true).toJsonSchemaString()
@@ -78,6 +78,7 @@ class OpenApiSymbolProcessor(
 
     private fun writeResource(path: String, content: String) {
         if (!writtenResources.add(path)) {
+            // KSP resources are immutable; routes another processor adds in later rounds are intentionally omitted.
             return
         }
 

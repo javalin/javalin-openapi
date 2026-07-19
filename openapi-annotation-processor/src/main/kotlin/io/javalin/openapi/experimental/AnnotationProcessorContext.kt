@@ -2,9 +2,9 @@ package io.javalin.openapi.experimental
 
 import com.sun.source.util.Trees
 import io.javalin.introspection.AnnotationSet
-import io.javalin.introspection.EnumConstantView
+import io.javalin.introspection.EnumConstant
 import io.javalin.introspection.InternalIntrospectionApi
-import io.javalin.introspection.PropertyView
+import io.javalin.introspection.PropertyProjection
 import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
@@ -49,10 +49,10 @@ class AnnotationProcessorContext(
     fun annotationsOf(element: Element): AnnotationSet =
         japIntrospector.annotationsOf(element)
 
-    override fun propertiesOf(type: OpenApiType): List<PropertyView> =
+    override fun propertiesOf(type: OpenApiType): List<PropertyProjection> =
         japIntrospector.introspect(type.mirror).getProperties()
 
-    override fun enumConstantsOf(type: OpenApiType): List<EnumConstantView> =
+    override fun enumConstantsOf(type: OpenApiType): List<EnumConstant> =
         japIntrospector.introspect(type.mirror).getEnumConstants()
 
     @OptIn(InternalIntrospectionApi::class)
@@ -83,13 +83,13 @@ class AnnotationProcessorContext(
         toOpenApiType(japIntrospector.introspect(this))
 
     @OptIn(InternalIntrospectionApi::class)
-    override fun acceptsProperty(type: OpenApiType, property: PropertyView): Boolean =
+    override fun acceptsProperty(type: OpenApiType, property: PropertyProjection): Boolean =
         configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
 
     override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
         val subtypes = japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
         return subtypes.mapNotNull { subtype ->
-            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.string("value")
+            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.get("value")?.asString()
             if (name == null) null else name to toOpenApiType(subtype)
         }
     }
