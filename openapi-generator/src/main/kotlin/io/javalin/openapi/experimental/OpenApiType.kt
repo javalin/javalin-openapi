@@ -16,7 +16,7 @@ class OpenApiType(
     val generics: List<OpenApiType> = emptyList(),
     val structureType: StructureType = DEFAULT,
     val extra: MutableList<Extra> = mutableListOf(),
-    @property:InternalOpenApiTypeApi @JvmField val handle: Any? = null
+    @property:InternalOpenApiTypeApi @JvmField val handle: Any? = null,
 ) {
 
     override fun equals(other: Any?): Boolean =
@@ -47,12 +47,12 @@ class OpenApiType(
 enum class StructureType {
     DEFAULT,
     ARRAY,
-    DICTIONARY
+    DICTIONARY,
 }
 
 interface Extra
 
 class CustomProperty(
     val name: String,
-    val type: OpenApiType
+    val type: OpenApiType,
 ) : Extra

@@ -56,15 +56,15 @@ private fun reflect(
                 visitingTypeVariables = visitingTypeVariables,
             )
         is TypeVariable<*> ->
-            if (type in visitingTypeVariables) {
-                objectDefinition(structureType)
-            } else {
-                reflect(
-                    type = type.bounds.firstOrNull() ?: Any::class.java,
-                    generics = generics,
-                    structureType = structureType,
-                    visitingTypeVariables = visitingTypeVariables + type,
-                )
+            when {
+                type in visitingTypeVariables -> objectDefinition(structureType)
+                else ->
+                    reflect(
+                        type = type.bounds.firstOrNull() ?: Any::class.java,
+                        generics = generics,
+                        structureType = structureType,
+                        visitingTypeVariables = visitingTypeVariables + type,
+                    )
             }
         is ParameterizedType -> parameterized(
             type = type,
@@ -188,7 +188,10 @@ private class ReflectionClassDefinition(
     override fun getProperties(): List<PropertyProjection> =
         collectMembers(erasure).map { member ->
             PropertyProjection(
-                name = if (member.accessor == Accessor.GETTER) propertyName(member.name) else member.name,
+                name = when {
+                    member.accessor == Accessor.GETTER -> propertyName(member.name)
+                    else -> member.name
+                },
                 type = reflect(member.genericType),
                 accessor = member.accessor,
                 nullable = (member.genericType as? Class<*>)?.isPrimitive != true,
@@ -226,30 +229,14 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
         if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
         if (getterNames.add(method.name)) {
-            members += Member(
-                name = method.name,
-                genericType = method.genericReturnType,
-                accessor = Accessor.GETTER,
-                visibility = visibilityOf(method.modifiers),
-                transient = false,
-                source = method,
-                sources = listOf(method),
-            )
+            members += method.toMember()
         }
     }
 
     // clazz.methods is public-only, so a second pass picks up inherited protected/package-private getters (jap parity)
     for (method in nonPublicGettersHierarchy(clazz)) {
         if (getterNames.add(method.name)) {
-            members += Member(
-                name = method.name,
-                genericType = method.genericReturnType,
-                accessor = Accessor.GETTER,
-                visibility = visibilityOf(method.modifiers),
-                transient = false,
-                source = method,
-                sources = listOf(method),
-            )
+            members += method.toMember()
         }
     }
 
@@ -278,6 +265,17 @@ private class Member(
     val source: AnnotatedElement,
     val sources: List<AnnotatedElement>,
 )
+
+private fun Method.toMember(): Member =
+    Member(
+        name = name,
+        genericType = genericReturnType,
+        accessor = Accessor.GETTER,
+        visibility = visibilityOf(modifiers),
+        transient = false,
+        source = this,
+        sources = listOf(this),
+    )
 
 private fun visibilityOf(modifiers: Int): MemberVisibility =
     when {

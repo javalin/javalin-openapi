@@ -71,20 +71,17 @@ class JapTypeIntrospector(
         when (mirror) {
             is TypeVariable -> {
                 val key = mirror.asElement()?.toString() ?: mirror.toString()
-                if (key in visitingTypeVariables) {
-                    objectDefinition(structureType)
-                } else {
-                    val bound = mirror.upperBound ?: mirror.lowerBound
-                    if (bound != null) {
+                val bound = mirror.upperBound ?: mirror.lowerBound
+                when {
+                    key in visitingTypeVariables -> objectDefinition(structureType)
+                    bound != null ->
                         resolve(
                             mirror = bound,
                             generics = generics,
                             structureType = structureType,
                             visitingTypeVariables = visitingTypeVariables + key,
                         )
-                    } else {
-                        objectDefinition(structureType)
-                    }
+                    else -> objectDefinition(structureType)
                 }
             }
             is WildcardType ->
@@ -121,7 +118,7 @@ class JapTypeIntrospector(
                             mirror = it,
                             generics = generics,
                             structureType = structureType,
-                            visitingTypeVariables = visitingTypeVariables
+                            visitingTypeVariables = visitingTypeVariables,
                         )
                     }
                     ?: objectDefinition(structureType)
@@ -210,7 +207,10 @@ class JapTypeIntrospector(
         override fun defaultAction(value: Any?, p: Nothing?): Any? = value
 
         override fun visitType(type: TypeMirror, p: Nothing?): Any =
-            if (type is PrimitiveType) primitiveDefinition(type) else resolve(type)
+            when {
+                type is PrimitiveType -> primitiveDefinition(type)
+                else -> resolve(type)
+            }
 
         override fun visitEnumConstant(constant: VariableElement, p: Nothing?): Any =
             constant.simpleName.toString()

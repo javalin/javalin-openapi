@@ -9,7 +9,7 @@ import org.eclipse.jetty.http.MimeTypes
 internal class ReDocWebJarHandler(
     private val redocWebJarPath: String,
     private val classLoader: ClassLoader = ReDocWebJarHandler::class.java.classLoader,
-    ) : Handler, OpenApiPluginRouteHandler {
+) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
         val resourceRootPath = "META-INF/resources$redocWebJarPath"

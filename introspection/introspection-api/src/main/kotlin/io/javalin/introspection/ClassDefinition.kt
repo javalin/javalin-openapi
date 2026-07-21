@@ -19,7 +19,10 @@ abstract class ClassDefinition(
     abstract fun getAnnotations(): AnnotationSet
 
     override fun toString(): String =
-        if (generics.isEmpty()) fullName else "$fullName<${generics.joinToString(", ")}>"
+        when {
+            generics.isEmpty() -> fullName
+            else -> "$fullName<${generics.joinToString(", ")}>"
+        }
 }
 
 enum class StructureType {

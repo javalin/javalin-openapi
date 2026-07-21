@@ -29,7 +29,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
     fun createTypeSchema(
         type: OpenApiType,
         inlineRefs: Boolean = false,
-        requireNonNullsByDefault: Boolean = true
+        requireNonNullsByDefault: Boolean = true,
     ): ResultScheme {
         context.reportDebug("OpenApi | Generating schema for ${type.fullName}")
 
@@ -77,10 +77,9 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                         else -> constant.name
                     }
 
-                    if (enumType != null && enumType.type != "string") {
-                        values.add(jsonMapper.readTree(name))
-                    } else {
-                        values.add(name)
+                    when {
+                        enumType != null && enumType.type != "string" -> values.add(jsonMapper.readTree(name))
+                        else -> values.add(name)
                     }
                     descriptions.add(description ?: "")
                 }
@@ -236,21 +235,24 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         type: OpenApiType,
         inlineRefs: Boolean,
         references: MutableSet<OpenApiType>,
-        requiresNonNulls: Boolean
+        requiresNonNulls: Boolean,
     ) {
         when (val nonRefType = context.simpleTypeMappings[type.fullName]) {
             null -> {
-                if (inlineRefs) {
-                    val (subScheme, subReferences) = createTypeSchema(
-                        type = type,
-                        inlineRefs = true,
-                        requireNonNullsByDefault = requiresNonNulls,
-                    )
-                    subScheme.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
-                    references.addAll(subReferences)
-                } else {
-                    references.add(type)
-                    scheme.put($$"$ref", "#/components/schemas/${type.simpleName}")
+                when {
+                    inlineRefs -> {
+                        val (subScheme, subReferences) = createTypeSchema(
+                            type = type,
+                            inlineRefs = true,
+                            requireNonNullsByDefault = requiresNonNulls,
+                        )
+                        subScheme.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
+                        references.addAll(subReferences)
+                    }
+                    else -> {
+                        references.add(type)
+                        scheme.put($$"$ref", "#/components/schemas/${type.simpleName}")
+                    }
                 }
             }
             else -> {
@@ -284,7 +286,11 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
 
         val customName = property.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
         val name = customName ?: property.name
-        val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, name) else name
+        val finalName =
+            when {
+                customName == null && namingStrategy != null -> translatePropertyName(namingStrategy, name)
+                else -> name
+            }
 
         val propertyType = property.annotations.find(OpenApiPropertyType::class.java)
         val nullability = propertyType?.get("nullability")?.asString()

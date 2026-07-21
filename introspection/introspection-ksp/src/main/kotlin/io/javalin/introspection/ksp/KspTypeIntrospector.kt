@@ -82,14 +82,14 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                 return objectDefinition(structureType)
             }
             val bound = declaration.bounds.firstOrNull()?.resolve()
-            return if (bound != null) {
-                resolve(
-                    type = bound,
-                    structureType = structureType,
-                    visitingTypeParameters = visitingTypeParameters + key,
-                )
-            } else {
-                objectDefinition(structureType)
+            return when {
+                bound != null ->
+                    resolve(
+                        type = bound,
+                        structureType = structureType,
+                        visitingTypeParameters = visitingTypeParameters + key,
+                    )
+                else -> objectDefinition(structureType)
             }
         }
         val qualifiedName = declaration.qualifiedName?.asString() ?: return objectDefinition(structureType)

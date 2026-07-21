@@ -27,7 +27,11 @@ internal data class OpenApiRouteDefinition(
     val security: List<OpenApiSecurityDefinition>,
 ) {
     val formattedPath: String
-        get() = if (path.startsWith("/")) path else "/$path"
+        get() =
+            when {
+                path.startsWith("/") -> path
+                else -> "/$path"
+            }
 
     companion object {
         fun from(values: Map<String, Any?>): OpenApiRouteDefinition =

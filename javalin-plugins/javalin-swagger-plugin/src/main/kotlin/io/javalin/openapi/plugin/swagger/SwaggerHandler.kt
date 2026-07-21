@@ -68,6 +68,11 @@ class SwaggerHandler(
             .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
         val allCustomJavaScripts = customJavaScriptFiles
             .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
+        val resolvedValidatorUrl =
+            when {
+                validatorUrl != null -> "\"$validatorUrl\""
+                else -> "null"
+            }
 
         @Suppress("JSUnresolvedReference")
         @Language("html")
@@ -118,7 +123,7 @@ class SwaggerHandler(
                         layout: "StandaloneLayout",
                         tagsSorter: $tagsSorter,
                         operationsSorter: $operationsSorter,
-                        validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
+                        validatorUrl: $resolvedValidatorUrl
                       })
                 }
                 </script>

@@ -63,8 +63,12 @@ abstract class IntrospectorSchemaContext(
         val scanner = introspector as? CompileTimeIntrospector ?: return emptyList()
         val subtypes = scanner.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = type.raw)
         return subtypes.mapNotNull { subtype ->
-            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.get("value")?.asString()
-            if (name == null) null else name to toOpenApiType(subtype)
+            subtype
+                .getAnnotations()
+                .find(DiscriminatorMappingName::class.java)
+                ?.get("value")
+                ?.asString()
+                ?.let { name -> name to toOpenApiType(subtype) }
         }
     }
 }

@@ -20,5 +20,7 @@ fun isGetterName(name: String): Boolean =
         (name.startsWith("is") && name.length > 2 && name[2].isUpperCase())
 
 fun propertyName(getterName: String): String =
-    (if (getterName.startsWith("get")) getterName.removePrefix("get") else getterName.removePrefix("is"))
-        .replaceFirstChar { it.lowercase() }
+    when {
+        getterName.startsWith("get") -> getterName.removePrefix("get")
+        else -> getterName.removePrefix("is")
+    }.replaceFirstChar { it.lowercase() }

@@ -63,16 +63,16 @@ class AnnotationProcessorContext(
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {
         val rawMirror = raw.source as TypeMirror
-        val mirror = if (rawMirror.kind.isPrimitive) {
-            types.boxedClass(rawMirror as PrimitiveType).asType()
-        } else {
-            rawMirror
-        }
-        val source = if (raw.structureType == RawStructureType.DICTIONARY) {
-            mapType()
-        } else {
-            types.asElement(mirror) ?: objectType()
-        }
+        val mirror =
+            when {
+                rawMirror.kind.isPrimitive -> types.boxedClass(rawMirror as PrimitiveType).asType()
+                else -> rawMirror
+            }
+        val source =
+            when {
+                raw.structureType == RawStructureType.DICTIONARY -> mapType()
+                else -> types.asElement(mirror) ?: objectType()
+            }
 
         return OpenApiType(
             simpleName = mirror.getSimpleName(),
@@ -108,8 +108,12 @@ class AnnotationProcessorContext(
             assignableTo = source,
         )
         return subtypes.mapNotNull { subtype ->
-            val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.get("value")?.asString()
-            if (name == null) null else name to toOpenApiType(subtype)
+            subtype
+                .getAnnotations()
+                .find(DiscriminatorMappingName::class.java)
+                ?.get("value")
+                ?.asString()
+                ?.let { name -> name to toOpenApiType(subtype) }
         }
     }
 

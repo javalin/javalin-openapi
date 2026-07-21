@@ -11,7 +11,7 @@ data class ExampleProperty(
     val name: String?,
     val value: String?,
     val raw: String?,
-    val objects: List<ExampleProperty>?
+    val objects: List<ExampleProperty>?,
 )
 
 fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
@@ -19,7 +19,10 @@ fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
         name = (this["name"] as? String)?.takeIf { it != NULL_STRING },
         value = (this["value"] as? String)?.takeIf { it != NULL_STRING },
         raw = (this["raw"] as? String)?.takeIf { it != NULL_STRING },
-        objects = (this["objects"] as? List<*>)?.filterIsInstance<Map<String, Any?>>()?.map { it.toExampleProperty() }?.takeIf { it.isNotEmpty() },
+        objects = (this["objects"] as? List<*>)
+            ?.filterIsInstance<Map<String, Any?>>()
+            ?.map { it.toExampleProperty() }
+            ?.takeIf { it.isNotEmpty() },
     )
 
 object ExampleGenerator {

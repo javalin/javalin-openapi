@@ -200,17 +200,20 @@ class OpenApiSchemaGenerator(
         }
 
         val path = route.path.split('/').joinToString(separator = "") { pathPart ->
-            if (pathPart.startsWith('{') || pathPart.startsWith('<')) {
-                val parameterName = pathPart
-                    .drop(1)
-                    .dropLast(1)
-                    .split('-')
-                    .joinToString(separator = "") { it.capitalise() }
-                pathParamPrefix + parameterName
-            } else {
-                pathPart
-                    .split('-')
-                    .joinToString(separator = "") { it.capitalise() }
+            when {
+                pathPart.startsWith('{') || pathPart.startsWith('<') -> {
+                    val parameterName = pathPart
+                        .drop(1)
+                        .dropLast(1)
+                        .split('-')
+                        .joinToString(separator = "") { it.capitalise() }
+                    pathParamPrefix + parameterName
+                }
+                else -> {
+                    pathPart
+                        .split('-')
+                        .joinToString(separator = "") { it.capitalise() }
+                }
             }
         }
         return method.lowercase() + path
@@ -226,11 +229,12 @@ class OpenApiSchemaGenerator(
         var mimeType = content.mimeType
 
         if (mimeType == null) {
-            if (source == null) {
-                mimeType = type
-                type = null
-            } else {
-                mimeType = detectContentType(source)
+            when {
+                source == null -> {
+                    mimeType = type
+                    type = null
+                }
+                else -> mimeType = detectContentType(source)
             }
         }
 
@@ -286,18 +290,15 @@ class OpenApiSchemaGenerator(
         for (property in properties) {
             val source = property.resolvedSource
 
-            if (property.isArray) {
-                if (source != null) {
+            when {
+                property.isArray && source != null ->
                     arrayProperty(property.name, createTypeDescriptionWithReferences(source))
-                } else {
+                property.isArray ->
                     arrayProperty(property.name, requireNotNull(property.type), property.format)
-                }
-            } else {
-                if (source != null) {
+                source != null ->
                     property(property.name, createTypeDescriptionWithReferences(source))
-                } else {
+                else ->
                     property(property.name, requireNotNull(property.type), property.format)
-                }
             }
         }
     }
@@ -305,10 +306,9 @@ class OpenApiSchemaGenerator(
     private fun ObjectSchemaBuilder.buildAdditionalProperties(additionalProperties: OpenApiContentDefinition) {
         val source = additionalProperties.resolvedSource
 
-        if (source != null) {
-            additionalProperties(createTypeDescriptionWithReferences(source))
-        } else {
-            additionalProperties(additionalProperties.type, additionalProperties.format)
+        when {
+            source != null -> additionalProperties(createTypeDescriptionWithReferences(source))
+            else -> additionalProperties(additionalProperties.type, additionalProperties.format)
         }
 
         applyExample(additionalProperties)

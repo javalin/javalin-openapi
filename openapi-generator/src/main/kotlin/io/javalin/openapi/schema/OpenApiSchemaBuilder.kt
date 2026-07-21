@@ -45,10 +45,9 @@ class OpenApiSchemaBuilder {
             val infoJson = jsonMapper.convertValue(OpenApiInfo().also { configure.accept(it) }, JsonNode::class.java)
             val existingInfo = root.get("info")
             val updatedInfo: JsonNode =
-                if (existingInfo != null) {
-                    jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
-                } else {
-                    infoJson
+                when {
+                    existingInfo != null -> jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
+                    else -> infoJson
                 }
             root.set<JsonNode>("info", updatedInfo)
         }
@@ -456,14 +455,15 @@ class ParametersBuilder(
         if (required) param.put("required", true)
         if (deprecated) param.put("deprecated", true)
         if (allowEmptyValue) param.put("allowEmptyValue", true)
-        if (schema.references.isNotEmpty()) {
-            val mediaTypeNode = createObjectNode()
-            mediaTypeNode.set<JsonNode>("schema", schemaJson)
-            val contentNode = createObjectNode()
-            contentNode.set<JsonNode>("application/json", mediaTypeNode)
-            param.set<JsonNode>("content", contentNode)
-        } else {
-            param.set<JsonNode>("schema", schemaJson)
+        when {
+            schema.references.isNotEmpty() -> {
+                val mediaTypeNode = createObjectNode()
+                mediaTypeNode.set<JsonNode>("schema", schemaJson)
+                val contentNode = createObjectNode()
+                contentNode.set<JsonNode>("application/json", mediaTypeNode)
+                param.set<JsonNode>("content", contentNode)
+            }
+            else -> param.set<JsonNode>("schema", schemaJson)
         }
         if (example != null) {
             param.put("example", example)
@@ -474,10 +474,9 @@ class ParametersBuilder(
             val existing = parameters.get(i) as? ObjectNode
             existing?.get("name")?.asText() == name && existing?.get("in")?.asText() == location
         }
-        if (existingIndex != null) {
-            parameters.set(existingIndex, param)
-        } else {
-            parameters.add(param)
+        when {
+            existingIndex != null -> parameters.set(existingIndex, param)
+            else -> parameters.add(param)
         }
     }
 
@@ -939,17 +938,17 @@ class CallbacksBuilder(
     private val callbacks = existing ?: createObjectNode()
 
     fun callback(name: String, url: String, method: String, configure: CallbackOperationBuilder.() -> Unit) {
-        val eventObject = if (callbacks.has(name)) {
-            callbacks.get(name) as ObjectNode
-        } else {
-            createObjectNode().also { callbacks.set<JsonNode>(name, it) }
-        }
+        val eventObject =
+            when {
+                callbacks.has(name) -> callbacks.get(name) as ObjectNode
+                else -> createObjectNode().also { callbacks.set<JsonNode>(name, it) }
+            }
 
-        val urlObject = if (eventObject.has(url)) {
-            eventObject.get(url) as ObjectNode
-        } else {
-            createObjectNode().also { eventObject.set<JsonNode>(url, it) }
-        }
+        val urlObject =
+            when {
+                eventObject.has(url) -> eventObject.get(url) as ObjectNode
+                else -> createObjectNode().also { eventObject.set<JsonNode>(url, it) }
+            }
 
         val existingOp = urlObject.get(method) as? ObjectNode
         val builder = CallbackOperationBuilder(refCollector = refCollector, existing = existingOp)
