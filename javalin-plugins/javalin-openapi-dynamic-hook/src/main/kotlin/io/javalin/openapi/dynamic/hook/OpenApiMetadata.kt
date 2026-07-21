@@ -15,5 +15,5 @@ class OpenApiMetadata(val configure: OperationBuilder.() -> Unit) : EndpointMeta
     }
 }
 
-fun MediaTypeBuilder.schema(type: Class<*>): Unit =
+fun MediaTypeBuilder.schema(type: Class<*>) =
     schema(ReflectionSchemaContext().inlineSchema(type))

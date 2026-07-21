@@ -26,24 +26,37 @@ class OpenApiSymbolProcessor(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         // JsonSchema inlines references; its cache must not leak into OpenAPI component references.
-        generateJsonSchemes(resolver, KspSchemaContext(resolver, logger))
-        generateOpenApiDocuments(resolver, KspSchemaContext(resolver, logger))
+        generateJsonSchemes(
+            resolver = resolver,
+            context = KspSchemaContext(resolver = resolver, logger = logger),
+        )
+        generateOpenApiDocuments(
+            resolver = resolver,
+            context = KspSchemaContext(resolver = resolver, logger = logger),
+        )
         return emptyList()
     }
 
     private fun generateJsonSchemes(resolver: Resolver, context: KspSchemaContext) {
-        val generated = resolver.getSymbolsWithAnnotation(JsonSchema::class.qualifiedName!!)
+        val generated = mutableListOf<String>()
+        val declarations = resolver.getSymbolsWithAnnotation(JsonSchema::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
-            .mapNotNull { declaration ->
-                val type = context.introspect(declaration.asStarProjectedType())
-                if (context.annotationsOf(type).find(JsonSchema::class.java)?.get("generateResource")?.asBoolean() == false) {
-                    return@mapNotNull null
-                }
-                val json = context.typeSchemaGenerator.createTypeSchema(type, inlineRefs = true).toJsonSchemaString()
-                writeResource("json-schemes/${type.fullName}", json)
-                type.fullName
-            }
             .toList()
+
+        for (declaration in declarations) {
+            val type = context.introspect(declaration.asStarProjectedType())
+            val generateResource = context.annotationsOf(type)
+                .find(JsonSchema::class.java)
+                ?.get("generateResource")
+                ?.asBoolean()
+            if (generateResource == false) {
+                continue
+            }
+
+            val json = context.typeSchemaGenerator.createTypeSchema(type, inlineRefs = true).toJsonSchemaString()
+            writeResource("json-schemes/${type.fullName}", json)
+            generated.add(type.fullName)
+        }
 
         if (generated.isNotEmpty()) {
             writeResource("json-schemes/index", generated.joinToString(separator = "\n"))
@@ -51,10 +64,13 @@ class OpenApiSymbolProcessor(
     }
 
     private fun generateOpenApiDocuments(resolver: Resolver, context: KspSchemaContext) {
-        val routes = (resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) + resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!))
+        val annotatedSymbols = resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) +
+            resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!)
+        val symbols = annotatedSymbols
             .distinct()
-            .flatMap { annotated -> context.annotationsOf(annotated).findAll(OpenApi::class.java).map { it.values } }
             .toList()
+        val routes = symbols
+            .flatMap { annotated -> context.annotationsOf(annotated).findAll(OpenApi::class.java).map { it.values } }
 
         if (routes.isEmpty()) {
             return
@@ -66,14 +82,14 @@ class OpenApiSymbolProcessor(
             version = options[OPENAPI_INFO_VERSION] ?: "",
         )
 
-        val generatedVersions = generator.generateVersionedSchemas(routes)
-            .map { (version, json) ->
-                val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                writeResource("openapi-plugin/$resourceName", json)
-                resourceName
-            }
+        val resourceNames = mutableListOf<String>()
+        for ((version, json) in generator.generateVersionedSchemas(routes)) {
+            val resourceName = "openapi-${version.replace(" ", "-")}.json"
+            writeResource("openapi-plugin/$resourceName", json)
+            resourceNames.add(resourceName)
+        }
 
-        writeResource("openapi-plugin/.index", generatedVersions.joinToString(separator = "\n"))
+        writeResource("openapi-plugin/.index", resourceNames.joinToString(separator = "\n"))
     }
 
     private fun writeResource(path: String, content: String) {
@@ -90,5 +106,9 @@ class OpenApiSymbolProcessor(
 
 class OpenApiSymbolProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
-        OpenApiSymbolProcessor(environment.codeGenerator, environment.logger, environment.options)
+        OpenApiSymbolProcessor(
+            codeGenerator = environment.codeGenerator,
+            logger = environment.logger,
+            options = environment.options,
+        )
 }

@@ -9,7 +9,7 @@ import java.math.BigDecimal
 
 data class ResultScheme(
     val json: ObjectNode,
-    val references: Set<OpenApiType>
+    val references: Set<OpenApiType>,
 ) {
     fun toJsonSchemaString(): String {
         val scheme = createObjectNode()
@@ -54,7 +54,7 @@ fun translatePropertyName(strategy: OpenApiNamingStrategy, name: String): String
         OpenApiNamingStrategy.KEBAB_CASE -> splitCamelCase(name).joinToString("-") { it.lowercase() }
     }
 
-fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode = also {
+fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode {
     extra
         .filterValues { it != null }
         .forEach { (key, value) ->
@@ -71,4 +71,5 @@ fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode = also {
                 else -> put(key, value.toString())
             }
         }
+    return this
 }

@@ -8,17 +8,22 @@ import javax.lang.model.element.Element
 
 class JsonSchemaGenerator {
 
-    fun generate(roundEnvironment: RoundEnvironment) =
-        roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
+    fun generate(roundEnvironment: RoundEnvironment) {
+        val elements = roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
             .filter { it.getAnnotation(JsonSchema::class.java)!!.generateResource }
-            .onEach { context.env.filer.saveResource(context, "json-schemes/${it}", generate(it)) }
-            .run { context.env.filer.saveResource(context, "json-schemes/index", joinToString(separator = "\n")) }
+
+        for (element in elements) {
+            context.env.filer.saveResource(context, "json-schemes/$element", generate(element))
+        }
+
+        context.env.filer.saveResource(context, "json-schemes/index", elements.joinToString(separator = "\n"))
+    }
 
     private fun generate(element: Element): String =
         with(context) {
             typeSchemaGenerator.createTypeSchema(
                 type = element.asType().toOpenApiType(),
-                inlineRefs = true
+                inlineRefs = true,
             ).toJsonSchemaString()
         }
 

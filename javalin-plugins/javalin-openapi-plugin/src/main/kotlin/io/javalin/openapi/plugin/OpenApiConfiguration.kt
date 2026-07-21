@@ -37,39 +37,38 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
 ) {
 
     /** Register a hook that extends the document at runtime (e.g. dynamically generated routes) */
-    fun withHook(hook: OpenApiHook): OpenApiPluginConfiguration = also {
+    fun withHook(hook: OpenApiHook): OpenApiPluginConfiguration = apply {
         this.hooks.add(hook)
     }
 
     /** Path to host documentation as JSON */
-    fun withDocumentationPath(path: String): OpenApiPluginConfiguration = also {
+    fun withDocumentationPath(path: String): OpenApiPluginConfiguration = apply {
         this.documentationPath = path
     }
 
     /** List of roles eligible to access OpenApi routes */
-    fun withRoles(vararg roles: RouteRole): OpenApiPluginConfiguration = also {
+    fun withRoles(vararg roles: RouteRole): OpenApiPluginConfiguration = apply {
         this.roles = arrayOf(*roles)
     }
 
     /** Pretty print JSON output */
     @JvmOverloads
-    fun withPrettyOutput(enabled: Boolean = true): OpenApiPluginConfiguration = also {
+    fun withPrettyOutput(enabled: Boolean = true): OpenApiPluginConfiguration = apply {
         this.prettyOutputEnabled = enabled
     }
 
     /** Dynamically apply custom changes to generated OpenApi specifications */
-    fun withDefinitionConfiguration(definitionConfigurationConfigurer: BiConsumer<String, OpenApiSchemaBuilder>): OpenApiPluginConfiguration = also {
+    fun withDefinitionConfiguration(definitionConfigurationConfigurer: BiConsumer<String, OpenApiSchemaBuilder>): OpenApiPluginConfiguration = apply {
         this.definitionConfiguration = definitionConfigurationConfigurer
     }
 
     /** Global definition processor applied to all versions without their own processor */
-    fun withDefinitionProcessor(definitionProcessor: DefinitionProcessor): OpenApiPluginConfiguration = also {
+    fun withDefinitionProcessor(definitionProcessor: DefinitionProcessor): OpenApiPluginConfiguration = apply {
         this.definitionProcessor = definitionProcessor
     }
 
     /** Set custom class loader for loading generated OpenAPI resources from classpath */
-    fun withResourceClassLoader(classLoader: ClassLoader): OpenApiPluginConfiguration = also {
+    fun withResourceClassLoader(classLoader: ClassLoader): OpenApiPluginConfiguration = apply {
         this.resourceClassLoader = classLoader
     }
-
 }

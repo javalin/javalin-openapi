@@ -19,7 +19,9 @@ class RegisteredRoutesHookConfiguration {
         withIgnoredPathPrefixes(prefix)
 
     fun withIgnoredPathPrefixes(vararg prefixes: String): RegisteredRoutesHookConfiguration = apply {
-        prefixes.map(::normalizePathPrefix).forEach(ignoredPathPrefixes::add)
+        prefixes.forEach { prefix ->
+            ignoredPathPrefixes.add(normalizePathPrefix(prefix))
+        }
     }
 
     internal fun ignores(endpoint: Endpoint): Boolean =
@@ -46,36 +48,37 @@ class RegisteredRoutesHook @JvmOverloads constructor(
         val schemaContext = ReflectionSchemaContext() // document-scoped: owns the generator + its memo cache
         context.builder.openApiVersion("3.1.0")
 
-        context.state.internalRouter.allHttpHandlers()
-            .map { it.endpoint }
-            .filter { it.method.isHttpMethod }
-            .filterNot(config::ignores)
-            .forEach { endpoint ->
-                val path = toOpenApiPath(endpoint.path)
-                val method = endpoint.method.name().lowercase()
-                val pathParams = PATH_PARAM.findAll(endpoint.path).map { it.groupValues[1] }.toList()
-                val metadata = endpoint.metadata(OpenApiMetadata::class.java)
-                val operationAlreadyDocumented = context.builder.hasOperation(path, method)
+        for (handler in context.state.internalRouter.allHttpHandlers()) {
+            val endpoint = handler.endpoint
+            if (!endpoint.method.isHttpMethod || config.ignores(endpoint)) {
+                continue
+            }
 
-                if (metadata == null && operationAlreadyDocumented) {
-                    return@forEach
-                }
+            val path = toOpenApiPath(endpoint.path)
+            val method = endpoint.method.name().lowercase()
+            val pathParams = PATH_PARAM.findAll(endpoint.path).map { it.groupValues[1] }.toList()
+            val metadata = endpoint.metadata(OpenApiMetadata::class.java)
+            val operationAlreadyDocumented = context.builder.hasOperation(path, method)
 
-                context.builder.path(path).operation(method) {
-                    if (!operationAlreadyDocumented && pathParams.isNotEmpty()) {
-                        parameters {
-                            pathParams.forEach { name ->
-                                parameter(name = name, location = "path", required = true) { type("string") }
-                            }
+            if (metadata == null && operationAlreadyDocumented) {
+                continue
+            }
+
+            context.builder.path(path).operation(method) {
+                if (!operationAlreadyDocumented && pathParams.isNotEmpty()) {
+                    parameters {
+                        pathParams.forEach { name ->
+                            parameter(name = name, location = "path", required = true) { type("string") }
                         }
                     }
+                }
 
-                    when (metadata) {
-                        null -> responses { response("200") { description("OK") } }
-                        else -> metadata.configure(this)
-                    }
+                when (metadata) {
+                    null -> responses { response("200") { description("OK") } }
+                    else -> metadata.configure(this)
                 }
             }
+        }
 
         context.builder.resolveComponentReferences { type -> schemaContext.componentSchema(type) }
     }

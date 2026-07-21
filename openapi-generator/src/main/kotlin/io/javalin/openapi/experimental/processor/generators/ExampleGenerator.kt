@@ -76,9 +76,17 @@ object ExampleGenerator {
     }
 
     private fun List<ExampleProperty>.isObjectList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == null && it.value == null && it.objects?.isNotEmpty() ?: false }
+        isNotEmpty() && all { example ->
+            example.name == null &&
+                example.value == null &&
+                example.objects?.isNotEmpty() == true
+        }
 
     private fun List<ExampleProperty>.isRawList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == null && it.value != null && it.objects?.isEmpty() ?: true }
+        isNotEmpty() && all { example ->
+            example.name == null &&
+                example.value != null &&
+                example.objects.isNullOrEmpty()
+        }
 
 }

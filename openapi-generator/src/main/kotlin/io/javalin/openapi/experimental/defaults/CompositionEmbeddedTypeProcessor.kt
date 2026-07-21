@@ -6,18 +6,17 @@ import io.javalin.openapi.experimental.processor.generators.createComposition
 
 class CompositionEmbeddedTypeProcessor : EmbeddedTypeProcessor {
 
-    override fun process(context: EmbeddedTypeProcessorContext): Boolean =
-        context.composition
-            ?.let {
-                context.scheme.createComposition(
-                    context = context.parentContext,
-                    type = context.type,
-                    propertyComposition = it,
-                    references = context.references,
-                    inlineRefs = context.inlineRefs,
-                    requiresNonNulls = context.requiresNonNulls
-                )
-                true
-            } ?: false
+    override fun process(context: EmbeddedTypeProcessorContext): Boolean {
+        val composition = context.composition ?: return false
 
+        context.scheme.createComposition(
+            context = context.parentContext,
+            type = context.type,
+            propertyComposition = composition,
+            references = context.references,
+            inlineRefs = context.inlineRefs,
+            requiresNonNulls = context.requiresNonNulls,
+        )
+        return true
+    }
 }

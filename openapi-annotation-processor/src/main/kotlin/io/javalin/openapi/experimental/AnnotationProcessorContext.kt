@@ -5,6 +5,8 @@ import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.EnumConstant
 import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyProjection
+import io.javalin.introspection.ClassDefinition as RawType
+import io.javalin.introspection.StructureType as RawStructureType
 import io.javalin.introspection.jap.JapTypeIntrospector
 import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
@@ -21,8 +23,6 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic.Kind.NOTE
 import javax.tools.Diagnostic.Kind.WARNING
-import io.javalin.introspection.ClassDefinition as RawType
-import io.javalin.introspection.StructureType as RawStructureType
 
 class AnnotationProcessorContext(
     val parameters: OpenApiAnnotationProcessorParameters,
@@ -38,7 +38,12 @@ class AnnotationProcessorContext(
     override val simpleTypeMappings: Map<String, SimpleType> get() = configuration.simpleTypeMappings
     override val embeddedTypeProcessors: List<EmbeddedTypeProcessor> get() = configuration.embeddedTypeProcessors
 
-    private val japIntrospector: JapTypeIntrospector by lazy { JapTypeIntrospector(types, env.elementUtils) { roundEnv } }
+    private val japIntrospector: JapTypeIntrospector by lazy {
+        JapTypeIntrospector(
+            types = types,
+            elements = env.elementUtils,
+        ) { roundEnv }
+    }
 
     override fun isEnum(type: OpenApiType): Boolean =
         type.source.kind == ElementKind.ENUM
@@ -58,7 +63,17 @@ class AnnotationProcessorContext(
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {
         val rawMirror = raw.source as TypeMirror
-        val mirror = if (rawMirror.kind.isPrimitive) types.boxedClass(rawMirror as PrimitiveType).asType() else rawMirror
+        val mirror = if (rawMirror.kind.isPrimitive) {
+            types.boxedClass(rawMirror as PrimitiveType).asType()
+        } else {
+            rawMirror
+        }
+        val source = if (raw.structureType == RawStructureType.DICTIONARY) {
+            mapType()
+        } else {
+            types.asElement(mirror) ?: objectType()
+        }
+
         return OpenApiType(
             simpleName = mirror.getSimpleName(),
             fullName = mirror.getFullName(),
@@ -66,8 +81,8 @@ class AnnotationProcessorContext(
             structureType = StructureType.valueOf(raw.structureType.name),
             handle = OpenApiTypeHandle(
                 mirror = mirror,
-                source = if (raw.structureType == RawStructureType.DICTIONARY) mapType() else (types.asElement(mirror) ?: objectType())
-            )
+                source = source,
+            ),
         )
     }
 
@@ -87,7 +102,11 @@ class AnnotationProcessorContext(
         configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
 
     override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
-        val subtypes = japIntrospector.typesAnnotatedWith(DiscriminatorMappingName::class.java, assignableTo = japIntrospector.introspect(type.mirror))
+        val source = japIntrospector.introspect(type.mirror)
+        val subtypes = japIntrospector.typesAnnotatedWith(
+            annotationType = DiscriminatorMappingName::class.java,
+            assignableTo = source,
+        )
         return subtypes.mapNotNull { subtype ->
             val name = subtype.getAnnotations().find(DiscriminatorMappingName::class.java)?.get("value")?.asString()
             if (name == null) null else name to toOpenApiType(subtype)
@@ -128,8 +147,6 @@ class AnnotationProcessorContext(
         }
         return element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
     }
-
-    /* Extension methods, should be replaced by context receivers in the future */
 
     fun TypeMirror.getSimpleName(): String =
         getFullName().substringAfterLast(".")

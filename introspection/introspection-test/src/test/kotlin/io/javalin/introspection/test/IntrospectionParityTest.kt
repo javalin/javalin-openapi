@@ -3,8 +3,8 @@ package io.javalin.introspection.test
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition
-import io.javalin.introspection.StructureType
 import io.javalin.introspection.MemberVisibility
+import io.javalin.introspection.StructureType
 import io.javalin.introspection.runtime.ReflectionTypeIntrospector
 import io.javalin.introspection.test.sub.PackagePrivateBase
 import org.assertj.core.api.Assertions.assertThat
@@ -75,9 +75,9 @@ class IntrospectionParityTest {
 
     @Test
     fun `annotation enumeration with meta-annotations matches across backends`() {
-        fun scan(annotations: AnnotationSet): Pair<String, Any?> {
+        fun scan(annotations: AnnotationSet): Pair<String, String?> {
             val tagged = annotations.all().first { it.metadata.contains("MetaMarker") }
-            return tagged.simpleName to tagged.values["label"]
+            return tagged.simpleName to tagged["label"].asString()
         }
         val runtimeScan = scan(runtime.introspect(Scanned::class.java).getAnnotations())
         val processedScan = AnnotationProcessing.introspect(Scanned::class) { scan(it.getAnnotations()) }
@@ -218,7 +218,18 @@ private fun ClassDefinition.toShape(): TypeShape =
         isEnum = isEnum(),
         enumConstants = getEnumConstants().map { it.name }.sorted(),
         properties = if (isEnum()) emptyList() else getProperties()
-            .map { PropertyShape(it.name, it.type.fullName, it.type.structureType, it.type.generics.map { g -> g.fullName }, it.accessor, it.nullable, it.visibility, it.transient) }
+            .map { property ->
+                PropertyShape(
+                    name = property.name,
+                    typeFullName = property.type.fullName,
+                    typeStructure = property.type.structureType,
+                    typeGenerics = property.type.generics.map { it.fullName },
+                    accessor = property.accessor,
+                    nullable = property.nullable,
+                    visibility = property.visibility,
+                    transient = property.transient,
+                )
+            }
             .sortedBy { "${it.accessor}:${it.name}" },
     )
 

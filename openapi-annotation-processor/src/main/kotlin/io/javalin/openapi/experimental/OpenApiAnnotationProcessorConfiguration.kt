@@ -19,7 +19,6 @@ class OpenApiAnnotationProcessorConfiguration {
     fun insertEmbeddedTypeProcessor(embeddedTypeProcessor: EmbeddedTypeProcessor) {
         embeddedTypeProcessors.add(0, embeddedTypeProcessor)
     }
-
 }
 
 fun interface PropertyInSchemeFilter {

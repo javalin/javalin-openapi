@@ -13,7 +13,10 @@ class DynamicCompositionTest {
 
     @Test
     fun `emits oneOf with refs for composition annotations`() {
-        val refs = propertiesOf(Shape::class.java).path("animal").path("oneOf").map { it.path($$"$ref").asText() }
+        val refs = propertiesOf(Shape::class.java)
+            .path("animal")
+            .path("oneOf")
+            .map { it.path($$"$ref").asText() }
         assertThat(refs).containsExactlyInAnyOrder(
             "#/components/schemas/Dog",
             "#/components/schemas/Cat",

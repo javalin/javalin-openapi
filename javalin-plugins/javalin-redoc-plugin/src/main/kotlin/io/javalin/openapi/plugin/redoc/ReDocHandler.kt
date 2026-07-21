@@ -12,7 +12,7 @@ class ReDocHandler(
     private val documentationPath: String,
     private val version: String,
     private val routingPath: String,
-    private val basePath: String?
+    private val basePath: String?,
 ) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {

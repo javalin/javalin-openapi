@@ -82,20 +82,51 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                 return objectDefinition(structureType)
             }
             val bound = declaration.bounds.firstOrNull()?.resolve()
-            return if (bound != null) resolve(bound, structureType, visitingTypeParameters + key) else objectDefinition(structureType)
+            return if (bound != null) {
+                resolve(
+                    type = bound,
+                    structureType = structureType,
+                    visitingTypeParameters = visitingTypeParameters + key,
+                )
+            } else {
+                objectDefinition(structureType)
+            }
         }
         val qualifiedName = declaration.qualifiedName?.asString() ?: return objectDefinition(structureType)
         return when {
-            mapType != null && mapType.isAssignableFrom(type.starProjection()) ->
-                definition(type, DICTIONARY, listOf(resolve(argument(type, 0), visitingTypeParameters = visitingTypeParameters), resolve(argument(type, 1), visitingTypeParameters = visitingTypeParameters)))
+            mapType != null && mapType.isAssignableFrom(type.starProjection()) -> {
+                val keyType = resolve(argument(type, 0), visitingTypeParameters = visitingTypeParameters)
+                val valueType = resolve(argument(type, 1), visitingTypeParameters = visitingTypeParameters)
+                definition(
+                    type = type,
+                    structureType = DICTIONARY,
+                    generics = listOf(keyType, valueType),
+                )
+            }
             collectionType != null && collectionType.isAssignableFrom(type.starProjection()) ->
-                resolve(argument(type, 0), ARRAY, visitingTypeParameters)
+                resolve(
+                    type = argument(type, 0),
+                    structureType = ARRAY,
+                    visitingTypeParameters = visitingTypeParameters,
+                )
             qualifiedName == "kotlin.Array" ->
-                resolve(argument(type, 0), ARRAY, visitingTypeParameters)
+                resolve(
+                    type = argument(type, 0),
+                    structureType = ARRAY,
+                    visitingTypeParameters = visitingTypeParameters,
+                )
             primitiveArrayElementTypes[qualifiedName] != null ->
-                resolve(builtin(primitiveArrayElementTypes.getValue(qualifiedName))!!, ARRAY, visitingTypeParameters)
-            else ->
-                definition(type, structureType, type.arguments.mapNotNull { it.type?.resolve() }.map { resolve(it, visitingTypeParameters = visitingTypeParameters) })
+                resolve(
+                    type = builtin(primitiveArrayElementTypes.getValue(qualifiedName))!!,
+                    structureType = ARRAY,
+                    visitingTypeParameters = visitingTypeParameters,
+                )
+            else -> {
+                val generics = type.arguments
+                    .mapNotNull { it.type?.resolve() }
+                    .map { resolve(it, visitingTypeParameters = visitingTypeParameters) }
+                definition(type = type, structureType = structureType, generics = generics)
+            }
         }
     }
 
@@ -117,7 +148,11 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
     }
 
     private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
-        definition(builtin("kotlin.Any")!!, structureType, emptyList())
+        definition(
+            type = builtin("kotlin.Any")!!,
+            structureType = structureType,
+            generics = emptyList(),
+        )
 
     private fun argument(type: KSType, index: Int): KSType =
         type.arguments.getOrNull(index)?.type?.resolve() ?: builtin("kotlin.Any")!!
@@ -131,7 +166,12 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         generics: List<ClassDefinition>,
         structureType: StructureType,
         private val type: KSType,
-    ) : ClassDefinition(simpleName, fullName, generics, structureType) {
+    ) : ClassDefinition(
+        simpleName = simpleName,
+        fullName = fullName,
+        generics = generics,
+        structureType = structureType,
+    ) {
 
         private val declaration: KSClassDeclaration?
             get() = type.declaration as? KSClassDeclaration
@@ -149,30 +189,36 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                 ?.declarations
                 ?.filterIsInstance<KSClassDeclaration>()
                 ?.filter { it.classKind == ClassKind.ENUM_ENTRY }
-                ?.map { EnumConstant(it.simpleName.asString(), KspAnnotations(it)) }
+                ?.map {
+                    EnumConstant(
+                        name = it.simpleName.asString(),
+                        annotations = KspAnnotations(elements = listOf(it)),
+                    )
+                }
                 ?.toList()
                 .orEmpty()
 
-        override fun getAnnotations(): AnnotationSet =
-            KspAnnotations(declaration)
+        override fun getAnnotations(): AnnotationSet = KspAnnotations(declaration)
 
         override fun getProperties(): List<PropertyProjection> {
             val declaration = declaration ?: return emptyList()
-            return declaration.getAllProperties().filter { property ->
-                property.getVisibility() !in setOf(KspVisibility.PRIVATE, KspVisibility.LOCAL)
-            }.map { property ->
-                val propertyType = property.type.resolve()
-                PropertyProjection(
-                    name = property.simpleName.asString(),
-                    type = resolve(propertyType),
-                    accessor = Accessor.GETTER,
-                    nullable = propertyType.isMarkedNullable,
-                    visibility = visibilityOf(property.getVisibility()),
-                    transient = Modifier.JAVA_TRANSIENT in property.modifiers,
-                    source = property,
-                    annotations = KspAnnotations(listOfNotNull(property, property.getter)),
-                )
-            }.toList()
+            return declaration
+                .getAllProperties()
+                .filter { property -> property.getVisibility() !in setOf(KspVisibility.PRIVATE, KspVisibility.LOCAL) }
+                .map { property ->
+                    val propertyType = property.type.resolve()
+                    PropertyProjection(
+                        name = property.simpleName.asString(),
+                        type = resolve(propertyType),
+                        accessor = Accessor.GETTER,
+                        nullable = propertyType.isMarkedNullable,
+                        visibility = visibilityOf(property.getVisibility()),
+                        transient = Modifier.JAVA_TRANSIENT in property.modifiers,
+                        source = property,
+                        annotations = KspAnnotations(elements = listOfNotNull(property, property.getter)),
+                    )
+                }
+                .toList()
         }
     }
 
@@ -196,6 +242,7 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
             val direct = annotations
                 .filter { it.named(type) }
                 .map { KspAnnotationProjection(it) }
+
             val containerName = type.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
             val repeated = containerName
                 ?.let { name -> annotations.firstOrNull { it.qualifiedName() == name } }
@@ -219,12 +266,16 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
     }
 
     private inner class KspAnnotationProjection(private val annotation: KSAnnotation) : AnnotationProjection {
+
         override val simpleName: String
             get() = annotation.shortName.asString()
+
         override val metadata: AnnotationSet
             get() = KspAnnotations(annotation.annotationType.resolve().declaration)
+
         override val values: Map<String, Any?>
             get() = argumentValues(annotation)
+
     }
 
     private fun argumentValues(annotation: KSAnnotation): Map<String, Any?> =

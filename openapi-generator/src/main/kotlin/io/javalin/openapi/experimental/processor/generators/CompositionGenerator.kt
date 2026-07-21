@@ -11,12 +11,12 @@ import io.javalin.openapi.Composition.ANY_OF
 import io.javalin.openapi.Composition.ONE_OF
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.OneOf
-import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.CustomProperty
+import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.SchemaGenerationContext
+import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createJsonObjectOf
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
-import io.javalin.openapi.experimental.processor.shared.toJsonArray
 import io.javalin.openapi.experimental.processor.shared.toJsonObject
 import io.javalin.introspection.ClassDefinition as RawType
 
@@ -25,18 +25,31 @@ fun findCompositionInElement(context: SchemaGenerationContext, annotations: Anno
         ?: compositionOf(context, annotations, AnyOf::class.java, ANY_OF)
         ?: compositionOf(context, annotations, AllOf::class.java, ALL_OF)
 
-private fun compositionOf(context: SchemaGenerationContext, annotations: AnnotationSet, annotationType: Class<out Annotation>, composition: Composition): PropertyComposition? {
+private fun compositionOf(
+    context: SchemaGenerationContext,
+    annotations: AnnotationSet,
+    annotationType: Class<out Annotation>,
+    composition: Composition,
+): PropertyComposition? {
     val annotation = annotations.find(annotationType) ?: return null
     val references = annotation.get("value").asClassDefinitions().map { context.toOpenApiType(it) }.toSet()
     val discriminator = annotation.get("discriminator").asMap()?.let { discriminatorInfo(context, it) }
-    return PropertyComposition(composition, references, discriminator)
+    return PropertyComposition(
+        type = composition,
+        references = references,
+        discriminator = discriminator,
+    )
 }
 
 private fun discriminatorInfo(context: SchemaGenerationContext, discriminator: Map<*, *>): DiscriminatorInfo {
     val property = discriminator["property"] as Map<*, *>
     val mapping = (discriminator["mapping"] as? List<*>).orEmpty()
         .filterIsInstance<Map<*, *>>()
-        .map { (it["name"] as String) to context.toOpenApiType(it["value"] as RawType) }
+        .map { entry ->
+            val name = entry["name"] as String
+            val type = entry["value"] as RawType
+            name to context.toOpenApiType(type)
+        }
     return DiscriminatorInfo(
         propertyName = property["name"] as String,
         propertyType = context.toOpenApiType(property["type"] as RawType),
@@ -60,47 +73,50 @@ fun ObjectNode.createComposition(
     // an empty oneOf/anyOf/allOf is invalid OpenAPI, so skip when there are no refs/subtypes
     if (refs.isEmpty()) return
 
-    when (inlineRefs) {
-        true ->
-            refs
-                .map { context.typeSchemaGenerator.createTypeSchema(type = it, inlineRefs = true, requireNonNullsByDefault = requiresNonNulls) }
-                .onEach { (_, refs) -> references.addAll(refs) }
-                .map { (scheme, _) -> scheme }
-                .toJsonArray { add(it) }
-                .let { set<JsonNode>(propertyComposition.type.propertyName, it) }
+    val compositionValues = createArrayNode()
+    if (inlineRefs) {
+        for (ref in refs) {
+            val result = context.typeSchemaGenerator.createTypeSchema(
+                type = ref,
+                inlineRefs = true,
+                requireNonNullsByDefault = requiresNonNulls,
+            )
+            references.addAll(result.references)
+            compositionValues.add(result.json)
+        }
+    } else {
+        for (ref in refs) {
+            references.add(ref)
+            compositionValues.add(createJsonObjectOf($$"$ref", "#/components/schemas/${ref.simpleName}"))
+        }
+    }
+    set<JsonNode>(propertyComposition.type.propertyName, compositionValues)
 
-        false ->
-            refs
-                .onEach { references.add(it) }
-                .map { createJsonObjectOf($$"$ref", "#/components/schemas/${it.simpleName}") }
-                .toJsonArray { add(it) }
-                .let { set(propertyComposition.type.propertyName, it) }
+    val discriminator = propertyComposition.discriminator
+        ?.takeIf { it.propertyName != NULL_STRING }
+        ?: return
+
+    val discriminatorObject = createObjectNode()
+    set<JsonNode>("discriminator", discriminatorObject)
+    discriminatorObject.put("propertyName", discriminator.propertyName)
+
+    val mapping = discriminator.mapping.ifEmpty { subtypes }
+    if (discriminator.injectInMappings) {
+        val customProperty = CustomProperty(
+            name = discriminator.propertyName,
+            type = discriminator.propertyType,
+        )
+
+        mapping.forEach { (_, mappedClass) ->
+            mappedClass.extra.add(customProperty)
+        }
     }
 
-    propertyComposition.discriminator
-        ?.takeIf { it.propertyName != NULL_STRING }
-        ?.also { discriminator ->
-            val discriminatorObject = createObjectNode()
-            set<JsonNode>("discriminator", discriminatorObject)
-            discriminatorObject.put("propertyName", discriminator.propertyName)
-
-            val mapping = discriminator.mapping.ifEmpty { subtypes }
-
-            if (discriminator.injectInMappings) {
-                val customProperty = CustomProperty(
-                    name = discriminator.propertyName,
-                    type = discriminator.propertyType
-                )
-
-                mapping.forEach { (_, mappedClass) ->
-                    mappedClass.extra.add(customProperty)
-                }
-            }
-
-            mapping
-                .onEach { (_, mappedClass) -> references.add(mappedClass) }
-                .associate { (name, mappedClass) -> name to "#/components/schemas/${mappedClass.simpleName}" }
-                .takeIf { it.isNotEmpty() }
-                ?.also { discriminatorObject.set<JsonNode>("mapping", it.toJsonObject()) }
+    if (mapping.isNotEmpty()) {
+        mapping.forEach { (_, mappedClass) -> references.add(mappedClass) }
+        val mappings = mapping.associate { (name, mappedClass) ->
+            name to "#/components/schemas/${mappedClass.simpleName}"
         }
+        discriminatorObject.set<JsonNode>("mapping", mappings.toJsonObject())
+    }
 }

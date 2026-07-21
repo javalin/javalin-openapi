@@ -11,5 +11,4 @@ class ReflectionSchemaContext(
 ) : IntrospectorSchemaContext(simpleTypeMappings) {
 
     override val introspector: TypeIntrospector = ReflectionTypeIntrospector()
-
 }

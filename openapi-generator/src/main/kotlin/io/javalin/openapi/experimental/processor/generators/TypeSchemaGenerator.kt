@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.introspection.Accessor
+import io.javalin.introspection.AnnotationValue
 import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.ClassDefinition as RawType
 import io.javalin.introspection.InternalIntrospectionApi
@@ -37,7 +38,11 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         val definedBy = type.definedBy()
 
         if (definedBy != null && !isEnum) {
-            return createTypeSchema(definedBy, inlineRefs, requireNonNullsByDefault)
+            return createTypeSchema(
+                type = definedBy,
+                inlineRefs = inlineRefs,
+                requireNonNullsByDefault = requireNonNullsByDefault,
+            )
         }
 
         val schema = createObjectNode()
@@ -46,7 +51,14 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
         when {
             composition != null -> {
-                schema.createComposition(context, type, composition, references, inlineRefs, requireNonNullsByDefault)
+                schema.createComposition(
+                    context = context,
+                    type = type,
+                    propertyComposition = composition,
+                    references = references,
+                    inlineRefs = inlineRefs,
+                    requiresNonNulls = requireNonNullsByDefault,
+                )
             }
             isEnum -> {
                 val enumType = definedBy
@@ -56,25 +68,22 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                 val values = createArrayNode()
                 val descriptions = createArrayNode()
 
-                context.enumConstantsOf(type)
-                    .map { constant ->
-                        val customName = constant.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
-                        val description = constant.annotations.find(OpenApiDescription::class.java)?.get("value")?.asString()
-                        val name = when {
-                            customName != null -> customName
-                            namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
-                            else -> constant.name
-                        }
-                        name to (description ?: "")
+                for (constant in context.enumConstantsOf(type)) {
+                    val customName = constant.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
+                    val description = constant.annotations.find(OpenApiDescription::class.java)?.get("value")?.asString()
+                    val name = when {
+                        customName != null -> customName
+                        namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
+                        else -> constant.name
                     }
-                    .forEach { (name, description) ->
-                        if (enumType != null && enumType.type != "string") {
-                            values.add(jsonMapper.readTree(name))
-                        } else {
-                            values.add(name)
-                        }
-                        descriptions.add(description)
+
+                    if (enumType != null && enumType.type != "string") {
+                        values.add(jsonMapper.readTree(name))
+                    } else {
+                        values.add(name)
                     }
+                    descriptions.add(description ?: "")
+                }
 
                 schema.put("type", enumType?.type ?: "string")
                 enumType?.format?.also { schema.put("format", it) }
@@ -100,22 +109,16 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                 val properties = context.findAllProperties(type, requireNonNulls)
 
                 properties.forEach { property ->
-                    val result =
-                        when {
-                            processedProperties.contains(property) ->
-                                processedProperties[property]!!
-                            else ->
-                                createEmbeddedTypeDescription(
-                                    type = property.type,
-                                    inlineRefs = inlineRefs,
-                                    requiresNonNulls = requireNonNulls,
-                                    composition = property.composition,
-                                    extra = property.extra,
-                                    nullable = property.nullable,
-                                ).also {
-                                    processedProperties[property] = it
-                                }
-                        }
+                    val result = processedProperties.getOrPut(property) {
+                        createEmbeddedTypeDescription(
+                            type = property.type,
+                            inlineRefs = inlineRefs,
+                            requiresNonNulls = requireNonNulls,
+                            composition = property.composition,
+                            extra = property.extra,
+                            nullable = property.nullable,
+                        )
+                    }
                     propertiesObject.set<JsonNode>(property.name, result.json)
                     references.addAll(result.references)
                 }
@@ -128,7 +131,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
             }
         }
 
-        return ResultScheme(schema, references)
+        return ResultScheme(json = schema, references = references)
     }
 
     fun createEmbeddedTypeDescription(
@@ -142,34 +145,52 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         val definedBy = type.definedBy()
 
         if (definedBy != null && !context.isEnum(type)) {
-            return createEmbeddedTypeDescription(definedBy, inlineRefs, requiresNonNulls, composition, extra, nullable)
+            return createEmbeddedTypeDescription(
+                type = definedBy,
+                inlineRefs = inlineRefs,
+                requiresNonNulls = requiresNonNulls,
+                composition = composition,
+                extra = extra,
+                nullable = nullable,
+            )
         }
 
         val scheme = createObjectNode()
         val references = mutableSetOf<OpenApiType>()
 
-        val handledByCustomProcessor =
-            context.embeddedTypeProcessors.firstOrNull {
-                it.process(
-                    EmbeddedTypeProcessorContext(
-                        parentContext = context,
-                        scheme = scheme,
-                        references = references,
-                        type = type,
-                        inlineRefs = inlineRefs,
-                        requiresNonNulls = requiresNonNulls,
-                        composition = composition,
-                        extra = extra
-                    )
+        val processorContext = EmbeddedTypeProcessorContext(
+            parentContext = context,
+            scheme = scheme,
+            references = references,
+            type = type,
+            inlineRefs = inlineRefs,
+            requiresNonNulls = requiresNonNulls,
+            composition = composition,
+            extra = extra,
+        )
+        val handled = context.embeddedTypeProcessors.any { processor ->
+            processor.process(processorContext)
+        }
+
+        if (!handled) {
+            if (type.fullName == "java.util.Optional" && type.generics.size == 1) {
+                return createEmbeddedTypeDescription(
+                    type = type.generics.first(),
+                    inlineRefs = inlineRefs,
+                    requiresNonNulls = requiresNonNulls,
+                    composition = composition,
+                    extra = extra,
+                    nullable = true,
                 )
             }
 
-        if (handledByCustomProcessor == null) {
-            if (type.fullName == "java.util.Optional" && type.generics.size == 1) {
-                return createEmbeddedTypeDescription(type.generics.first(), inlineRefs, requiresNonNulls, composition, extra, nullable = true)
-            }
-
-            addType(scheme, type, inlineRefs, references, requiresNonNulls)
+            addType(
+                scheme = scheme,
+                type = type,
+                inlineRefs = inlineRefs,
+                references = references,
+                requiresNonNulls = requiresNonNulls,
+            )
         }
 
         scheme.addExtra(extra)
@@ -207,7 +228,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
             }
         }
 
-        return ResultScheme(scheme, references)
+        return ResultScheme(json = scheme, references = references)
     }
 
     fun addType(
@@ -220,7 +241,11 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         when (val nonRefType = context.simpleTypeMappings[type.fullName]) {
             null -> {
                 if (inlineRefs) {
-                    val (subScheme, subReferences) = createTypeSchema(type, true, requiresNonNulls)
+                    val (subScheme, subReferences) = createTypeSchema(
+                        type = type,
+                        inlineRefs = true,
+                        requireNonNullsByDefault = requiresNonNulls,
+                    )
                     subScheme.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
                     references.addAll(subReferences)
                 } else {
@@ -261,8 +286,9 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
         val name = customName ?: property.name
         val finalName = if (customName == null && namingStrategy != null) translatePropertyName(namingStrategy, name) else name
 
-        val nullability = property.annotations.find(OpenApiPropertyType::class.java)?.get("nullability")?.asString()
-        val redirect = property.annotations.find(OpenApiPropertyType::class.java)?.get("definedBy")?.asClassDefinition()
+        val propertyType = property.annotations.find(OpenApiPropertyType::class.java)
+        val nullability = propertyType?.get("nullability")?.asString()
+        val redirect = propertyType?.get("definedBy")?.asClassDefinition()
         val treatedAsNotNull = (redirect == null && !property.nullable) || redirect?.hasPrimitiveSource() == true
 
         val isNotNull = when {
@@ -302,7 +328,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
                 Property(
                     name = extraProperty.name,
                     type = extraProperty.type,
-                    required = requireNonNulls
+                    required = requireNonNulls,
                 )
             )
         }
@@ -320,10 +346,10 @@ private fun AnnotationSet.findExtra(): Map<String, Any?> {
         "description" to find(OpenApiDescription::class.java)?.get("value")?.asString()
     )
 
-    find(OpenApiExample::class.java)?.values?.also { example ->
-        val value = example.notNull("value")
-        val raw = example.notNull("raw")
-        val objects = (example["objects"] as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
+    find(OpenApiExample::class.java)?.also { example ->
+        val value = example["value"].notNullString()
+        val raw = example["raw"].notNullString()
+        val objects = example["objects"].asList().filterIsInstance<Map<String, Any?>>()
         when {
             value != null -> extra["example"] = value
             raw != null -> extra["example"] = jsonMapper.readTree(raw)
@@ -334,30 +360,30 @@ private fun AnnotationSet.findExtra(): Map<String, Any?> {
         }
     }
 
-    find(OpenApiNumberValidation::class.java)?.values?.also {
-        extra["minimum"] = it.notNull("minimum")?.toBigDecimal()
-        extra["maximum"] = it.notNull("maximum")?.toBigDecimal()
-        extra["exclusiveMinimum"] = it.notNull("exclusiveMinimum")?.toBigDecimal()
-        extra["exclusiveMaximum"] = it.notNull("exclusiveMaximum")?.toBigDecimal()
-        extra["multipleOf"] = it.notNull("multipleOf")?.toBigDecimal()
+    find(OpenApiNumberValidation::class.java)?.also { validation ->
+        extra["minimum"] = validation["minimum"].notNullString()?.toBigDecimal()
+        extra["maximum"] = validation["maximum"].notNullString()?.toBigDecimal()
+        extra["exclusiveMinimum"] = validation["exclusiveMinimum"].notNullString()?.toBigDecimal()
+        extra["exclusiveMaximum"] = validation["exclusiveMaximum"].notNullString()?.toBigDecimal()
+        extra["multipleOf"] = validation["multipleOf"].notNullString()?.toBigDecimal()
     }
 
-    find(OpenApiStringValidation::class.java)?.values?.also {
-        extra["minLength"] = it.notNull("minLength")?.toInt()
-        extra["maxLength"] = it.notNull("maxLength")?.toInt()
-        extra["format"] = it.notNull("format")
-        extra["pattern"] = it.notNull("pattern")
+    find(OpenApiStringValidation::class.java)?.also { validation ->
+        extra["minLength"] = validation["minLength"].notNullString()?.toInt()
+        extra["maxLength"] = validation["maxLength"].notNullString()?.toInt()
+        extra["format"] = validation["format"].notNullString()
+        extra["pattern"] = validation["pattern"].notNullString()
     }
 
-    find(OpenApiArrayValidation::class.java)?.values?.also {
-        extra["minItems"] = it.notNull("minItems")?.toInt()
-        extra["maxItems"] = it.notNull("maxItems")?.toInt()
-        extra["uniqueItems"] = (it["uniqueItems"] as? Boolean)?.takeIf { unique -> unique }
+    find(OpenApiArrayValidation::class.java)?.also { validation ->
+        extra["minItems"] = validation["minItems"].notNullString()?.toInt()
+        extra["maxItems"] = validation["maxItems"].notNullString()?.toInt()
+        extra["uniqueItems"] = validation["uniqueItems"].asBoolean()?.takeIf { unique -> unique }
     }
 
-    find(OpenApiObjectValidation::class.java)?.values?.also {
-        extra["minProperties"] = it.notNull("minProperties")?.toInt()
-        extra["maxProperties"] = it.notNull("maxProperties")?.toInt()
+    find(OpenApiObjectValidation::class.java)?.also { validation ->
+        extra["minProperties"] = validation["minProperties"].notNullString()?.toInt()
+        extra["maxProperties"] = validation["maxProperties"].notNullString()?.toInt()
     }
 
     findAll(Custom::class.java).forEach { custom ->
@@ -380,8 +406,8 @@ private fun MemberVisibility.toOpenApi(): Visibility =
         MemberVisibility.PACKAGE_PRIVATE -> Visibility.DEFAULT
     }
 
-private fun Map<String, Any?>.notNull(key: String): String? =
-    (this[key] as? String)?.takeIf { it != NULL_STRING }
+private fun AnnotationValue.notNullString(): String? =
+    asString()?.takeIf { it != NULL_STRING }
 
 private val primitiveSourceNames = setOf("boolean", "byte", "short", "int", "long", "float", "double", "char")
 

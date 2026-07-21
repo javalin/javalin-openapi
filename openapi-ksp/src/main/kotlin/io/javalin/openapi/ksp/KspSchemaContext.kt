@@ -1,7 +1,7 @@
 package io.javalin.openapi.ksp
 
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotated
 import io.javalin.introspection.AnnotationSet
 import io.javalin.introspection.PropertyProjection

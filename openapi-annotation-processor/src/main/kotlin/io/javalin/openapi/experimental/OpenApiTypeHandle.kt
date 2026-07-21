@@ -5,7 +5,7 @@ import javax.lang.model.type.TypeMirror
 
 data class OpenApiTypeHandle(
     val mirror: TypeMirror,
-    val source: Element
+    val source: Element,
 )
 
 @OptIn(InternalOpenApiTypeApi::class)

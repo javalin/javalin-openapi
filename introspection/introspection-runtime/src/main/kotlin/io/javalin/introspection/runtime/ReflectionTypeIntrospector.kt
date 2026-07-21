@@ -41,17 +41,44 @@ private fun reflect(
     visitingTypeVariables: Set<TypeVariable<*>> = emptySet(),
 ): ClassDefinition =
     when (type) {
-        is GenericArrayType -> reflect(type.genericComponentType, generics, ARRAY, visitingTypeVariables)
-        is WildcardType -> reflect(type.upperBounds.firstOrNull() ?: Any::class.java, generics, structureType, visitingTypeVariables)
+        is GenericArrayType ->
+            reflect(
+                type = type.genericComponentType,
+                generics = generics,
+                structureType = ARRAY,
+                visitingTypeVariables = visitingTypeVariables,
+            )
+        is WildcardType ->
+            reflect(
+                type = type.upperBounds.firstOrNull() ?: Any::class.java,
+                generics = generics,
+                structureType = structureType,
+                visitingTypeVariables = visitingTypeVariables,
+            )
         is TypeVariable<*> ->
             if (type in visitingTypeVariables) {
                 objectDefinition(structureType)
             } else {
-                reflect(type.bounds.firstOrNull() ?: Any::class.java, generics, structureType, visitingTypeVariables + type)
+                reflect(
+                    type = type.bounds.firstOrNull() ?: Any::class.java,
+                    generics = generics,
+                    structureType = structureType,
+                    visitingTypeVariables = visitingTypeVariables + type,
+                )
             }
-        is ParameterizedType -> parameterized(type, generics, structureType, visitingTypeVariables)
-        is Class<*> -> raw(type, generics, structureType, visitingTypeVariables)
-        else -> definition(Any::class.java, emptyList(), structureType)
+        is ParameterizedType -> parameterized(
+            type = type,
+            generics = generics,
+            structureType = structureType,
+            visitingTypeVariables = visitingTypeVariables,
+        )
+        is Class<*> -> raw(
+            clazz = type,
+            generics = generics,
+            structureType = structureType,
+            visitingTypeVariables = visitingTypeVariables,
+        )
+        else -> definition(erasure = Any::class.java, generics = emptyList(), structureType = structureType)
     }
 
 private fun raw(
@@ -61,11 +88,21 @@ private fun raw(
     visitingTypeVariables: Set<TypeVariable<*>>,
 ): ClassDefinition =
     when {
-        clazz.isArray -> reflect(clazz.componentType, generics, ARRAY, visitingTypeVariables)
-        clazz.isPrimitive -> definition(clazz.kotlin.javaObjectType, generics, structureType)
-        Map::class.java.isAssignableFrom(clazz) -> definition(clazz, listOf(objectDefinition(), objectDefinition()), DICTIONARY)
+        clazz.isArray -> reflect(
+            type = clazz.componentType,
+            generics = generics,
+            structureType = ARRAY,
+            visitingTypeVariables = visitingTypeVariables,
+        )
+        clazz.isPrimitive -> definition(erasure = clazz.kotlin.javaObjectType, generics = generics, structureType = structureType)
+        Map::class.java.isAssignableFrom(clazz) ->
+            definition(
+                erasure = clazz,
+                generics = listOf(objectDefinition(), objectDefinition()),
+                structureType = DICTIONARY,
+            )
         Collection::class.java.isAssignableFrom(clazz) -> objectDefinition(ARRAY)
-        else -> definition(clazz, generics, structureType)
+        else -> definition(erasure = clazz, generics = generics, structureType = structureType)
     }
 
 private fun parameterized(
@@ -77,19 +114,28 @@ private fun parameterized(
     val erasure = type.rawType as Class<*>
     val arguments = type.actualTypeArguments
     return when {
-        Map::class.java.isAssignableFrom(erasure) ->
+        Map::class.java.isAssignableFrom(erasure) -> {
+            val keyType = reflect(arguments.getOrElse(0) { Any::class.java }, visitingTypeVariables = visitingTypeVariables)
+            val valueType = reflect(arguments.getOrElse(1) { Any::class.java }, visitingTypeVariables = visitingTypeVariables)
             definition(
                 erasure = erasure,
-                generics = listOf(
-                    reflect(arguments.getOrElse(0) { Any::class.java }, visitingTypeVariables = visitingTypeVariables),
-                    reflect(arguments.getOrElse(1) { Any::class.java }, visitingTypeVariables = visitingTypeVariables),
-                ),
+                generics = listOf(keyType, valueType),
                 structureType = DICTIONARY,
             )
+        }
         Collection::class.java.isAssignableFrom(erasure) ->
-            reflect(arguments.getOrElse(0) { Any::class.java }, generics, ARRAY, visitingTypeVariables)
-        else ->
-            definition(erasure, arguments.map { reflect(it, visitingTypeVariables = visitingTypeVariables) }, structureType)
+            reflect(
+                type = arguments.getOrElse(0) { Any::class.java },
+                generics = generics,
+                structureType = ARRAY,
+                visitingTypeVariables = visitingTypeVariables,
+            )
+        else -> {
+            val resolvedGenerics = arguments.map {
+                reflect(it, visitingTypeVariables = visitingTypeVariables)
+            }
+            definition(erasure = erasure, generics = resolvedGenerics, structureType = structureType)
+        }
     }
 }
 
@@ -103,7 +149,7 @@ private fun definition(erasure: Class<*>, generics: List<ClassDefinition>, struc
     )
 
 private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
-    definition(Any::class.java, emptyList(), structureType)
+    definition(erasure = Any::class.java, generics = emptyList(), structureType = structureType)
 
 private class ReflectionClassDefinition(
     simpleName: String,
@@ -111,20 +157,33 @@ private class ReflectionClassDefinition(
     generics: List<ClassDefinition>,
     structureType: StructureType,
     private val erasure: Class<*>,
-) : ClassDefinition(simpleName, fullName, generics, structureType) {
+) : ClassDefinition(
+    simpleName = simpleName,
+    fullName = fullName,
+    generics = generics,
+    structureType = structureType,
+) {
 
     @InternalIntrospectionApi
-    override val source: Any
-        get() = erasure
+    override val source: Any = erasure
 
     override fun isEnum(): Boolean =
         erasure.isEnum
 
-    override fun getEnumConstants(): List<EnumConstant> =
-        erasure.takeIf { it.isEnum }?.enumConstants?.map {
-            val name = (it as Enum<*>).name
-            EnumConstant(name, ReflectionAnnotations(listOfNotNull(runCatching { erasure.getDeclaredField(name) }.getOrNull())))
-        }.orEmpty()
+    override fun getEnumConstants(): List<EnumConstant> {
+        if (!erasure.isEnum) {
+            return emptyList()
+        }
+
+        return erasure.enumConstants.map { constant ->
+            val name = (constant as Enum<*>).name
+            val field = runCatching { erasure.getDeclaredField(name) }.getOrNull()
+            EnumConstant(
+                name = name,
+                annotations = ReflectionAnnotations(listOfNotNull(field)),
+            )
+        }
+    }
 
     override fun getProperties(): List<PropertyProjection> =
         collectMembers(erasure).map { member ->
@@ -140,15 +199,22 @@ private class ReflectionClassDefinition(
             )
         }
 
-    override fun getAnnotations(): AnnotationSet =
-        ReflectionAnnotations(listOf(erasure))
+    override fun getAnnotations(): AnnotationSet = ReflectionAnnotations(listOf(erasure))
 }
 
 private fun collectMembers(clazz: Class<*>): List<Member> {
     if (clazz.isRecord) {
         return clazz.recordComponents.map { component ->
             val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
-            Member(component.name, component.genericType, Accessor.RECORD_COMPONENT, MemberVisibility.PUBLIC, false, component.accessor, listOfNotNull(component.accessor, backingField, component))
+            Member(
+                name = component.name,
+                genericType = component.genericType,
+                accessor = Accessor.RECORD_COMPONENT,
+                visibility = MemberVisibility.PUBLIC,
+                transient = false,
+                source = component.accessor,
+                sources = listOfNotNull(component.accessor, backingField, component),
+            )
         }
     }
 
@@ -160,20 +226,44 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
         if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
         if (getterNames.add(method.name)) {
-            members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
+            members += Member(
+                name = method.name,
+                genericType = method.genericReturnType,
+                accessor = Accessor.GETTER,
+                visibility = visibilityOf(method.modifiers),
+                transient = false,
+                source = method,
+                sources = listOf(method),
+            )
         }
     }
 
     // clazz.methods is public-only, so a second pass picks up inherited protected/package-private getters (jap parity)
     for (method in nonPublicGettersHierarchy(clazz)) {
         if (getterNames.add(method.name)) {
-            members += Member(method.name, method.genericReturnType, Accessor.GETTER, visibilityOf(method.modifiers), false, method, listOf(method))
+            members += Member(
+                name = method.name,
+                genericType = method.genericReturnType,
+                accessor = Accessor.GETTER,
+                visibility = visibilityOf(method.modifiers),
+                transient = false,
+                source = method,
+                sources = listOf(method),
+            )
         }
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {
         if (Modifier.isStatic(field.modifiers) || field.isSynthetic) continue
-        members += Member(field.name, field.genericType, Accessor.FIELD, visibilityOf(field.modifiers), Modifier.isTransient(field.modifiers), field, listOf(field))
+        members += Member(
+            name = field.name,
+            genericType = field.genericType,
+            accessor = Accessor.FIELD,
+            visibility = visibilityOf(field.modifiers),
+            transient = Modifier.isTransient(field.modifiers),
+            source = field,
+            sources = listOf(field),
+        )
     }
 
     return members
@@ -254,10 +344,13 @@ private class ReflectionAnnotations(private val sources: List<AnnotatedElement>)
 }
 
 private class ReflectionAnnotationProjection(private val annotation: Annotation) : AnnotationProjection {
+
     override val simpleName: String
         get() = annotation.annotationClass.java.simpleName
+
     override val metadata: AnnotationSet
         get() = ReflectionAnnotations(listOf(annotation.annotationClass.java))
+
     override val values: Map<String, Any?>
         get() = annotationToMap(annotation)
 }

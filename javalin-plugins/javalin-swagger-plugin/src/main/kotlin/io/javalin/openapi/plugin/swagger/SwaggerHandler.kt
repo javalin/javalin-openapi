@@ -13,7 +13,7 @@ class SwaggerEndpoint(
     method: HandlerType,
     path: String,
     roles: Set<RouteRole>,
-    handler: Handler
+    handler: Handler,
 ) : Endpoint(
     method = method,
     path = path,
@@ -40,7 +40,7 @@ class SwaggerHandler(
     private val tagsSorter: String,
     private val operationsSorter: String,
     private val customStylesheetFiles: List<Pair<String, String>>,
-    private val customJavaScriptFiles: List<Pair<String, String>>
+    private val customJavaScriptFiles: List<Pair<String, String>>,
 ) : Handler, OpenApiPluginRouteHandler {
 
     private val swaggerUiHtml = createSwaggerUiHtml()

@@ -27,7 +27,7 @@ internal data class OpenApiRouteDefinition(
     val security: List<OpenApiSecurityDefinition>,
 ) {
     val formattedPath: String
-        get() = path.let { if (it.startsWith("/")) it else "/$it" }
+        get() = if (path.startsWith("/")) path else "/$path"
 
     companion object {
         fun from(values: Map<String, Any?>): OpenApiRouteDefinition =
@@ -154,8 +154,8 @@ internal data class OpenApiContentDefinition(
     val example: String?,
     val exampleObjects: List<ExampleProperty>,
 ) {
-    val hasResolvedSource: Boolean
-        get() = from != null && from.fullName != NULL_CLASS::class.java.name
+    val resolvedSource: ClassDefinition?
+        get() = from?.takeUnless { it.fullName == NULL_CLASS::class.java.name }
 
     companion object {
         fun from(values: Map<String, Any?>): OpenApiContentDefinition =
@@ -178,11 +178,11 @@ internal data class OpenApiContentPropertyDefinition(
     val from: ClassDefinition?,
     val name: String,
     val isArray: Boolean,
-    val type: String,
+    val type: String?,
     val format: String?,
 ) {
-    val hasResolvedSource: Boolean
-        get() = from != null && from.fullName != NULL_CLASS::class.java.name
+    val resolvedSource: ClassDefinition?
+        get() = from?.takeUnless { it.fullName == NULL_CLASS::class.java.name }
 
     companion object {
         fun from(values: Map<String, Any?>): OpenApiContentPropertyDefinition =
@@ -190,7 +190,7 @@ internal data class OpenApiContentPropertyDefinition(
                 from = values.classDefinition("from"),
                 name = values.requiredString("name"),
                 isArray = values.boolean("isArray"),
-                type = values.requiredString("type"),
+                type = values.text("type"),
                 format = values.text("format"),
             )
     }

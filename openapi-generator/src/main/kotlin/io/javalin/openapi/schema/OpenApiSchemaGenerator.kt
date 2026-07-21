@@ -19,9 +19,8 @@ class OpenApiSchemaGenerator(
     private val defaultStatusDescription: (String) -> String? = { OpenApiStatus.reasonPhrase(it) },
 ) {
 
-    fun generateSchema(routes: List<Map<String, Any?>>): String {
-        return generateRouteSchema(routes.map(OpenApiRouteDefinition::from))
-    }
+    fun generateSchema(routes: List<Map<String, Any?>>): String =
+        generateRouteSchema(routes.map(OpenApiRouteDefinition::from))
 
     private fun generateRouteSchema(routes: List<OpenApiRouteDefinition>): String {
         val schema =
@@ -64,7 +63,9 @@ class OpenApiSchemaGenerator(
             }
         }
 
-        schema.resolveComponentReferences { type -> context.typeSchemaGenerator.createTypeSchema(type, false) }
+        schema.resolveComponentReferences { type ->
+            context.typeSchemaGenerator.createTypeSchema(type = type, inlineRefs = false)
+        }
         return schema.toJson()
     }
 
@@ -110,7 +111,9 @@ class OpenApiSchemaGenerator(
         requestBody {
             description(requestBody.description)
             content { addResolvedContent(requestBody.content) }
-            if (requestBody.required) { required(true) }
+            if (requestBody.required) {
+                required(true)
+            }
         }
     }
 
@@ -148,7 +151,7 @@ class OpenApiSchemaGenerator(
                 callback(
                     name = callback.name,
                     url = callback.url,
-                    method = callback.method.lowercase()
+                    method = callback.method.lowercase(),
                 ) {
                     summary(callback.summary)
                     description(callback.description)
@@ -156,7 +159,9 @@ class OpenApiSchemaGenerator(
                     requestBody {
                         description(callbackBody?.description)
                         content { addResolvedContent(callbackBody?.content.orEmpty()) }
-                        if (callbackBody?.required == true) { required(true) }
+                        if (callbackBody?.required == true) {
+                            required(true)
+                        }
                     }
                     responses {
                         for (response in callback.responses.sortedBy { it.status }) {
@@ -189,44 +194,43 @@ class OpenApiSchemaGenerator(
         COOKIE("cookie"),
     }
 
-    private fun generateOperationId(method: String, route: OpenApiRouteDefinition, pathParamPrefix: String = "By"): String =
-        when (val operationId = route.operationId) {
-            AUTO_GENERATE ->
-                method.lowercase() + route.path.split('/')
-                    .map { pathPart ->
-                        if (pathPart.startsWith('{') || pathPart.startsWith('<')) {
-                            val pathParam = pathPart
-                                .drop(1)
-                                .dropLast(1)
-                                .split('-')
-                                .joinToString(separator = "") { it.capitalise() }
-                            pathParamPrefix + pathParam
-                        } else {
-                            pathPart.capitalise()
-                        }
-                    }
-                    .joinToString(separator = "") {
-                        it.split('-').joinToString(separator = "") { it.capitalise() }
-                    }
-            else -> operationId
+    private fun generateOperationId(method: String, route: OpenApiRouteDefinition, pathParamPrefix: String = "By"): String {
+        if (route.operationId != AUTO_GENERATE) {
+            return route.operationId
         }
+
+        val path = route.path.split('/').joinToString(separator = "") { pathPart ->
+            if (pathPart.startsWith('{') || pathPart.startsWith('<')) {
+                val parameterName = pathPart
+                    .drop(1)
+                    .dropLast(1)
+                    .split('-')
+                    .joinToString(separator = "") { it.capitalise() }
+                pathParamPrefix + parameterName
+            } else {
+                pathPart
+                    .split('-')
+                    .joinToString(separator = "") { it.capitalise() }
+            }
+        }
+        return method.lowercase() + path
+    }
 
     private fun String.capitalise(): String = this.replaceFirstChar {
         it.titlecase(Locale.getDefault())
     }
 
     private fun resolveMediaType(content: OpenApiContentDefinition): Pair<String, MediaTypeBuilder.() -> Unit>? {
-        val from = content.from
-        val fromIsNull = !content.hasResolvedSource
+        val source = content.resolvedSource
         var type = content.type
         var mimeType = content.mimeType
 
         if (mimeType == null) {
-            if (fromIsNull) {
+            if (source == null) {
                 mimeType = type
                 type = null
             } else {
-                mimeType = detectContentType(from!!)
+                mimeType = detectContentType(source)
             }
         }
 
@@ -248,8 +252,8 @@ class OpenApiSchemaGenerator(
 
         val configure: MediaTypeBuilder.() -> Unit = {
             when {
-                properties == null && additionalProperties == null && !fromIsNull ->
-                    schema(createTypeDescriptionWithReferences(from!!))
+                properties == null && additionalProperties == null && source != null ->
+                    schema(createTypeDescriptionWithReferences(source))
 
                 properties == null && additionalProperties == null ->
                     schema {
@@ -280,29 +284,29 @@ class OpenApiSchemaGenerator(
 
     private fun ObjectSchemaBuilder.buildProperties(properties: List<OpenApiContentPropertyDefinition>) {
         for (property in properties) {
-            val from = property.from?.takeIf { property.hasResolvedSource }
+            val source = property.resolvedSource
 
             if (property.isArray) {
-                if (from != null) {
-                    arrayProperty(property.name, createTypeDescriptionWithReferences(from))
+                if (source != null) {
+                    arrayProperty(property.name, createTypeDescriptionWithReferences(source))
                 } else {
-                    arrayProperty(property.name, property.type, property.format)
+                    arrayProperty(property.name, requireNotNull(property.type), property.format)
                 }
             } else {
-                if (from != null) {
-                    property(property.name, createTypeDescriptionWithReferences(from))
+                if (source != null) {
+                    property(property.name, createTypeDescriptionWithReferences(source))
                 } else {
-                    property(property.name, property.type, property.format)
+                    property(property.name, requireNotNull(property.type), property.format)
                 }
             }
         }
     }
 
     private fun ObjectSchemaBuilder.buildAdditionalProperties(additionalProperties: OpenApiContentDefinition) {
-        val from = additionalProperties.from?.takeIf { additionalProperties.hasResolvedSource }
+        val source = additionalProperties.resolvedSource
 
-        if (from != null) {
-            additionalProperties(createTypeDescriptionWithReferences(from))
+        if (source != null) {
+            additionalProperties(createTypeDescriptionWithReferences(source))
         } else {
             additionalProperties(additionalProperties.type, additionalProperties.format)
         }

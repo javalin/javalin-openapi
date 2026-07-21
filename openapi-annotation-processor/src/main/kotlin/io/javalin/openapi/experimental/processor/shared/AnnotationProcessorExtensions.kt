@@ -41,8 +41,8 @@ fun Messager.printException(kind: Kind, throwable: Throwable) {
 
     printMessage(kind, error.toString())
 
-    if (throwable.cause != null) {
+    throwable.cause?.let { cause ->
         printMessage(kind, "---")
-        printException(throwable.cause!!)
+        printException(cause)
     }
 }

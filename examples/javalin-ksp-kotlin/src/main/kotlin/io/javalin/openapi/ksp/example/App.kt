@@ -24,7 +24,12 @@ class AccountHandler : Handler {
         methods = [HttpMethod.GET],
         summary = "Get the current account",
         operationId = "getAccount",
-        responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = Account::class)])]
+        responses = [
+            OpenApiResponse(
+                status = OpenApiStatus.OK,
+                content = [OpenApiContent(from = Account::class)],
+            )
+        ],
     )
     override fun handle(ctx: Context) {
         ctx.json(Account(id = "u-1", age = 30, roles = listOf("admin")))

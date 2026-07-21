@@ -48,7 +48,7 @@ class KspTypeIntrospectorTest {
             val enumConstants: List<String>?,
             val hasRef: Boolean,
             val refValue: String?,
-            val scannedLabel: Any?,
+            val scannedLabel: String?,
         )
 
         val snapshot = withKsp { ksp ->
@@ -61,7 +61,7 @@ class KspTypeIntrospectorTest {
                 enumConstants = color.getEnumConstants().map { it.name },
                 hasRef = account.getAnnotations().contains("Ref"),
                 refValue = account.getAnnotations().find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName,
-                scannedLabel = account.getAnnotations().all().first { it.metadata.contains("MetaMarker") }.values["label"],
+                scannedLabel = account.getAnnotations().all().first { it.metadata.contains("MetaMarker") }["label"].asString(),
             )
         }
 

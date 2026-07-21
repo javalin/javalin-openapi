@@ -44,7 +44,10 @@ class KspSchemaContextTest {
     fun `generates a component schema end-to-end through the shared generator`() {
         withResolver { resolver, logger ->
             val context = KspSchemaContext(resolver, logger)
-            val user = resolver.getClassDeclarationByName(resolver.getKSNameFromString("io.javalin.openapi.ksp.User"))!!
+            val declaration = resolver.getClassDeclarationByName(
+                resolver.getKSNameFromString("io.javalin.openapi.ksp.User")
+            )!!
+            val user = declaration
                 .asStarProjectedType()
 
             val schema = context.componentSchema(context.introspect(user)).json

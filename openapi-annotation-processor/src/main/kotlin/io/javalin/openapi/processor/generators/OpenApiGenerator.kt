@@ -20,37 +20,37 @@ internal class OpenApiGenerator {
     )
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val routes = listOf(
+        val routeElements = listOf(
             roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java),
             roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java),
-        )
-            .flatten()
+        ).flatten()
+        val routes = routeElements
             .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
 
-        schemaGenerator.generateVersionedSchemas(routes)
-            .map { (version, generatedOpenApiSchema) ->
-                val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
-                    ?.toUri()
-                    ?.toString()
-                    ?: return
+        val resourceNames = mutableListOf<String>()
+        for ((version, generatedOpenApiSchema) in schemaGenerator.generateVersionedSchemas(routes)) {
+            val resourceName = "openapi-${version.replace(" ", "-")}.json"
+            val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
+                ?.toUri()
+                ?.toString()
+                ?: return
 
-                if (context.configuration.validateWithParser) {
-                    val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
+            if (context.configuration.validateWithParser) {
+                val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
 
-                    if (parsedSchema.messages.isNotEmpty()) {
-                        context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
-                    }
-
-                    parsedSchema.messages.forEach {
-                        context.env.messager.printMessage(WARNING, it)
-                    }
+                if (parsedSchema.messages.isNotEmpty()) {
+                    context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
                 }
 
-                resourceName
+                parsedSchema.messages.forEach { message ->
+                    context.env.messager.printMessage(WARNING, message)
+                }
             }
-            .joinToString(separator = "\n")
-            .let { context.env.filer.saveResource(context, "openapi-plugin/.index", it) }
+
+            resourceNames.add(resourceName)
+        }
+
+        context.env.filer.saveResource(context, "openapi-plugin/.index", resourceNames.joinToString(separator = "\n"))
     }
 
 }

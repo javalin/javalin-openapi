@@ -49,15 +49,12 @@ class RepeatableAnnotationProjection(
     override val simpleName: String,
     override val values: Map<String, Any?>,
 ) : AnnotationProjection {
-    private companion object {
-        val EMPTY: AnnotationSet = object : AnnotationSet {
-            override fun all(): List<AnnotationProjection> = emptyList()
-            override fun find(type: Class<out Annotation>): AnnotationProjection? = null
-            override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> = emptyList()
-            override fun contains(simpleName: String): Boolean = false
-        }
-    }
+    override val metadata: AnnotationSet = EmptyAnnotationSet
+}
 
-    override val metadata: AnnotationSet
-        get() = EMPTY
+private object EmptyAnnotationSet : AnnotationSet {
+    override fun all(): List<AnnotationProjection> = emptyList()
+    override fun find(type: Class<out Annotation>): AnnotationProjection? = null
+    override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> = emptyList()
+    override fun contains(simpleName: String): Boolean = false
 }
