@@ -9,8 +9,10 @@ import javax.lang.model.element.Element
 class JsonSchemaGenerator {
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val elements = roundEnvironment.getElementsAnnotatedWith(JsonSchema::class.java)
-            .filter { it.getAnnotation(JsonSchema::class.java)!!.generateResource }
+        val elements =
+            roundEnvironment
+                .getElementsAnnotatedWith(JsonSchema::class.java)
+                .filter { it.getAnnotation(JsonSchema::class.java)!!.generateResource }
 
         for (element in elements) {
             context.env.filer.saveResource(context, "json-schemes/$element", generate(element))

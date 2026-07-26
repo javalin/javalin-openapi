@@ -14,6 +14,7 @@ import io.javalin.openapi.OpenID
 import io.javalin.openapi.Security
 import io.javalin.openapi.SecurityScheme
 import io.javalin.openapi.experimental.OpenApiType
+import io.javalin.openapi.experimental.mergeExtraFrom
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
@@ -31,8 +32,8 @@ class OpenApiSchemaBuilder {
     private val componentSchemas = createObjectNode()
     internal val componentReferences = mutableMapOf<String, OpenApiType>()
 
-    private val refCollector: (Set<OpenApiType>) -> Unit = { refs ->
-        componentReferences.putAll(refs.associateBy { it.fullName })
+    private val refCollector: (Set<OpenApiType>) -> Unit = { references ->
+        references.forEach { reference -> mergeComponentReference(reference) }
     }
 
     fun openApiVersion(version: String): OpenApiSchemaBuilder =
@@ -44,13 +45,23 @@ class OpenApiSchemaBuilder {
         apply {
             val infoJson = jsonMapper.convertValue(OpenApiInfo().also { configure.accept(it) }, JsonNode::class.java)
             val existingInfo = root.get("info")
-            val updatedInfo: JsonNode =
-                when {
-                    existingInfo != null -> jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
-                    else -> infoJson
-                }
+            val updatedInfo: JsonNode = when {
+                existingInfo != null -> jsonMapper.readerForUpdating(existingInfo).readValue(infoJson)
+                else -> infoJson
+            }
             root.set<JsonNode>("info", updatedInfo)
         }
+
+    fun ensureInfo(title: String = "", version: String = ""): OpenApiSchemaBuilder = apply {
+        val info = root.get("info") as? ObjectNode
+            ?: createObjectNode().also { root.set<JsonNode>("info", it) }
+        if (!info.has("title")) {
+            info.put("title", title)
+        }
+        if (!info.has("version")) {
+            info.put("version", version)
+        }
+    }
 
     fun server(configure: Consumer<OpenApiServer>): OpenApiSchemaBuilder =
         apply {
@@ -131,11 +142,7 @@ class OpenApiSchemaBuilder {
             val security = Security(name = name).also { configure.accept(it) }
             val securityArray = root.get("security") as? ArrayNode
                 ?: createArrayNode().also { root.set<JsonNode>("security", it) }
-            val entry = createObjectNode()
-            val scopes = createArrayNode()
-            security.scopes.forEach { scopes.add(it) }
-            entry.set<JsonNode>(security.name, scopes)
-            securityArray.add(entry)
+            securityArray.addSecurityRequirement(security.name, security.scopes)
         }
 
     fun path(path: String): PathItemBuilder {
@@ -180,7 +187,11 @@ class OpenApiSchemaBuilder {
                 }
 
                 val (json, references) = resolver.resolve(componentReference)
-                componentReferences.putAll(references.associateBy { it.fullName })
+                references.forEach { reference ->
+                    if (mergeComponentReference(reference)) {
+                        generatedComponents.remove(reference.fullName)
+                    }
+                }
                 generatedComponents[name] = componentReference to json
             }
         }
@@ -204,6 +215,15 @@ class OpenApiSchemaBuilder {
             }
         }
     }
+
+    private fun mergeComponentReference(reference: OpenApiType): Boolean =
+        when (val existing = componentReferences[reference.fullName]) {
+            null -> {
+                componentReferences[reference.fullName] = reference
+                false
+            }
+            else -> existing.mergeExtraFrom(reference)
+        }
 
     private fun buildRoot(): ObjectNode {
         root.set<JsonNode>("paths", paths)
@@ -271,8 +291,7 @@ class SchemaBuilder {
     fun ref(ref: String): SchemaBuilder =
         apply { schema.put($$"$ref", ref) }
 
-    internal fun build(): ObjectNode =
-        schema
+    internal fun build(): ObjectNode = schema
 }
 
 @OpenApiSchemaDsl
@@ -316,12 +335,11 @@ class OperationBuilder(
     }
 
     fun tags(vararg tags: String) {
-        tagsArray = createArrayNode()
-        tags.forEach { tagsArray.add(it) }
+        tags(tags.asList())
     }
 
     fun tags(tags: Collection<String>) {
-        tagsArray = createArrayNode()
+        this.tagsArray = createArrayNode()
         tags.forEach { tagsArray.add(it) }
     }
 
@@ -338,7 +356,7 @@ class OperationBuilder(
     }
 
     fun deprecated(value: Boolean) {
-        deprecatedValue = value
+        this.deprecatedValue = value
     }
 
     fun addTag(tag: String) {
@@ -352,7 +370,7 @@ class OperationBuilder(
     fun parameters(configure: ParametersBuilder.() -> Unit) {
         val builder = ParametersBuilder(refCollector = refCollector, existing = parametersArray)
         builder.configure()
-        parametersArray = builder.build()
+        this.parametersArray = builder.build()
     }
 
     fun requestBody(configure: RequestBodyBuilder.() -> Unit) {
@@ -360,14 +378,14 @@ class OperationBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            requestBodyObject = built
+            this.requestBodyObject = built
         }
     }
 
     fun responses(configure: ResponsesBuilder.() -> Unit) {
         val builder = ResponsesBuilder(refCollector = refCollector, existing = responsesObject)
         builder.configure()
-        responsesObject = builder.build()
+        this.responsesObject = builder.build()
     }
 
     fun callbacks(configure: CallbacksBuilder.() -> Unit) {
@@ -375,14 +393,14 @@ class OperationBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            callbacksObject = built
+            this.callbacksObject = built
         }
     }
 
     fun security(configure: SecurityBuilder.() -> Unit) {
         val builder = SecurityBuilder(securityArray)
         builder.configure()
-        securityArray = builder.build()
+        this.securityArray = builder.build()
     }
 
     fun parameters(configure: Consumer<ParametersBuilder>) =
@@ -403,7 +421,6 @@ class OperationBuilder(
             result.set<JsonNode>("tags", tagsArray)
         }
 
-        // Copy properties set directly on operation (summary, description, operationId)
         for (entry in operation.properties()) {
             result.set<JsonNode>(entry.key, entry.value)
         }
@@ -469,7 +486,6 @@ class ParametersBuilder(
             param.put("example", example)
         }
 
-        // Replace existing parameter with same name+in, or append
         val existingIndex = (0 until parameters.size()).firstOrNull { i ->
             val existing = parameters.get(i) as? ObjectNode
             existing?.get("name")?.asText() == name && existing?.get("in")?.asText() == location
@@ -525,8 +541,7 @@ class ParametersBuilder(
             example = example,
         ) { schema.accept(this) }
 
-    internal fun build(): ArrayNode =
-        parameters
+    internal fun build(): ArrayNode = parameters
 }
 
 @OpenApiSchemaDsl
@@ -554,7 +569,7 @@ class RequestBodyBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            contentObject = built
+            this.contentObject = built
         }
     }
 
@@ -564,20 +579,16 @@ class RequestBodyBuilder(
     internal fun build(): ObjectNode {
         val result = createObjectNode()
 
-        // description first
         if (requestBody.has("description")) {
             result.set<JsonNode>("description", requestBody.get("description"))
         }
 
-        // then content
         contentObject?.let { result.set<JsonNode>("content", it) }
 
-        // If no content and no description, return empty (will be skipped by caller)
         if (result.size() == 0) {
             return result
         }
 
-        // required is only added when there's already description or content
         if (requestBody.has("required")) {
             result.set<JsonNode>("required", requestBody.get("required"))
         }
@@ -604,8 +615,7 @@ class ContentBuilder(
     fun mediaType(mimeType: String, configure: Consumer<MediaTypeBuilder>) =
         mediaType(mimeType) { configure.accept(this) }
 
-    internal fun build(): ObjectNode =
-        content
+    internal fun build(): ObjectNode = content
 }
 
 interface ExampleHolder {
@@ -626,11 +636,11 @@ class MediaTypeBuilder(
 
     fun schema(resolved: ResultScheme) {
         refCollector(resolved.references)
-        schemaObject = resolved.json
+        this.schemaObject = resolved.json
     }
 
     fun schema(configure: SchemaBuilder.() -> Unit) {
-        schemaObject = SchemaBuilder().apply(configure).build()
+        this.schemaObject = SchemaBuilder().apply(configure).build()
     }
 
     fun schema(configure: Consumer<SchemaBuilder>) =
@@ -639,7 +649,7 @@ class MediaTypeBuilder(
     fun objectSchema(configure: ObjectSchemaBuilder.() -> Unit) {
         val builder = ObjectSchemaBuilder(refCollector)
         builder.configure()
-        schemaObject = builder.build()
+        this.schemaObject = builder.build()
     }
 
     fun objectSchema(configure: Consumer<ObjectSchemaBuilder>) =
@@ -729,11 +739,11 @@ class ObjectSchemaBuilder(
 
     fun additionalProperties(schema: ResultScheme) {
         refCollector(schema.references)
-        additionalPropertiesObject = schema.json
+        this.additionalPropertiesObject = schema.json
     }
 
     fun additionalProperties(schema: SchemaBuilder.() -> Unit) {
-        additionalPropertiesObject = SchemaBuilder().apply(schema).build()
+        this.additionalPropertiesObject = SchemaBuilder().apply(schema).build()
     }
 
     fun additionalProperties(schema: Consumer<SchemaBuilder>) =
@@ -743,17 +753,17 @@ class ObjectSchemaBuilder(
         val schema = createObjectNode()
         type?.let { schema.put("type", it) }
         format?.let { schema.put("format", it) }
-        additionalPropertiesObject = schema
+        this.additionalPropertiesObject = schema
     }
 
     override fun example(value: String) {
-        exampleValue = value
-        exampleJsonValue = null
+        this.exampleValue = value
+        this.exampleJsonValue = null
     }
 
     override fun exampleJson(value: JsonNode) {
-        exampleJsonValue = value
-        exampleValue = null
+        this.exampleJsonValue = value
+        this.exampleValue = null
     }
 
     internal fun build(): ObjectNode {
@@ -793,8 +803,7 @@ class ResponsesBuilder(
     fun response(status: String, configure: Consumer<ResponseBuilder>) =
         response(status) { configure.accept(this) }
 
-    internal fun build(): ObjectNode =
-        responses
+    internal fun build(): ObjectNode = responses
 }
 
 @OpenApiSchemaDsl
@@ -818,7 +827,7 @@ class ResponseBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            contentObject = built
+            this.contentObject = built
         }
     }
 
@@ -827,7 +836,7 @@ class ResponseBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            headersObject = built
+            this.headersObject = built
         }
     }
 
@@ -925,8 +934,7 @@ class HeadersBuilder(
             example = example,
         ) { schema.accept(this) }
 
-    internal fun build(): ObjectNode =
-        headers
+    internal fun build(): ObjectNode = headers
 }
 
 @OpenApiSchemaDsl
@@ -938,17 +946,15 @@ class CallbacksBuilder(
     private val callbacks = existing ?: createObjectNode()
 
     fun callback(name: String, url: String, method: String, configure: CallbackOperationBuilder.() -> Unit) {
-        val eventObject =
-            when {
-                callbacks.has(name) -> callbacks.get(name) as ObjectNode
-                else -> createObjectNode().also { callbacks.set<JsonNode>(name, it) }
-            }
+        val eventObject = when {
+            callbacks.has(name) -> callbacks.get(name) as ObjectNode
+            else -> createObjectNode().also { callbacks.set<JsonNode>(name, it) }
+        }
 
-        val urlObject =
-            when {
-                eventObject.has(url) -> eventObject.get(url) as ObjectNode
-                else -> createObjectNode().also { eventObject.set<JsonNode>(url, it) }
-            }
+        val urlObject = when {
+            eventObject.has(url) -> eventObject.get(url) as ObjectNode
+            else -> createObjectNode().also { eventObject.set<JsonNode>(url, it) }
+        }
 
         val existingOp = urlObject.get(method) as? ObjectNode
         val builder = CallbackOperationBuilder(refCollector = refCollector, existing = existingOp)
@@ -959,8 +965,7 @@ class CallbacksBuilder(
     fun callback(name: String, url: String, method: String, configure: Consumer<CallbackOperationBuilder>) =
         callback(name = name, url = url, method = method) { configure.accept(this) }
 
-    internal fun build(): ObjectNode =
-        callbacks
+    internal fun build(): ObjectNode = callbacks
 }
 
 @OpenApiSchemaDsl
@@ -994,14 +999,14 @@ class CallbackOperationBuilder(
         builder.configure()
         val built = builder.build()
         if (built.size() > 0) {
-            requestBodyObject = built
+            this.requestBodyObject = built
         }
     }
 
     fun responses(configure: ResponsesBuilder.() -> Unit) {
         val builder = ResponsesBuilder(refCollector = refCollector, existing = responsesObject)
         builder.configure()
-        responsesObject = builder.build()
+        this.responsesObject = builder.build()
     }
 
     fun requestBody(configure: Consumer<RequestBodyBuilder>) =
@@ -1029,13 +1034,16 @@ class SecurityBuilder(existing: ArrayNode? = null) {
     private val security = existing ?: createArrayNode()
 
     fun securityRequirement(name: String, vararg scopes: String) {
-        val entry = createObjectNode()
-        val scopesArray = createArrayNode()
-        scopes.forEach { scopesArray.add(it) }
-        entry.set<JsonNode>(name, scopesArray)
-        security.add(entry)
+        security.addSecurityRequirement(name, scopes.asList())
     }
 
-    internal fun build(): ArrayNode =
-        security
+    internal fun build(): ArrayNode = security
+}
+
+private fun ArrayNode.addSecurityRequirement(name: String, scopes: Iterable<String>) {
+    val entry = createObjectNode()
+    val scopesArray = createArrayNode()
+    scopes.forEach { scopesArray.add(it) }
+    entry.set<JsonNode>(name, scopesArray)
+    add(entry)
 }

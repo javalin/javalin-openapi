@@ -94,7 +94,13 @@ private fun raw(
             structureType = ARRAY,
             visitingTypeVariables = visitingTypeVariables,
         )
-        clazz.isPrimitive -> definition(erasure = clazz.kotlin.javaObjectType, generics = generics, structureType = structureType)
+        clazz.isPrimitive ->
+            definition(
+                erasure = clazz.kotlin.javaObjectType,
+                generics = generics,
+                structureType = structureType,
+                source = clazz,
+            )
         Map::class.java.isAssignableFrom(clazz) ->
             definition(
                 erasure = clazz,
@@ -139,13 +145,19 @@ private fun parameterized(
     }
 }
 
-private fun definition(erasure: Class<*>, generics: List<ClassDefinition>, structureType: StructureType): ClassDefinition =
+private fun definition(
+    erasure: Class<*>,
+    generics: List<ClassDefinition>,
+    structureType: StructureType,
+    source: Class<*> = erasure,
+): ClassDefinition =
     ReflectionClassDefinition(
         simpleName = erasure.simpleName.ifEmpty { erasure.name.substringAfterLast('.') },
         fullName = erasure.canonicalName ?: erasure.name,
         generics = generics,
         structureType = structureType,
         erasure = erasure,
+        sourceType = source,
     )
 
 private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
@@ -157,6 +169,7 @@ private class ReflectionClassDefinition(
     generics: List<ClassDefinition>,
     structureType: StructureType,
     private val erasure: Class<*>,
+    private val sourceType: Class<*>,
 ) : ClassDefinition(
     simpleName = simpleName,
     fullName = fullName,
@@ -165,7 +178,7 @@ private class ReflectionClassDefinition(
 ) {
 
     @InternalIntrospectionApi
-    override val source: Any = erasure
+    override val source: Any = sourceType
 
     override fun isEnum(): Boolean =
         erasure.isEnum

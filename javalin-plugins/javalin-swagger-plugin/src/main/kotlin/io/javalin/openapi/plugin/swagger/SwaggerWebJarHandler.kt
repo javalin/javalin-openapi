@@ -29,7 +29,8 @@ internal class SwaggerWebJarHandler(
         context.result(resource)
         context.res().characterEncoding = "UTF-8"
 
-        MimeTypes.DEFAULTS.getMimeByExtension(context.path())?.let { // Swagger returns various non-standard assets like .js.map that are not recognized
+        // Swagger returns non-standard assets such as .js.map, which Jetty does not otherwise recognize.
+        MimeTypes.DEFAULTS.getMimeByExtension(context.path())?.let {
             context.contentType(it)
         }
     }

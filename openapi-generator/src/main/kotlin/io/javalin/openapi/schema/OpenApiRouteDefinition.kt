@@ -27,11 +27,10 @@ internal data class OpenApiRouteDefinition(
     val security: List<OpenApiSecurityDefinition>,
 ) {
     val formattedPath: String
-        get() =
-            when {
-                path.startsWith("/") -> path
-                else -> "/$path"
-            }
+        get() = when {
+            path.startsWith("/") -> path
+            else -> "/$path"
+        }
 
     companion object {
         fun from(values: Map<String, Any?>): OpenApiRouteDefinition =
@@ -200,25 +199,25 @@ internal data class OpenApiContentPropertyDefinition(
     }
 }
 
-private fun Map<String, Any?>.requiredString(key: String): String = this[key] as String
+private fun Map<String, Any?>.requiredString(key: String): String = get(key) as String
 
-private fun Map<String, Any?>.requiredClassDefinition(key: String): ClassDefinition = this[key] as ClassDefinition
+private fun Map<String, Any?>.requiredClassDefinition(key: String): ClassDefinition = get(key) as ClassDefinition
 
-private fun Map<String, Any?>.string(key: String): String? = this[key] as? String
+private fun Map<String, Any?>.string(key: String): String? = get(key) as? String
 
 private fun Map<String, Any?>.text(key: String): String? = string(key)?.takeIf { it != NULL_STRING }
 
 private fun Map<String, Any?>.nonEmptyString(key: String): String? = string(key)?.takeIf { it.isNotEmpty() }
 
-private fun Map<String, Any?>.boolean(key: String): Boolean = this[key] as? Boolean ?: false
+private fun Map<String, Any?>.boolean(key: String): Boolean = get(key) as? Boolean ?: false
 
-private fun Map<String, Any?>.classDefinition(key: String): ClassDefinition? = this[key] as? ClassDefinition
+private fun Map<String, Any?>.classDefinition(key: String): ClassDefinition? = get(key) as? ClassDefinition
 
 private fun Map<String, Any?>.strings(key: String): List<String> =
-    (this[key] as? List<*>)?.filterIsInstance<String>().orEmpty()
+    (get(key) as? List<*>)?.filterIsInstance<String>().orEmpty()
 
 @Suppress("UNCHECKED_CAST")
-private fun Map<String, Any?>.child(key: String): Map<String, Any?>? = this[key] as? Map<String, Any?>
+private fun Map<String, Any?>.child(key: String): Map<String, Any?>? = get(key) as? Map<String, Any?>
 
 private fun Map<String, Any?>.maps(key: String): List<Map<String, Any?>> =
-    (this[key] as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
+    (get(key) as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()

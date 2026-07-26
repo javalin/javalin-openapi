@@ -354,7 +354,9 @@ class JapTypeIntrospector(
                 Modifier.STATIC in modifiers -> false
                 parameters.isNotEmpty() || enclosingElement.toString() == "java.lang.Object" -> false
                 returnType.kind == TypeKind.VOID -> false
-                else -> isGetterName(simpleName.toString()) || annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("OpenApiName") }
+                else ->
+                    isGetterName(simpleName.toString()) ||
+                        annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("OpenApiName") }
             }
 
         private fun Element.isInstanceField(): Boolean =

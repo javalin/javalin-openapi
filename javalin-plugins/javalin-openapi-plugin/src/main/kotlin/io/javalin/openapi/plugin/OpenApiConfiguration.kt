@@ -58,7 +58,9 @@ class OpenApiPluginConfiguration @JvmOverloads constructor(
     }
 
     /** Dynamically apply custom changes to generated OpenApi specifications */
-    fun withDefinitionConfiguration(definitionConfigurationConfigurer: BiConsumer<String, OpenApiSchemaBuilder>): OpenApiPluginConfiguration = apply {
+    fun withDefinitionConfiguration(
+        definitionConfigurationConfigurer: BiConsumer<String, OpenApiSchemaBuilder>,
+    ): OpenApiPluginConfiguration = apply {
         this.definitionConfiguration = definitionConfigurationConfigurer
     }
 

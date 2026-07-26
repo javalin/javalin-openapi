@@ -38,25 +38,32 @@ class OpenApiSymbolProcessor(
     }
 
     private fun generateJsonSchemes(resolver: Resolver, context: KspSchemaContext) {
-        val generated = mutableListOf<String>()
-        val declarations = resolver.getSymbolsWithAnnotation(JsonSchema::class.qualifiedName!!)
-            .filterIsInstance<KSClassDeclaration>()
-            .toList()
+        val generated =
+            resolver
+                .getSymbolsWithAnnotation(JsonSchema::class.qualifiedName!!)
+                .filterIsInstance<KSClassDeclaration>()
+                .mapNotNull { declaration ->
+                    val type = context.introspect(declaration.asStarProjectedType())
+                    val generateResource =
+                        context
+                            .annotationsOf(type)
+                            .find(JsonSchema::class.java)
+                            ?.get("generateResource")
+                            ?.asBoolean()
+                    if (generateResource == false) {
+                        return@mapNotNull null
+                    }
 
-        for (declaration in declarations) {
-            val type = context.introspect(declaration.asStarProjectedType())
-            val generateResource = context.annotationsOf(type)
-                .find(JsonSchema::class.java)
-                ?.get("generateResource")
-                ?.asBoolean()
-            if (generateResource == false) {
-                continue
-            }
-
-            val json = context.typeSchemaGenerator.createTypeSchema(type, inlineRefs = true).toJsonSchemaString()
-            writeResource("json-schemes/${type.fullName}", json)
-            generated.add(type.fullName)
-        }
+                    val json =
+                        context
+                            .typeSchemaGenerator
+                            .createTypeSchema(type, inlineRefs = true)
+                            .toJsonSchemaString()
+                    val resourceName = declaration.qualifiedName?.asString() ?: type.fullName
+                    writeResource("json-schemes/$resourceName", json)
+                    resourceName
+                }
+                .toList()
 
         if (generated.isNotEmpty()) {
             writeResource("json-schemes/index", generated.joinToString(separator = "\n"))
@@ -64,13 +71,17 @@ class OpenApiSymbolProcessor(
     }
 
     private fun generateOpenApiDocuments(resolver: Resolver, context: KspSchemaContext) {
-        val annotatedSymbols = resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) +
-            resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!)
-        val symbols = annotatedSymbols
-            .distinct()
-            .toList()
-        val routes = symbols
-            .flatMap { annotated -> context.annotationsOf(annotated).findAll(OpenApi::class.java).map { it.values } }
+        val routes =
+            (resolver.getSymbolsWithAnnotation(OpenApi::class.qualifiedName!!) +
+                resolver.getSymbolsWithAnnotation(OpenApis::class.qualifiedName!!))
+                .distinct()
+                .flatMap { annotated ->
+                    context
+                        .annotationsOf(annotated)
+                        .findAll(OpenApi::class.java)
+                        .map { it.values }
+                }
+                .toList()
 
         if (routes.isEmpty()) {
             return
@@ -82,12 +93,14 @@ class OpenApiSymbolProcessor(
             version = options[OPENAPI_INFO_VERSION] ?: "",
         )
 
-        val resourceNames = mutableListOf<String>()
-        for ((version, json) in generator.generateVersionedSchemas(routes)) {
-            val resourceName = "openapi-${version.replace(" ", "-")}.json"
-            writeResource("openapi-plugin/$resourceName", json)
-            resourceNames.add(resourceName)
-        }
+        val resourceNames =
+            generator
+                .generateVersionedSchemas(routes)
+                .map { (version, json) ->
+                    val resourceName = "openapi-${version.replace(" ", "-")}.json"
+                    writeResource("openapi-plugin/$resourceName", json)
+                    resourceName
+                }
 
         writeResource("openapi-plugin/.index", resourceNames.joinToString(separator = "\n"))
     }

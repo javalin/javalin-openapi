@@ -57,22 +57,24 @@ class SwaggerHandler(
         val publicSwaggerAssetsPath = "$rootPath/webjars/swagger-ui/$swaggerVersion".removedDoubledPathOperators()
         val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
 
-        val allDocumentations = versions
-            .joinToString(separator = ",\n") {
-                when (it) {
-                    is SwaggerVersionMapping.OpenApiLoader -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
-                    is SwaggerVersionMapping.Custom -> "{ name: '${it.name}', url: '${it.url}' }"
+        val allDocumentations =
+            versions
+                .joinToString(separator = ",\n") {
+                    when (it) {
+                        is SwaggerVersionMapping.OpenApiLoader -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
+                        is SwaggerVersionMapping.Custom -> "{ name: '${it.name}', url: '${it.url}' }"
+                    }
                 }
-            }
-        val allCustomStylesheets = customStylesheetFiles
-            .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
-        val allCustomJavaScripts = customJavaScriptFiles
-            .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
-        val resolvedValidatorUrl =
-            when {
-                validatorUrl != null -> "\"$validatorUrl\""
-                else -> "null"
-            }
+        val allCustomStylesheets =
+            customStylesheetFiles
+                .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
+        val allCustomJavaScripts =
+            customJavaScriptFiles
+                .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />" }
+        val resolvedValidatorUrl = when {
+            validatorUrl != null -> "\"$validatorUrl\""
+            else -> "null"
+        }
 
         @Suppress("JSUnresolvedReference")
         @Language("html")

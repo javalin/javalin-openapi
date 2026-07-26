@@ -63,16 +63,14 @@ class AnnotationProcessorContext(
     @OptIn(InternalIntrospectionApi::class)
     override fun toOpenApiType(raw: RawType): OpenApiType {
         val rawMirror = raw.source as TypeMirror
-        val mirror =
-            when {
-                rawMirror.kind.isPrimitive -> types.boxedClass(rawMirror as PrimitiveType).asType()
-                else -> rawMirror
-            }
-        val source =
-            when {
-                raw.structureType == RawStructureType.DICTIONARY -> mapType()
-                else -> types.asElement(mirror) ?: objectType()
-            }
+        val mirror = when {
+            rawMirror.kind.isPrimitive -> types.boxedClass(rawMirror as PrimitiveType).asType()
+            else -> rawMirror
+        }
+        val source = when {
+            raw.structureType == RawStructureType.DICTIONARY -> mapType()
+            else -> types.asElement(mirror) ?: objectType()
+        }
 
         return OpenApiType(
             simpleName = mirror.getSimpleName(),
@@ -138,7 +136,10 @@ class AnnotationProcessorContext(
     fun hasElement(type: TypeElement, element: Element): Boolean =
         when (element) {
             is ExecutableElement -> env.elementUtils.getAllMembers(type).let { members ->
-                members.contains(element) || members.filterIsInstance<ExecutableElement>().any { env.elementUtils.overrides(element, it, type) }
+                members.contains(element) ||
+                    members
+                        .filterIsInstance<ExecutableElement>()
+                        .any { env.elementUtils.overrides(element, it, type) }
             }
             else -> false
         }
@@ -146,10 +147,10 @@ class AnnotationProcessorContext(
     fun getFullName(mirror: TypeMirror): String {
         val element = env.typeUtils.asElement(mirror)
         val customName = element?.getAnnotation(OpenApiName::class.java)?.value
-        if (customName != null) {
-            return mirror.toString().substringBeforeLast(".") + "." + customName
+        return when {
+            customName != null -> mirror.toString().substringBeforeLast(".") + "." + customName
+            else -> element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
         }
-        return element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
     }
 
     fun TypeMirror.getSimpleName(): String =

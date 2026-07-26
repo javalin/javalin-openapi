@@ -3,6 +3,8 @@ package io.javalin.openapi.dynamic;
 import io.javalin.openapi.OpenApiNumberValidation;
 import io.javalin.openapi.OpenApiPropertyType;
 
+import java.time.Instant;
+
 public class Validated {
 
     @OpenApiNumberValidation(minimum = "1", maximum = "10")
@@ -13,5 +15,10 @@ public class Validated {
     @OpenApiPropertyType(definedBy = String.class)
     public int getRedirected() {
         return 0;
+    }
+
+    @OpenApiPropertyType(definedBy = long.class)
+    public Instant getCreatedAt() {
+        return Instant.EPOCH;
     }
 }

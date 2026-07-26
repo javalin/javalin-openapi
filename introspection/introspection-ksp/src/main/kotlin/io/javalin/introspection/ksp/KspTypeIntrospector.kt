@@ -122,9 +122,11 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
                     visitingTypeParameters = visitingTypeParameters,
                 )
             else -> {
-                val generics = type.arguments
-                    .mapNotNull { it.type?.resolve() }
-                    .map { resolve(it, visitingTypeParameters = visitingTypeParameters) }
+                val generics =
+                    type
+                        .arguments
+                        .mapNotNull { it.type?.resolve() }
+                        .map { resolve(it, visitingTypeParameters = visitingTypeParameters) }
                 definition(type = type, structureType = structureType, generics = generics)
             }
         }
@@ -239,9 +241,10 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
 
         override fun findAll(type: Class<out Annotation>): List<AnnotationProjection> {
             val annotations = annotations()
-            val direct = annotations
-                .filter { it.named(type) }
-                .map { KspAnnotationProjection(it) }
+            val direct =
+                annotations
+                    .filter { it.named(type) }
+                    .map { KspAnnotationProjection(it) }
 
             val containerName = type.getAnnotation(JavaRepeatable::class.java)?.value?.java?.canonicalName
             val repeated = containerName

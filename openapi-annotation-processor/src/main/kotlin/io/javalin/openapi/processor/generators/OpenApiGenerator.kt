@@ -20,35 +20,47 @@ internal class OpenApiGenerator {
     )
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val routeElements = listOf(
-            roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java),
-            roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java),
-        ).flatten()
-        val routes = routeElements
-            .flatMap { element -> context.annotationsOf(element).findAll(OpenApi::class.java).map { it.values } }
-
-        val resourceNames = mutableListOf<String>()
-        for ((version, generatedOpenApiSchema) in schemaGenerator.generateVersionedSchemas(routes)) {
-            val resourceName = "openapi-${version.replace(" ", "-")}.json"
-            val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
-                ?.toUri()
-                ?.toString()
-                ?: return
-
-            if (context.configuration.validateWithParser) {
-                val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
-
-                if (parsedSchema.messages.isNotEmpty()) {
-                    context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+        val routes =
+            listOf(
+                roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java),
+                roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java),
+            )
+                .flatten()
+                .flatMap { element ->
+                    context
+                        .annotationsOf(element)
+                        .findAll(OpenApi::class.java)
+                        .map { it.values }
                 }
 
-                parsedSchema.messages.forEach { message ->
-                    context.env.messager.printMessage(WARNING, message)
-                }
-            }
+        val resourceNames =
+            schemaGenerator
+                .generateVersionedSchemas(routes)
+                .map { (version, generatedOpenApiSchema) ->
+                    val resourceName = "openapi-${version.replace(" ", "-")}.json"
+                    val resource =
+                        context
+                            .env
+                            .filer
+                            .saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
+                            ?.toUri()
+                            ?.toString()
+                        ?: return
 
-            resourceNames.add(resourceName)
-        }
+                    if (context.configuration.validateWithParser) {
+                        val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
+
+                        if (parsedSchema.messages.isNotEmpty()) {
+                            context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+                        }
+
+                        parsedSchema.messages.forEach { message ->
+                            context.env.messager.printMessage(WARNING, message)
+                        }
+                    }
+
+                    resourceName
+                }
 
         context.env.filer.saveResource(context, "openapi-plugin/.index", resourceNames.joinToString(separator = "\n"))
     }

@@ -43,13 +43,15 @@ private fun compositionOf(
 
 private fun discriminatorInfo(context: SchemaGenerationContext, discriminator: Map<*, *>): DiscriminatorInfo {
     val property = discriminator["property"] as Map<*, *>
-    val mapping = (discriminator["mapping"] as? List<*>).orEmpty()
-        .filterIsInstance<Map<*, *>>()
-        .map { entry ->
-            val name = entry["name"] as String
-            val type = entry["value"] as RawType
-            name to context.toOpenApiType(type)
-        }
+    val mapping =
+        (discriminator["mapping"] as? List<*>)
+            .orEmpty()
+            .filterIsInstance<Map<*, *>>()
+            .map { entry ->
+                val name = entry["name"] as String
+                val type = entry["value"] as RawType
+                name to context.toOpenApiType(type)
+            }
     return DiscriminatorInfo(
         propertyName = property["name"] as String,
         propertyType = context.toOpenApiType(property["type"] as RawType),
@@ -81,12 +83,12 @@ fun ObjectNode.createComposition(
                 inlineRefs = true,
                 requireNonNullsByDefault = requiresNonNulls,
             )
-            references.addAll(result.references)
+            result.references.forEach { references.addReference(it) }
             compositionValues.add(result.json)
         }
     } else {
         for (ref in refs) {
-            references.add(ref)
+            references.addReference(ref)
             compositionValues.add(createJsonObjectOf($$"$ref", "#/components/schemas/${ref.simpleName}"))
         }
     }
@@ -113,7 +115,7 @@ fun ObjectNode.createComposition(
     }
 
     if (mapping.isNotEmpty()) {
-        mapping.forEach { (_, mappedClass) -> references.add(mappedClass) }
+        mapping.forEach { (_, mappedClass) -> references.addReference(mappedClass) }
         val mappings = mapping.associate { (name, mappedClass) ->
             name to "#/components/schemas/${mappedClass.simpleName}"
         }

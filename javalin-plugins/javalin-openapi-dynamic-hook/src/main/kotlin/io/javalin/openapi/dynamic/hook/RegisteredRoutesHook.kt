@@ -12,7 +12,7 @@ class RegisteredRoutesHookConfiguration {
     private val ignoredPathPrefixes = linkedSetOf<String>()
 
     fun clearDefaultIgnoredRoutes(): RegisteredRoutesHookConfiguration = apply {
-        ignoreDefaultRoutes = false
+        this.ignoreDefaultRoutes = false
     }
 
     fun withIgnoredPathPrefix(prefix: String): RegisteredRoutesHookConfiguration =
@@ -46,7 +46,7 @@ class RegisteredRoutesHook @JvmOverloads constructor(
 
     override fun apply(context: OpenApiHookContext) {
         val schemaContext = ReflectionSchemaContext() // document-scoped: owns the generator + its memo cache
-        context.builder.openApiVersion("3.1.0")
+        context.builder.openApiVersion("3.1.0").ensureInfo()
 
         for (handler in context.state.internalRouter.allHttpHandlers()) {
             val endpoint = handler.endpoint

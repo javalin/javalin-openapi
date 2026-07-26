@@ -1,6 +1,7 @@
 package io.javalin.openapi.schema
 
 import com.fasterxml.jackson.databind.JsonNode
+import io.javalin.openapi.experimental.CustomProperty
 import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.processor.generators.ResultScheme
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
@@ -44,6 +45,19 @@ internal class OpenApiSchemaBuilderTest {
 
             assertThatJson(json).inPath("$.info").isObject
                 .containsEntry("title", "API")
+        }
+
+        @Test
+        fun `should fill missing required info fields`() {
+            val json = OpenApiSchemaBuilder()
+                .openApiVersion("3.1.0")
+                .info { it.title("API") }
+                .ensureInfo(version = "1.0")
+                .toJson()
+
+            assertThatJson(json)
+                .inPath("$.info")
+                .isEqualTo(json("""{ "title": "API", "version": "1.0" }"""))
         }
 
         @Test
@@ -742,6 +756,29 @@ internal class OpenApiSchemaBuilderTest {
                 .containsEntry("type", "object")
             assertThatJson(schema.toJson()).inPath("$.components.schemas.Address.properties.street").isObject
                 .containsEntry("type", "string")
+        }
+
+        @Test
+        fun `should retain metadata when a matching reference is collected later`() {
+            val string = OpenApiType(simpleName = "String", fullName = "java.lang.String")
+            val discriminator = CustomProperty(name = "type", type = string)
+            val withMetadata = OpenApiType(
+                simpleName = "Circle",
+                fullName = "com.example.Circle",
+                extra = mutableListOf(discriminator),
+            )
+            val withoutMetadata = OpenApiType(
+                simpleName = "Circle",
+                fullName = "com.example.Circle",
+            )
+            val schema = builder()
+
+            schema.addComponentSchema("First", ResultScheme(createObjectNode(), setOf(withMetadata)))
+            schema.addComponentSchema("Second", ResultScheme(createObjectNode(), setOf(withoutMetadata)))
+            schema.resolveComponentReferences { type ->
+                check(type.extra.contains(discriminator))
+                ResultScheme(createObjectNode(), emptySet())
+            }
         }
 
         @Test

@@ -16,10 +16,10 @@ data class ExampleProperty(
 
 fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
     ExampleProperty(
-        name = (this["name"] as? String)?.takeIf { it != NULL_STRING },
-        value = (this["value"] as? String)?.takeIf { it != NULL_STRING },
-        raw = (this["raw"] as? String)?.takeIf { it != NULL_STRING },
-        objects = (this["objects"] as? List<*>)
+        name = (get("name") as? String)?.takeIf { it != NULL_STRING },
+        value = (get("value") as? String)?.takeIf { it != NULL_STRING },
+        raw = (get("raw") as? String)?.takeIf { it != NULL_STRING },
+        objects = (get("objects") as? List<*>)
             ?.filterIsInstance<Map<String, Any?>>()
             ?.map { it.toExampleProperty() }
             ?.takeIf { it.isNotEmpty() },
@@ -57,15 +57,15 @@ object ExampleGenerator {
 
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
-            this.value != null -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects)
-            this.raw != null -> GeneratorResult(null, jsonMapper.readTree(this.raw))
+            value != null -> GeneratorResult(value, null)
+            objects?.isNotEmpty() == true -> generateFromExamples(objects)
+            raw != null -> GeneratorResult(null, jsonMapper.readTree(raw))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
 
     private fun List<ExampleProperty>.toJsonObject(): ObjectNode {
         val jsonObject = createObjectNode()
-        this.forEach {
+        forEach {
             val result = it.toSimpleExampleValue()
             if (it.name == null) {
                 throw IllegalArgumentException("Example object must have a name ($it)")

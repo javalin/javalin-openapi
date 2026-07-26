@@ -9,11 +9,13 @@ import io.javalin.openapi.OpenApiPluginRouteHandler
 internal class OpenApiHandler(private val documentation: Lazy<Map<String, String>>) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
+        val version = context.queryParamMap()["v"]?.firstOrNull() ?: "default"
+
         context
             .header(Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
             .header(Header.ACCESS_CONTROL_ALLOW_METHODS, "GET")
             .contentType(ContentType.JSON)
-            .result(documentation.value[context.queryParamMap()["v"]?.firstOrNull() ?: "default"] ?: "{}")
+            .result(documentation.value[version] ?: "{}")
     }
 
 }

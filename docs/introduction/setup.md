@@ -90,7 +90,7 @@ ksp {
 }
 ```
 
-```xml [Maven]
+```xml [Maven (Java)]
 <dependencies>
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
@@ -125,6 +125,74 @@ ksp {
                     </path>
                 </annotationProcessorPaths>
             </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+```xml [Maven (Kotlin)]
+<properties>
+    <kotlin.version>2.1.0</kotlin.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-openapi-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+    <!-- Optional: Swagger UI -->
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-swagger-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+    <!-- Optional: ReDoc -->
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-redoc-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>kapt</id>
+                    <goals>
+                        <goal>kapt</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                        </sourceDirs>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>io.javalin.community.openapi</groupId>
+                                <artifactId>openapi-annotation-processor</artifactId>
+                                <version>7.3.0-RC.1</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 </build>

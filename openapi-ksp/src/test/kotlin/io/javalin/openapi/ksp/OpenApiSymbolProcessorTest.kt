@@ -105,7 +105,7 @@ class OpenApiSymbolProcessorTest {
                 import io.javalin.openapi.OpenApiResponse
                 import io.javalin.openapi.OpenApiStatus
 
-                @OneOf(discriminator = Discriminator(property = DiscriminatorProperty(name = "type")))
+                @OneOf(discriminator = Discriminator(property = DiscriminatorProperty(name = "type", type = String::class, injectInMappings = true)))
                 sealed interface Shape
 
                 @DiscriminatorMappingName("circle")
@@ -114,11 +114,13 @@ class OpenApiSymbolProcessorTest {
                 @DiscriminatorMappingName("square")
                 data class Square(val side: Int) : Shape
 
+                data class ShapeEnvelope(val direct: Circle, val shape: Shape)
+
                 class Shapes {
                     @OpenApi(
                         path = "/shape",
                         methods = [HttpMethod.GET],
-                        responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = Shape::class)])]
+                        responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = ShapeEnvelope::class)])]
                     )
                     fun shape() {}
                 }
@@ -138,6 +140,73 @@ class OpenApiSymbolProcessorTest {
         assertThat(shape.path("discriminator").path("propertyName").asText()).isEqualTo("type")
         assertThat(shape.path("discriminator").path("mapping").path("circle").asText()).isEqualTo("#/components/schemas/Circle")
         assertThat(shape.path("discriminator").path("mapping").path("square").asText()).isEqualTo("#/components/schemas/Square")
+        assertThat(
+            compilation.generatedJson("openapi-default.json")
+                .path("components")
+                .path("schemas")
+                .path("Circle")
+                .path("properties")
+                .path("type")
+                .path("type")
+                .asText()
+        ).isEqualTo("string")
+    }
+
+    @Test
+    fun `uses source names for JsonSchema resources when OpenApiName overrides the schema name`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "Renamed.kt",
+                """
+                package app
+                import io.javalin.openapi.JsonSchema
+                import io.javalin.openapi.OpenApiName
+
+                @JsonSchema
+                @OpenApiName("Renamed")
+                class Original(val value: String)
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        assertThat(compilation.generatedJson("app.Original").path("properties").has("value")).isTrue()
+        assertThat(compilation.generatedFile("index").readText()).isEqualTo("app.Original")
+    }
+
+    @Test
+    fun `keeps primitive redirects required`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "Redirect.kt",
+                """
+                package app
+                import io.javalin.openapi.HttpMethod
+                import io.javalin.openapi.OpenApi
+                import io.javalin.openapi.OpenApiContent
+                import io.javalin.openapi.OpenApiPropertyType
+                import io.javalin.openapi.OpenApiResponse
+                import io.javalin.openapi.OpenApiStatus
+                import java.time.Instant
+
+                class Redirect(@get:OpenApiPropertyType(definedBy = Long::class) val createdAt: Instant)
+
+                class Routes {
+                    @OpenApi(
+                        path = "/redirect",
+                        methods = [HttpMethod.GET],
+                        responses = [OpenApiResponse(status = OpenApiStatus.OK, content = [OpenApiContent(from = Redirect::class)])]
+                    )
+                    fun redirect() {}
+                }
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val redirect = compilation.generatedJson("openapi-default.json").path("components").path("schemas").path("Redirect")
+        assertThat(redirect.path("properties").path("createdAt").path("type").asText()).isEqualTo("integer")
+        assertThat(redirect.path("required").map { it.asText() }).contains("createdAt")
     }
 
     @Test

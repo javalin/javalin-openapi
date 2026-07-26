@@ -23,9 +23,9 @@ class OpenApiType(
         when {
             this === other -> true
             other is OpenApiType ->
-                this.fullName == other.fullName
-                    && this.generics == other.generics
-                    && this.structureType == other.structureType
+                fullName == other.fullName
+                    && generics == other.generics
+                    && structureType == other.structureType
             else -> false
         }
 
@@ -52,7 +52,15 @@ enum class StructureType {
 
 interface Extra
 
-class CustomProperty(
+data class CustomProperty(
     val name: String,
     val type: OpenApiType,
 ) : Extra
+
+internal fun OpenApiType.mergeExtraFrom(other: OpenApiType): Boolean {
+    val missingExtra = other.extra.filterNot(extra::contains)
+    if (missingExtra.isEmpty()) return false
+
+    extra.addAll(missingExtra)
+    return true
+}

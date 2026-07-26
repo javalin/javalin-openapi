@@ -119,7 +119,7 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                         )
                     }
                     propertiesObject.set<JsonNode>(property.name, result.json)
-                    references.addAll(result.references)
+                    result.references.forEach { references.addReference(it) }
                 }
 
                 if (properties.any { it.required }) {
@@ -247,10 +247,10 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                             requireNonNullsByDefault = requiresNonNulls,
                         )
                         subScheme.properties().forEach { (key, value) -> scheme.set<JsonNode>(key, value) }
-                        references.addAll(subReferences)
+                        subReferences.forEach { references.addReference(it) }
                     }
                     else -> {
-                        references.add(type)
+                        references.addReference(type)
                         scheme.put($$"$ref", "#/components/schemas/${type.simpleName}")
                     }
                 }
@@ -271,7 +271,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
     val byFieldsVisibility = byFields?.get("value")?.asString()?.let { Visibility.valueOf(it) }
     val namingStrategy = annotations.namingStrategy()
 
-    val properties = mutableListOf<Property>()
+    val declaredProperties = mutableListOf<Property>()
 
     for (property in propertiesOf(type)) {
         if (!acceptsProperty(type, property)) continue
@@ -286,11 +286,10 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
 
         val customName = property.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
         val name = customName ?: property.name
-        val finalName =
-            when {
-                customName == null && namingStrategy != null -> translatePropertyName(namingStrategy, name)
-                else -> name
-            }
+        val finalName = when {
+            customName == null && namingStrategy != null -> translatePropertyName(namingStrategy, name)
+            else -> name
+        }
 
         val propertyType = property.annotations.find(OpenApiPropertyType::class.java)
         val nullability = propertyType?.get("nullability")?.asString()
@@ -315,7 +314,7 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
             else -> false
         }
 
-        properties.add(
+        declaredProperties.add(
             Property(
                 name = finalName,
                 type = toOpenApiType(redirect ?: property.type),
@@ -327,17 +326,18 @@ internal fun SchemaGenerationContext.findAllProperties(type: OpenApiType, requir
         )
     }
 
-    type.extra
-        .filterIsInstance<CustomProperty>()
-        .forEach { extraProperty ->
-            properties.add(
+    val customProperties =
+        type
+            .extra
+            .filterIsInstance<CustomProperty>()
+            .map { extraProperty ->
                 Property(
                     name = extraProperty.name,
                     type = extraProperty.type,
                     required = requireNonNulls,
                 )
-            )
-        }
+            }
+    val properties = declaredProperties + customProperties
 
     reportDebug("OpenApi | Resolved ${properties.size} properties for ${type.fullName}: ${properties.joinToString { it.name }}")
 
@@ -415,7 +415,11 @@ private fun MemberVisibility.toOpenApi(): Visibility =
 private fun AnnotationValue.notNullString(): String? =
     asString()?.takeIf { it != NULL_STRING }
 
-private val primitiveSourceNames = setOf("boolean", "byte", "short", "int", "long", "float", "double", "char")
+private val primitiveSourceNames = setOf(
+    "boolean", "byte", "short", "int", "long", "float", "double", "char",
+    "Boolean", "Byte", "Short", "Int", "Long", "Float", "Double", "Char",
+    "kotlin.Boolean", "kotlin.Byte", "kotlin.Short", "kotlin.Int", "kotlin.Long", "kotlin.Float", "kotlin.Double", "kotlin.Char",
+)
 
 @OptIn(InternalIntrospectionApi::class)
 private fun RawType.hasPrimitiveSource(): Boolean =

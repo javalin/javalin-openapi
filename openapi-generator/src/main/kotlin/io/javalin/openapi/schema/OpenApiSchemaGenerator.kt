@@ -202,11 +202,12 @@ class OpenApiSchemaGenerator(
         val path = route.path.split('/').joinToString(separator = "") { pathPart ->
             when {
                 pathPart.startsWith('{') || pathPart.startsWith('<') -> {
-                    val parameterName = pathPart
-                        .drop(1)
-                        .dropLast(1)
-                        .split('-')
-                        .joinToString(separator = "") { it.capitalise() }
+                    val parameterName =
+                        pathPart
+                            .drop(1)
+                            .dropLast(1)
+                            .split('-')
+                            .joinToString(separator = "") { it.capitalise() }
                     pathParamPrefix + parameterName
                 }
                 else -> {
@@ -219,7 +220,7 @@ class OpenApiSchemaGenerator(
         return method.lowercase() + path
     }
 
-    private fun String.capitalise(): String = this.replaceFirstChar {
+    private fun String.capitalise(): String = replaceFirstChar {
         it.titlecase(Locale.getDefault())
     }
 
@@ -316,9 +317,13 @@ class OpenApiSchemaGenerator(
 
     private fun detectContentType(from: ClassDefinition): String {
         val model = context.toOpenApiType(from)
+        val isBinary =
+            (model.structureType == ARRAY && model.simpleName == "Byte") ||
+                model.simpleName == "[B" ||
+                model.simpleName == "File"
 
         return when {
-            (model.structureType == ARRAY && model.simpleName == "Byte") || model.simpleName == "[B" || model.simpleName == "File" -> "application/octet-stream"
+            isBinary -> "application/octet-stream"
             model.structureType == ARRAY -> "application/json"
             model.simpleName == "String" -> "text/plain"
             else -> "application/json"
@@ -330,8 +335,7 @@ class OpenApiSchemaGenerator(
         return context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
     }
 
-    private fun descriptionOf(response: OpenApiResponseDefinition): String =
-        response.description
+    private fun descriptionOf(response: OpenApiResponseDefinition): String = response.description
             ?: defaultStatusDescription(response.status)
             ?: ""
 

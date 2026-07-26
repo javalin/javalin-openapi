@@ -25,8 +25,11 @@ class DynamicOpenApiHookTest {
 
         try {
             val body = Unirest.get("http://localhost:${app.port()}/openapi").asString().body
-            val paths = jsonMapper.readTree(body).path("paths")
+            val document = jsonMapper.readTree(body)
+            val paths = document.path("paths")
 
+            assertThat(document.path("info").has("title")).isTrue()
+            assertThat(document.path("info").has("version")).isTrue()
             assertThat(paths.has("/openapi")).isFalse()
             assertThat(paths.path("/users").has("get")).isTrue()
             assertThat(paths.path("/users").has("post")).isTrue()

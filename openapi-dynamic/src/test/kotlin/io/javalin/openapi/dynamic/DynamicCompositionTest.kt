@@ -11,6 +11,9 @@ class DynamicCompositionTest {
     private fun propertiesOf(type: Class<*>): JsonNode =
         schemaContext.componentSchema(schemaContext.introspect(type)).json.path("properties")
 
+    private fun schemaOf(type: Class<*>): JsonNode =
+        schemaContext.componentSchema(schemaContext.introspect(type)).json
+
     @Test
     fun `emits oneOf with refs for composition annotations`() {
         val refs = propertiesOf(Shape::class.java)
@@ -38,5 +41,13 @@ class DynamicCompositionTest {
     @Test
     fun `applies the OpenApiPropertyType redirect`() {
         assertThat(propertiesOf(Validated::class.java).path("redirected").path("type").asText()).isEqualTo("string")
+    }
+
+    @Test
+    fun `keeps primitive redirects required`() {
+        val schema = schemaOf(Validated::class.java)
+
+        assertThat(schema.path("properties").path("createdAt").path("type").asText()).isEqualTo("integer")
+        assertThat(schema.path("required").map { it.asText() }).contains("createdAt")
     }
 }

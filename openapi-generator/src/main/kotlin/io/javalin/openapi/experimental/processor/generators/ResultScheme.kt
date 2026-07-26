@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.OpenApiNamingStrategy
 import io.javalin.openapi.experimental.OpenApiType
+import io.javalin.openapi.experimental.mergeExtraFrom
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import java.math.BigDecimal
 
@@ -27,6 +28,13 @@ data class Property(
     val nullable: Boolean = false,
     val extra: Map<String, Any?> = emptyMap()
 )
+
+internal fun MutableSet<OpenApiType>.addReference(reference: OpenApiType) {
+    when (val existing = firstOrNull { it == reference }) {
+        null -> add(reference)
+        else -> existing.mergeExtraFrom(reference)
+    }
+}
 
 fun splitCamelCase(name: String): List<String> {
     val words = mutableListOf<String>()
