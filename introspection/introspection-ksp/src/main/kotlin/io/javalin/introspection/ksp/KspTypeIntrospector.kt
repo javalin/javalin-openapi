@@ -25,6 +25,7 @@ import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.MemberVisibility
+import java.lang.annotation.Inherited
 import java.lang.annotation.Repeatable as JavaRepeatable
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
@@ -229,7 +230,29 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         constructor(element: KSAnnotated?) : this(listOfNotNull(element))
 
         private fun annotations(): List<KSAnnotation> =
-            elements.flatMap { it.annotations.toList() }
+            elements.flatMap { element ->
+                element.annotations.toList() + inheritedAnnotations(element)
+            }
+
+        private fun inheritedAnnotations(element: KSAnnotated): List<KSAnnotation> {
+            val declaration = element as? KSClassDeclaration ?: return emptyList()
+            return generateSequence(declaration) { current -> current.superclass() }
+                .drop(1)
+                .flatMap { superclass -> superclass.annotations.filter { it.isInherited() }.toList() }
+                .toList()
+        }
+
+        private fun KSClassDeclaration.superclass(): KSClassDeclaration? =
+            superTypes
+                .mapNotNull { it.resolve().declaration as? KSClassDeclaration }
+                .firstOrNull { it.classKind == ClassKind.CLASS }
+
+        private fun KSAnnotation.isInherited(): Boolean =
+            annotationType
+                .resolve()
+                .declaration
+                .annotations
+                .any { it.qualifiedName() == Inherited::class.java.name }
 
         override fun contains(simpleName: String): Boolean =
             annotations().any { it.shortName.asString() == simpleName }

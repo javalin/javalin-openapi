@@ -66,6 +66,11 @@ class ReflectionSchemaContextTest {
     }
 
     @Test
+    fun `includes fluent accessors annotated with OpenApiName`() {
+        assertThat(propertyNames(FluentOpenApiNameDto::class.java)).containsExactly("age")
+    }
+
+    @Test
     fun `reads fields and honors visibility when OpenApiByFields is present`() {
         assertThat(propertyNames(FieldsDto::class.java)).containsExactly("publicField")
     }

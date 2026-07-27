@@ -89,6 +89,31 @@ class OpenApiSymbolProcessorTest {
     }
 
     @Test
+    fun `writes every repeated OpenApi route on the same declaration`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "RepeatedRoutes.kt",
+                """
+                package app
+                import io.javalin.openapi.HttpMethod
+                import io.javalin.openapi.OpenApi
+
+                class Routes {
+                    @OpenApi(path = "/first", methods = [HttpMethod.GET])
+                    @OpenApi(path = "/second", methods = [HttpMethod.POST])
+                    fun routes() {}
+                }
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val paths = compilation.generatedJson("openapi-default.json").path("paths")
+        assertThat(paths.path("/first").path("get").isMissingNode).isFalse()
+        assertThat(paths.path("/second").path("post").isMissingNode).isFalse()
+    }
+
+    @Test
     fun `auto-discovers discriminator subtypes via DiscriminatorMappingName`() {
         val (compilation, result) = compileWithKsp(
             SourceFile.kotlin(
@@ -366,6 +391,36 @@ class OpenApiSymbolProcessorTest {
             .path("value")
 
         assertThat(value.path("xDeduped").asText()).isEqualTo("property")
+    }
+
+    @Test
+    fun `inherits custom schema annotations from Kotlin superclasses`() {
+        val (compilation, result) = compileWithKsp(
+            SourceFile.kotlin(
+                "InheritedExtra.kt",
+                """
+                package app
+                import io.javalin.openapi.CustomAnnotation
+                import io.javalin.openapi.JsonSchema
+                import java.lang.annotation.Inherited
+
+                @Inherited
+                @CustomAnnotation
+                @Target(AnnotationTarget.CLASS)
+                annotation class InheritedExtra(val inherited: String)
+
+                @InheritedExtra("yes")
+                open class Parent
+
+                @JsonSchema
+                class Child(val name: String) : Parent()
+                """.trimIndent()
+            )
+        )
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KSP compilation failed: ${result.messages}" }
+
+        val child = compilation.generatedJson("app.Child")
+        assertThat(child.path("inherited").asText()).isEqualTo("yes")
     }
 
     @Test

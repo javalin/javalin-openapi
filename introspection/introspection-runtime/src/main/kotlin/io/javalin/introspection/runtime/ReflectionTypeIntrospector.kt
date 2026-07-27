@@ -240,7 +240,7 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
-        if (method.returnType == Void.TYPE || !isGetterName(method.name)) continue
+        if (method.returnType == Void.TYPE || !method.isPropertyGetter()) continue
         if (getterNames.add(method.name)) {
             members += method.toMember()
         }
@@ -290,6 +290,9 @@ private fun Method.toMember(): Member =
         sources = listOf(this),
     )
 
+private fun Method.isPropertyGetter(): Boolean =
+    isGetterName(name) || annotations.any { it.annotationClass.simpleName == "OpenApiName" }
+
 private fun visibilityOf(modifiers: Int): MemberVisibility =
     when {
         Modifier.isPublic(modifiers) -> MemberVisibility.PUBLIC
@@ -325,7 +328,7 @@ private fun nonPublicGettersHierarchy(clazz: Class<*>): List<Method> {
         for (method in current.declaredMethods) {
             val modifiers = method.modifiers
             if (Modifier.isStatic(modifiers) || Modifier.isPublic(modifiers) || method.isBridge || method.isSynthetic) continue
-            if (method.parameterCount != 0 || method.returnType == Void.TYPE || !isGetterName(method.name)) continue
+            if (method.parameterCount != 0 || method.returnType == Void.TYPE || !method.isPropertyGetter()) continue
             val inherited = when {
                 current == clazz -> true
                 Modifier.isPrivate(modifiers) -> false

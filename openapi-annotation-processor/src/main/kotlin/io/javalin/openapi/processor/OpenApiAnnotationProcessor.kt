@@ -3,6 +3,7 @@ package io.javalin.openapi.processor
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.JsonSchema
 import io.javalin.openapi.OpenApi
+import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.AnnotationProcessorContext
 import io.javalin.openapi.experimental.OPENAPI_GROOVY_SCRIPT_PATH
 import io.javalin.openapi.experimental.OPENAPI_INFO_TITLE
@@ -74,6 +75,7 @@ open class OpenApiAnnotationProcessor : AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> =
         setOf(
             OpenApi::class.qualifiedName!!,
+            OpenApis::class.qualifiedName!!,
             JsonSchema::class.qualifiedName!!,
         )
 

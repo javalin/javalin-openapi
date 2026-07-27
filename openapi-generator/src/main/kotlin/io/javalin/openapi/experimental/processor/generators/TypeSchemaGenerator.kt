@@ -17,7 +17,13 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
     // The cache helps to avoid processing the same property multiple times & prevent infinite recursion
     // ~ https://github.com/javalin/javalin-openapi/issues/230
-    private val processedProperties = mutableMapOf<Property, ResultScheme>()
+    private val processedProperties = mutableMapOf<ProcessedProperty, ResultScheme>()
+
+    private data class ProcessedProperty(
+        val property: Property,
+        val inlineRefs: Boolean,
+        val requiresNonNulls: Boolean,
+    )
 
     private fun OpenApiType.definedBy(): OpenApiType? =
         context.annotationsOf(this)
@@ -108,7 +114,12 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
                 val properties = context.findAllProperties(type, requireNonNulls)
 
                 properties.forEach { property ->
-                    val result = processedProperties.getOrPut(property) {
+                    val processedProperty = ProcessedProperty(
+                        property = property,
+                        inlineRefs = inlineRefs,
+                        requiresNonNulls = requireNonNulls,
+                    )
+                    val result = processedProperties.getOrPut(processedProperty) {
                         createEmbeddedTypeDescription(
                             type = property.type,
                             inlineRefs = inlineRefs,

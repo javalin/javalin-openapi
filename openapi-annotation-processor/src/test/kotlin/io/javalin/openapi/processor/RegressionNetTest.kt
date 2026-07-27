@@ -138,6 +138,66 @@ internal class RegressionNetTest : OpenApiAnnotationProcessorSpecification() {
             """))
     }
 
+    private class SharedNestedType(val value: String)
+
+    private class OpenApiDocumentWithSharedNestedType(val nested: SharedNestedType)
+
+    @JsonSchema
+    private class JsonSchemaDocumentWithSharedNestedType(val nested: SharedNestedType)
+
+    @OpenApi(
+        path = "/shared-nested-type",
+        versions = ["should_not_leak_openapi_references_into_json_schema"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = OpenApiDocumentWithSharedNestedType::class)])],
+    )
+    @Test
+    fun should_not_leak_openapi_references_into_json_schema() = withJsonScheme("JsonSchemaDocumentWithSharedNestedType") {
+        assertThatJson(it)
+            .inPath("$.properties.nested")
+            .isObject
+            .doesNotContainKey("${'$'}ref")
+            .containsEntry("type", "object")
+            .containsEntry("properties", json("""{ "value": { "type": "string" } }"""))
+    }
+
+    @Test
+    fun should_process_java_repeatable_open_api_annotations() {
+        val compiler = requireNotNull(ToolProvider.getSystemJavaCompiler()) { "A JDK is required (no system Java compiler)" }
+        val output = Files.createTempDirectory("openapi-repeatable")
+        val source = object : SimpleJavaFileObject(URI.create("string:///app/RepeatableRoutes.java"), JavaFileObject.Kind.SOURCE) {
+            override fun getCharContent(ignoreEncodingErrors: Boolean): CharSequence =
+                """
+                package app;
+
+                import io.javalin.openapi.HttpMethod;
+                import io.javalin.openapi.OpenApi;
+
+                class RepeatableRoutes {
+                    @OpenApi(path = "/first", methods = HttpMethod.GET)
+                    @OpenApi(path = "/second", methods = HttpMethod.POST)
+                    public void routes() {
+                    }
+                }
+                """.trimIndent()
+        }
+        val options = listOf(
+            "-classpath", System.getProperty("java.class.path"),
+            "-d", output.toString(),
+            "-s", output.resolve("generated").toString(),
+        )
+        val task = compiler.getTask(null, null, null, options, null, listOf(source))
+        task.setProcessors(listOf(OpenApiAnnotationProcessor()))
+
+        assertThat(task.call()).isTrue()
+
+        val document = Files.readString(output.resolve("openapi-plugin/openapi-default.json"))
+        assertThatJson(document).inPath("$.paths").isObject
+            .containsKey("/first")
+            .containsKey("/second")
+        assertThatJson(document).inPath("$.paths['/first']").isObject.containsKey("get")
+        assertThatJson(document).inPath("$.paths['/second']").isObject.containsKey("post")
+    }
+
     @Test
     fun should_warn_when_content_mime_type_cannot_be_resolved() {
         val compiler = requireNotNull(ToolProvider.getSystemJavaCompiler()) { "A JDK is required (no system Java compiler)" }
