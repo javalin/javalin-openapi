@@ -80,4 +80,29 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
             .isObject
     }
 
+    @OpenApi(
+        path = "/inherited-custom-annotation",
+        versions = ["should_include_inherited_custom_annotation_extras"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = InheritedExtraChild::class)])]
+    )
+    @Test
+    fun should_include_inherited_custom_annotation_extras() = withOpenApi("should_include_inherited_custom_annotation_extras") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.InheritedExtraChild")
+            .isObject
+            .containsEntry("inherited", "yes")
+    }
+
+    @OpenApi(
+        path = "/nested-custom-annotation",
+        versions = ["should_emit_nested_custom_annotation_values_as_json"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = NestedExtraDto::class)])]
+    )
+    @Test
+    fun should_emit_nested_custom_annotation_values_as_json() = withOpenApi("should_emit_nested_custom_annotation_values_as_json") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.NestedExtraDto.nested")
+            .isEqualTo(json("""{ "note": "x" }"""))
+    }
+
 }

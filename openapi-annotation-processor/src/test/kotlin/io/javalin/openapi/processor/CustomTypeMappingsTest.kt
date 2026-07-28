@@ -88,4 +88,21 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
             """))
     }
 
+    @OpenApi(
+        path = "/primitive-redirect",
+        versions = ["should_keep_primitive_redirect_required"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = PrimitiveRedirectDto::class)])]
+    )
+    @Test
+    fun should_keep_primitive_redirect_required() = withOpenApi("should_keep_primitive_redirect_required") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.PrimitiveRedirectDto.properties.createdAt")
+            .isObject
+            .isEqualTo(json("""{ "type": "integer", "format": "int64" }"""))
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.PrimitiveRedirectDto.required")
+            .isEqualTo(json("""["createdAt"]"""))
+    }
+
 }

@@ -11,7 +11,13 @@ import io.javalin.openapi.OpenApiResponse
 import io.javalin.openapi.processor.specification.OpenApiAnnotationProcessorSpecification
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.nio.file.Files
+import javax.tools.JavaFileObject
+import javax.tools.SimpleJavaFileObject
+import javax.tools.ToolProvider
 
 internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification() {
 
@@ -113,6 +119,44 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
                     }
                 }
             }"""))
+    }
+
+    @Test
+    fun should_process_java_repeatable_open_api_annotations() {
+        val compiler = requireNotNull(ToolProvider.getSystemJavaCompiler()) { "A JDK is required (no system Java compiler)" }
+        val output = Files.createTempDirectory("openapi-repeatable")
+        val source = object : SimpleJavaFileObject(URI.create("string:///app/RepeatableRoutes.java"), JavaFileObject.Kind.SOURCE) {
+            override fun getCharContent(ignoreEncodingErrors: Boolean): CharSequence =
+                """
+                package app;
+
+                import io.javalin.openapi.HttpMethod;
+                import io.javalin.openapi.OpenApi;
+
+                class RepeatableRoutes {
+                    @OpenApi(path = "/first", methods = HttpMethod.GET)
+                    @OpenApi(path = "/second", methods = HttpMethod.POST)
+                    public void routes() {
+                    }
+                }
+                """.trimIndent()
+        }
+        val options = listOf(
+            "-classpath", System.getProperty("java.class.path"),
+            "-d", output.toString(),
+            "-s", output.resolve("generated").toString(),
+        )
+        val task = compiler.getTask(null, null, null, options, null, listOf(source))
+        task.setProcessors(listOf(OpenApiAnnotationProcessor()))
+
+        assertThat(task.call()).isTrue()
+
+        val document = Files.readString(output.resolve("openapi-plugin/openapi-default.json"))
+        assertThatJson(document).inPath("$.paths").isObject
+            .containsKey("/first")
+            .containsKey("/second")
+        assertThatJson(document).inPath("$.paths['/first']").isObject.containsKey("get")
+        assertThatJson(document).inPath("$.paths['/second']").isObject.containsKey("post")
     }
 
 }

@@ -52,4 +52,31 @@ internal class PropertySelectionTest : OpenApiAnnotationProcessorSpecification()
             .containsKey("getterProperty")
     }
 
+    @OpenApi(
+        path = "/fluent-openapi-name",
+        versions = ["should_include_fluent_accessor_with_openapi_name"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = FluentOpenApiNameDto::class)])]
+    )
+    @Test
+    fun should_include_fluent_accessor_with_openapi_name() = withOpenApi("should_include_fluent_accessor_with_openapi_name") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.FluentOpenApiNameDto.properties")
+            .isObject
+            .containsKey("age")
+    }
+
+    @OpenApi(
+        path = "/record-extra-getter",
+        versions = ["should_include_record_components_and_extra_getters"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = RecordWithExtraGetter::class)])]
+    )
+    @Test
+    fun should_include_record_components_and_extra_getters() = withOpenApi("should_include_record_components_and_extra_getters") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.RecordWithExtraGetter.properties")
+            .isObject
+            .containsKey("id")
+            .containsKey("displayName")
+    }
+
 }
