@@ -733,7 +733,6 @@ internal class OpenApiSchemaBuilderTest {
                 })
             }, emptySet())
 
-            // Add a path that references Address via $ref
             schema.path("/users").operation("get") {
                 responses {
                     response("200") {
@@ -788,7 +787,6 @@ internal class OpenApiSchemaBuilderTest {
             val userDef = OpenApiType(simpleName = "User", fullName = "com.example.User")
             val addressDef = OpenApiType(simpleName = "Address", fullName = "com.example.Address")
 
-            // User references Address
             val userSchema = ResultScheme(createObjectNode().apply {
                 put("type", "object")
                 set<JsonNode>("properties", createObjectNode().apply {
@@ -916,7 +914,6 @@ internal class OpenApiSchemaBuilderTest {
                 }
             }
 
-            // A -> B -> C (chain of 3)
             val bDef = OpenApiType(simpleName = "B", fullName = "com.example.B")
             val cDef = OpenApiType(simpleName = "C", fullName = "com.example.C")
 
@@ -1544,7 +1541,6 @@ internal class OpenApiSchemaBuilderTest {
 
             val json = schema.toJson()
 
-            // Compile-time data preserved
             assertThatJson(json).inPath("$.paths['/users'].get.tags").isArray.containsExactly("users")
             assertThatJson(json).inPath("$.paths['/users'].get.summary").isEqualTo("Get users")
             assertThatJson(json).inPath("$.paths['/users'].get.operationId").isEqualTo("getUsers")
@@ -1553,7 +1549,6 @@ internal class OpenApiSchemaBuilderTest {
             assertThatJson(json).inPath("$.paths['/users'].get.responses['200'].content['application/json'].schema.\$ref")
                 .isEqualTo("#/components/schemas/User")
 
-            // Runtime additions
             assertThatJson(json).inPath("$.servers[0].url").isEqualTo("https://api.example.com")
             assertThatJson(json).inPath("$.components.securitySchemes.BearerAuth.scheme").isEqualTo("bearer")
             assertThatJson(json).inPath("$.paths['/users'].get.security[0].BearerAuth").isArray.isEmpty()

@@ -15,6 +15,12 @@ class ReflectionSchemaContextTest {
     private fun propertyNames(type: Class<*>): List<String> =
         schemaOf(type).path("properties").fieldNames().asSequence().toList()
 
+    private fun accountSchema(): JsonNode =
+        schemaOf(Account::class.java)
+
+    private fun accountProperties(): JsonNode =
+        accountSchema().path("properties")
+
     @Test
     fun `resolves a class into the shared OpenApiType model`() {
         val account = schemaContext.introspect(Account::class.java)
@@ -25,28 +31,66 @@ class ReflectionSchemaContextTest {
     }
 
     @Test
-    fun `applies renames, ignores, required flags and descriptions through the shared generator`() {
-        val account = schemaOf(Account::class.java)
-        val properties = account.path("properties")
+    fun `honors renamed account properties`() {
+        val properties = accountProperties()
 
-        assertThat(properties.fieldNames().asSequence().toList()).contains("id", "age", "name", "e_mail")
+        assertThat(properties.has("e_mail")).isTrue()
         assertThat(properties.has("email")).isFalse()
+    }
+
+    @Test
+    fun `omits ignored account properties`() {
+        val properties = accountProperties()
+
         assertThat(properties.has("secret")).isFalse()
+    }
+
+    @Test
+    fun `omits synthetic account properties`() {
+        val properties = accountProperties()
+
         assertThat(properties.has("class")).isFalse()
+    }
+
+    @Test
+    fun `marks required account properties`() {
+        val account = accountSchema()
 
         assertThat(account.path("required").map { it.asText() }).containsExactlyInAnyOrder("id", "age")
+    }
+
+    @Test
+    fun `renders account property descriptions`() {
+        val properties = accountProperties()
+
         assertThat(properties.path("label").path("description").asText()).isEqualTo("Human readable label")
     }
 
     @Test
-    fun `resolves collections, maps and nested objects`() {
-        val properties = schemaOf(Account::class.java).path("properties")
+    fun `renders collection properties`() {
+        val properties = accountProperties()
 
         assertThat(properties.path("tags").path("type").asText()).isEqualTo("array")
         assertThat(properties.path("tags").path("items").path("type").asText()).isEqualTo("string")
+    }
+
+    @Test
+    fun `renders map properties`() {
+        val properties = accountProperties()
+
         assertThat(properties.path("meta").path("type").asText()).isEqualTo("object")
         assertThat(properties.path("meta").path("additionalProperties").path("type").asText()).isEqualTo("integer")
+    }
+
+    @Test
+    fun `references nested object properties`() {
+        val properties = accountProperties()
+
         assertThat(properties.path("address").path($$"$ref").asText()).isEqualTo("#/components/schemas/Address")
+    }
+
+    @Test
+    fun `renders nested object properties`() {
 
         assertThat(propertyNames(Address::class.java)).containsExactlyInAnyOrder("city", "zip")
     }

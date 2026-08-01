@@ -29,8 +29,6 @@ import java.lang.annotation.Inherited
 import java.lang.annotation.Repeatable as JavaRepeatable
 import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
-// KSP can't materialize JVM annotation instances (annotation access is name/value only) and names builtins with
-// Kotlin FQNs (`kotlin.Int`), which `canonicalName` normalizes to their JVM equivalents to match jap/reflection.
 class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospector {
 
     private val mapType = builtin("kotlin.collections.Map")

@@ -51,9 +51,7 @@ class OpenApiPluginTest {
 
             config.registerPlugin(
                 OpenApiPlugin {
-                    it.withDefinitionConfiguration { _, _ ->
-                        /* do nothing */
-                    }
+                    it.withDefinitionConfiguration { _, _ -> }
                 }
             )
         }

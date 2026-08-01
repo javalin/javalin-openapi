@@ -14,6 +14,9 @@ class ReflectionTypeIntrospectorTest {
     private fun props(type: Class<*>): Map<String, PropertyProjection> =
         introspector.introspect(type).getProperties().associateBy { it.name }
 
+    private fun accountProperties(): Map<String, PropertyProjection> =
+        props(Account::class.java)
+
     @Test
     fun `resolves a class into the shared model`() {
         val account = introspector.introspect(Account::class.java)
@@ -23,27 +26,48 @@ class ReflectionTypeIntrospectorTest {
     }
 
     @Test
-    fun `exposes getter members under logical names with boxed primitives and structural nullability`() {
-        val props = props(Account::class.java)
+    fun `exposes getter members under logical names`() {
+        val props = accountProperties()
 
         assertThat(props.keys).contains("id", "age", "name", "color", "address", "tags", "meta")
         assertThat(props.getValue("id").accessor).isEqualTo(Accessor.GETTER)
+    }
+
+    @Test
+    fun `boxes primitive getter types`() {
+        val props = accountProperties()
 
         assertThat(props.getValue("age").type.fullName).isEqualTo("java.lang.Integer")
+    }
+
+    @Test
+    fun `reads getter nullability`() {
+        val props = accountProperties()
+
         assertThat(props.getValue("age").nullable).isFalse()
         assertThat(props.getValue("name").nullable).isTrue()
     }
 
     @Test
-    fun `resolves collections, maps and nested types`() {
-        val props = props(Account::class.java)
+    fun `resolves collection types`() {
+        val props = accountProperties()
 
         assertThat(props.getValue("tags").type.structureType).isEqualTo(StructureType.ARRAY)
         assertThat(props.getValue("tags").type.fullName).isEqualTo("java.lang.String")
+    }
+
+    @Test
+    fun `resolves map types`() {
+        val props = accountProperties()
 
         val meta = props.getValue("meta").type
         assertThat(meta.structureType).isEqualTo(StructureType.DICTIONARY)
         assertThat(meta.generics.map { it.fullName }).containsExactly("java.lang.String", "java.lang.Integer")
+    }
+
+    @Test
+    fun `resolves nested types`() {
+        val props = accountProperties()
 
         assertThat(props.getValue("address").type.fullName).isEqualTo(Address::class.java.name)
     }

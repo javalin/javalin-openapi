@@ -79,8 +79,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
             """))
     }
 
-    // Nullable composition types
-
     @JsonSchema
     class NullableOneOfConfig(
         @get:OpenApiNullable
@@ -225,8 +223,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                 }
             """))
     }
-
-    // Discriminator tests
 
     @OneOf(
         discriminator = Discriminator(

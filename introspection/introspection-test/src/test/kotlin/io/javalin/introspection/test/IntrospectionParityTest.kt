@@ -209,7 +209,6 @@ private data class PropertyShape(
     val transient: Boolean,
 )
 
-/** Normalized, order-independent structural view of a type, so the two backends can be compared by value. */
 private fun ClassDefinition.toShape(): TypeShape =
     TypeShape(
         fullName = fullName,

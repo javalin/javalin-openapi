@@ -21,20 +21,12 @@ repositories {
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    annotationProcessor(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
-    )
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
     // Optional: Swagger UI
-    implementation(
-        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
-    )
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
     // Optional: ReDoc
-    implementation(
-        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
-    )
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
 }
 ```
 
@@ -46,18 +38,10 @@ plugins {
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    kapt(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
-    )
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
 }
 ```
 
@@ -70,18 +54,10 @@ plugins {
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    ksp(
-        "io.javalin.community.openapi:openapi-ksp:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
-    )
+    ksp("io.javalin.community.openapi:openapi-ksp:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
 }
 
 ksp {

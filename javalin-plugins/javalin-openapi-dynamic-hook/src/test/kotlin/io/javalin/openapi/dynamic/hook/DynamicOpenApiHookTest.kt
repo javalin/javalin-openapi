@@ -123,7 +123,7 @@ class DynamicOpenApiHookTest {
     }
 
     @Test
-    fun `enriches a route from OpenApiMetadata, reusing the operation builder and schema engine`() {
+    fun `enriches a route from OpenApiMetadata`() {
         val app = Javalin.start { config ->
             config.jetty.port = 0
             config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })

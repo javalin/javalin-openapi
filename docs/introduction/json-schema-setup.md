@@ -18,12 +18,8 @@ You only need the annotation processor and the specification module - no Javalin
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    annotationProcessor(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:openapi-specification:$openapi"
-    )
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
 }
 ```
 
@@ -31,12 +27,8 @@ dependencies {
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    kapt(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:openapi-specification:$openapi"
-    )
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
 }
 ```
 
@@ -49,12 +41,8 @@ plugins {
 dependencies {
     val openapi = "7.3.0-RC.1"
 
-    ksp(
-        "io.javalin.community.openapi:openapi-ksp:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:openapi-specification:$openapi"
-    )
+    ksp("io.javalin.community.openapi:openapi-ksp:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
 }
 ```
 

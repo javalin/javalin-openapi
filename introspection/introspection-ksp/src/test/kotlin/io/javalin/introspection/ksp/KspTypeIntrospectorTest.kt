@@ -41,32 +41,16 @@ class KspTypeIntrospectorTest {
     }
 
     @Test
-    fun `KSP backend resolves structure, enums and name-based annotations`() {
-        data class Snapshot(
-            val properties: Map<String, String>,
-            val isEnum: Boolean,
-            val enumConstants: List<String>?,
-            val hasRef: Boolean,
-            val refValue: String?,
-            val scannedLabel: String?,
-        )
+    fun `KSP backend resolves property types`() {
+        val properties =
+            withKsp { ksp ->
+                ksp
+                    .introspect("$REF_PKG.Account")
+                    .getProperties()
+                    .associate { property -> property.name to "${property.type.fullName}:${property.type.structureType}" }
+            }
 
-        val snapshot = withKsp { ksp ->
-            val pkg = "io.javalin.introspection.ksp"
-            val account = ksp.introspect("$pkg.Account")
-            val color = ksp.introspect("$pkg.Color")
-            Snapshot(
-                properties = account.getProperties().associate { it.name to "${it.type.fullName}:${it.type.structureType}" },
-                isEnum = color.isEnum(),
-                enumConstants = color.getEnumConstants().map { it.name },
-                hasRef = account.getAnnotations().contains("Ref"),
-                refValue = account.getAnnotations().find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName,
-                scannedLabel = account.getAnnotations().all().first { it.metadata.contains("MetaMarker") }["label"].asString(),
-            )
-        }
-
-        // Structure + collection/map/nullability resolve, and Kotlin builtins normalize to JVM names (== jap/reflection)
-        assertThat(snapshot.properties).containsAllEntriesOf(
+        assertThat(properties).containsAllEntriesOf(
             mapOf(
                 "id" to "java.lang.String:DEFAULT",
                 "age" to "java.lang.Integer:DEFAULT",
@@ -76,17 +60,45 @@ class KspTypeIntrospectorTest {
                 "meta" to "java.util.Map:DICTIONARY",
             )
         )
+    }
 
-        // Enum
-        assertThat(snapshot.isEnum).isTrue()
-        assertThat(snapshot.enumConstants).containsExactly("RED", "GREEN")
+    @Test
+    fun `KSP backend resolves enum constants`() {
+        val color =
+            withKsp { ksp ->
+                ksp.introspect("$REF_PKG.Color")
+            }
 
-        // Name-based annotation access (the only kind KSP can do): presence + class-valued member resolved to a ClassDefinition
-        assertThat(snapshot.hasRef).isTrue()
-        assertThat(snapshot.refValue).isEqualTo("$REF_PKG.Address")
+        assertThat(color.isEnum()).isTrue()
+        assertThat(color.getEnumConstants().map { it.name }).containsExactly("RED", "GREEN")
+    }
 
-        // Enumerate-all + meta-annotation scan (the custom-annotation path) works on KSP too
-        assertThat(snapshot.scannedLabel).isEqualTo("x")
+    @Test
+    fun `KSP backend reads annotations by name`() {
+        val annotations =
+            withKsp { ksp ->
+                ksp
+                    .introspect("$REF_PKG.Account")
+                    .getAnnotations()
+            }
+
+        assertThat(annotations.contains("Ref")).isTrue()
+        assertThat(annotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName)
+            .isEqualTo("$REF_PKG.Address")
+    }
+
+    @Test
+    fun `KSP backend finds annotations by meta-annotation`() {
+        val annotated =
+            withKsp { ksp ->
+                ksp
+                    .introspect("$REF_PKG.Account")
+                    .getAnnotations()
+                    .all()
+                    .first { it.metadata.contains("MetaMarker") }
+            }
+
+        assertThat(annotated["label"].asString()).isEqualTo("x")
     }
 
     private companion object {
