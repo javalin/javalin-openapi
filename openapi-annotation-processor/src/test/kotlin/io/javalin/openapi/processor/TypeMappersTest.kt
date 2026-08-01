@@ -100,6 +100,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.components.schemas.SimpleTypesList.properties")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "customType": {
@@ -280,6 +281,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.paths['/dictionary-structure'].get.responses.200.content['application/map-string-string'].schema")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "type": "object",
@@ -333,6 +335,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.paths['/nested-list-example'].get.responses.200.content['text/plain'].example")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "name": "document",
@@ -403,6 +406,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.components.schemas.IntegerEnum")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "type": "integer",
@@ -436,6 +440,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.components.schemas.XEnumDescriptionsEnum")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "type": "string",
@@ -463,6 +468,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
             .inPath("$.components.schemas.DescribedStringEnum")
             .isObject
             .isEqualTo(json(
+                // language=json
                 """
                 {
                   "type": "string",
