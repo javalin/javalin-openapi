@@ -65,7 +65,7 @@ internal class SwaggerPluginTest {
 
             assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
             assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
-            assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
+            assertThat(response).contains("""<script src='/script.js' type='text/javascript'></script>""")
             assertThat(response).contains("{ name: 'custom', url: '/openapi.yaml' }")
         } finally {
             app.stop()

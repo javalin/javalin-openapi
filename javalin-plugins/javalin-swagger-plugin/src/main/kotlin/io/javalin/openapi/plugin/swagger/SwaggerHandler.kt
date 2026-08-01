@@ -70,7 +70,7 @@ class SwaggerHandler(
                 .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
         val allCustomJavaScripts =
             customJavaScriptFiles
-                .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />" }
+                .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}'></script>" }
         val resolvedValidatorUrl = when {
             validatorUrl != null -> "\"$validatorUrl\""
             else -> "null"
