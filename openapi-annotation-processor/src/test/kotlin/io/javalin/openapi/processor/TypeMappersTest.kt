@@ -73,7 +73,7 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
         val localTime: LocalTime,
         val duration: Duration,
         val uri: URI,
-        val obj: Object,
+        val obj: Any,
         val map: Map<*, *>,
         val mapWithList: Map<*, List<*>>,
         val standardEnum: StandardEnum,

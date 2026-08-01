@@ -125,7 +125,7 @@ class AnnotationProcessorContext(
         env.elementUtils.getTypeElement(name)
 
     private fun objectType(): TypeElement =
-        forTypeElement(Object::class.java.name)!!
+        forTypeElement(Any::class.java.name)!!
 
     private fun mapType(): TypeElement =
         forTypeElement(Map::class.java.name)!!

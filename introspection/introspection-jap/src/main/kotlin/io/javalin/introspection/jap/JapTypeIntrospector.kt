@@ -198,7 +198,7 @@ class JapTypeIntrospector(
         )
 
     private fun objectMirror(): TypeMirror =
-        elements.getTypeElement("java.lang.Object").asType()
+        elements.getTypeElement(Any::class.java.name).asType()
 
     private fun erasureOf(name: String): TypeMirror =
         types.erasure(elements.getTypeElement(name).asType())
@@ -352,7 +352,7 @@ class JapTypeIntrospector(
             when {
                 kind != ElementKind.METHOD || this !is ExecutableElement -> false
                 Modifier.STATIC in modifiers -> false
-                parameters.isNotEmpty() || enclosingElement.toString() == "java.lang.Object" -> false
+                parameters.isNotEmpty() || enclosingElement.toString() == Any::class.java.name -> false
                 returnType.kind == TypeKind.VOID -> false
                 else ->
                     isGetterName(simpleName.toString()) ||
@@ -385,7 +385,7 @@ class JapTypeIntrospector(
             val inherited =
                 generateSequence(superclass) { mirror -> (types.asElement(mirror) as? TypeElement)?.superclass }
                     .mapNotNull { types.asElement(it) as? TypeElement }
-                    .takeWhile { it.qualifiedName.toString() != Object::class.java.name }
+                    .takeWhile { it.qualifiedName.toString() != Any::class.java.name }
                     .flatMap { supertype ->
                         supertype
                             .annotationMirrors

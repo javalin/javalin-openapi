@@ -10,7 +10,7 @@ import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
-internal class SchemeTest : OpenApiAnnotationProcessorSpecification() {
+internal class ComponentSchemaTest : OpenApiAnnotationProcessorSpecification() {
 
     private open class BaseType {
         val baseProperty: String = "Test"

@@ -52,6 +52,32 @@ internal class PropertySelectionTest : OpenApiAnnotationProcessorSpecification()
             .containsKey("getterProperty")
     }
 
+    private interface FilteredRecord {
+        fun getRecord(): String
+    }
+
+    private open class FilteredRecordBase {
+        fun getRecordBase(): String = "RecordBase"
+    }
+
+    private class FilteredEmailRequest(val email: String) : FilteredRecordBase(), FilteredRecord {
+        override fun getRecord(): String = "Record"
+    }
+
+    @OpenApi(
+        path = "/filtered-properties",
+        versions = ["should_exclude_properties_filtered_by_processor_configuration"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = FilteredEmailRequest::class)])],
+    )
+    @Test
+    fun should_exclude_properties_filtered_by_processor_configuration() =
+        withOpenApi("should_exclude_properties_filtered_by_processor_configuration") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.FilteredEmailRequest.properties")
+            .isObject
+            .containsOnlyKeys("email")
+    }
+
     @OpenApi(
         path = "/fluent-openapi-name",
         versions = ["should_include_fluent_accessor_with_openapi_name"],

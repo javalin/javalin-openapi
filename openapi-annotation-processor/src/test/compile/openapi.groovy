@@ -20,16 +20,16 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
         // Used by TypeMappersTest
         configuration.simpleTypeMappings['io.javalin.openapi.processor.TypeMappersTest.CustomType'] = new SimpleType("string")
 
-        // Used by UserCasesTest
+        // Used by PropertySelectionTest
         configuration.propertyInSchemeFilter = { AnnotationProcessorContext ctx, OpenApiType type, Element property ->
-            TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
-            TypeElement specificRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecordBase')
+            TypeElement filteredRecord = ctx.forTypeElement('io.javalin.openapi.processor.PropertySelectionTest.FilteredRecord')
+            TypeElement filteredRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.PropertySelectionTest.FilteredRecordBase')
 
-            if (ctx.isAssignable(OpenApiTypeHandleKt.getMirror(type), specificRecord.asType()) && ctx.hasElement(specificRecord, property)) {
+            if (ctx.isAssignable(OpenApiTypeHandleKt.getMirror(type), filteredRecord.asType()) && ctx.hasElement(filteredRecord, property)) {
                 return false // exclude
             }
 
-            if (ctx.isAssignable(OpenApiTypeHandleKt.getMirror(type), specificRecordBase.asType()) && ctx.hasElement(specificRecordBase, property)) {
+            if (ctx.isAssignable(OpenApiTypeHandleKt.getMirror(type), filteredRecordBase.asType()) && ctx.hasElement(filteredRecordBase, property)) {
                 return false // exclude
             }
 

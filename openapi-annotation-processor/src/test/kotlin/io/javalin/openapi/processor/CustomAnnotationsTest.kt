@@ -26,6 +26,16 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
     @Target(PROPERTY_GETTER)
     private annotation class CustomAnnotationOnGetter(val onGetter: BooleanArray)
 
+    @CustomAnnotation
+    @Target(PROPERTY_GETTER)
+    private annotation class Schema(
+        val allowableValues: Array<String> = [],
+        val description: String = "",
+        val example: String = "",
+        val format: String = "",
+        val pattern: String = "",
+    )
+
     @Custom(name = "description", value = "Custom description")
     @CustomAnnotationOnClass(onClass = [true])
     private class CustomEntity(
@@ -57,6 +67,33 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
             .inPath("$.components.schemas.CustomEntity.properties.element")
             .isObject
             .containsEntry("onGetter", json("[true]"))
+    }
+
+    private data class KeypairCreateResponse(
+        @get:Schema(
+            allowableValues = ["valid", "expired", "revoked"],
+            format = "fingerprint",
+            pattern = "^(valid|expired|revoked)$",
+            description = "status of the key like valid|expired|revoked",
+        )
+        val fingerprint: String,
+    )
+
+    @OpenApi(
+        path = "/custom-annotation-array",
+        versions = ["should_include_array_values_from_custom_annotations"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = KeypairCreateResponse::class)])],
+    )
+    @Test
+    fun should_include_array_values_from_custom_annotations() =
+        withOpenApi("should_include_array_values_from_custom_annotations") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.KeypairCreateResponse.properties.fingerprint")
+            .isObject
+            .containsEntry("allowableValues", json("[\"valid\", \"expired\", \"revoked\"]"))
+            .containsEntry("description", "status of the key like valid|expired|revoked")
+            .containsEntry("format", "fingerprint")
+            .containsEntry("pattern", "^(valid|expired|revoked)$")
     }
 
     @OpenApiName("PandaEntity")
