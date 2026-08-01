@@ -29,4 +29,5 @@ interface SchemaGenerationContext {
     fun reportWarning(message: String) {}
 
     fun reportDebug(message: String) {}
+
 }

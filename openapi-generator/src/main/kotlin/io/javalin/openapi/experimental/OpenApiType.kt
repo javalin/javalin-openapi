@@ -1,6 +1,7 @@
 package io.javalin.openapi.experimental
 
 import io.javalin.openapi.experimental.StructureType.DEFAULT
+import java.util.Objects
 
 @RequiresOptIn(
     level = RequiresOptIn.Level.ERROR,
@@ -16,32 +17,15 @@ class OpenApiType(
     val generics: List<OpenApiType> = emptyList(),
     val structureType: StructureType = DEFAULT,
     val extra: MutableList<Extra> = mutableListOf(),
-    @property:InternalOpenApiTypeApi @JvmField val handle: Any? = null,
+    @property:InternalOpenApiTypeApi val handle: Any? = null,
 ) {
-
     override fun equals(other: Any?): Boolean =
-        when {
-            this === other -> true
-            other is OpenApiType ->
-                fullName == other.fullName
-                    && generics == other.generics
-                    && structureType == other.structureType
-            else -> false
-        }
+        other is OpenApiType
+            && fullName == other.fullName
+            && generics == other.generics
+            && structureType == other.structureType
 
-    override fun hashCode(): Int {
-        var result = fullName.hashCode()
-        result = 31 * result + generics.hashCode()
-        result = 31 * result + structureType.hashCode()
-        return result
-    }
-
-    override fun toString(): String =
-        when {
-            generics.isEmpty() -> fullName
-            else -> "$fullName<${generics.joinToString(", ")}>"
-        }
-
+    override fun hashCode(): Int = Objects.hash(fullName, generics, structureType)
 }
 
 enum class StructureType {
@@ -60,7 +44,6 @@ data class CustomProperty(
 internal fun OpenApiType.mergeExtraFrom(other: OpenApiType): Boolean {
     val missingExtra = other.extra.filterNot(extra::contains)
     if (missingExtra.isEmpty()) return false
-
     extra.addAll(missingExtra)
     return true
 }
