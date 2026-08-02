@@ -4,9 +4,9 @@ The `OpenApiSchemaBuilder` provides a Kotlin DSL for building and modifying Open
 
 ## When to Use
 
-- **Extend compile-time schemas** — add servers, security, or extra endpoints at startup
-- **Dynamic endpoints** — describe routes registered at runtime that the annotation processor can't see
-- **Testing** — build expected schemas in tests without JSON strings
+- **Extend compile-time schemas** - add servers, security, or extra endpoints at startup
+- **Dynamic endpoints** - describe routes registered at runtime that the annotation processor can't see
+- **Testing** - build expected schemas in tests without JSON strings
 
 ## Basic Usage
 
@@ -41,21 +41,21 @@ The `SchemaBuilder` DSL provides a clean way to define inline schemas without wo
 
 ```kotlin
 schema { type("string") }
-// → { "type": "string" }
+// -> { "type": "string" }
 ```
 
 ### Type with Format
 
 ```kotlin
 schema { type("integer"); format("int32") }
-// → { "type": "integer", "format": "int32" }
+// -> { "type": "integer", "format": "int32" }
 ```
 
 ### Reference
 
 ```kotlin
 schema { ref("#/components/schemas/User") }
-// → { "$ref": "#/components/schemas/User" }
+// -> { "$ref": "#/components/schemas/User" }
 ```
 
 The schema DSL is available on media types, parameters, headers, and object schema properties.
@@ -217,7 +217,67 @@ schema.path("/users").operation("get") {
 val json = schema.toJson()
 ```
 
-Reopening an existing operation preserves all fields — only the fields you set are changed. This makes it safe to layer runtime additions on top of compile-time output.
+Reopening an existing operation preserves all fields - only the fields you set are changed. This makes it safe to layer runtime additions on top of compile-time output.
+
+## Auto-generating Docs for Registered Routes
+
+For a springdoc-style experience - documenting routes that are registered programmatically (and that the compile-time processor never sees) - use the **dynamic hook** module. It adds undocumented Javalin routes to the served document.
+
+```kotlin [Gradle (Kotlin)]
+dependencies {
+    val openapi = "7.3.0-RC.1"
+    implementation("io.javalin.community.openapi:javalin-openapi-dynamic-hook:$openapi")
+}
+```
+
+Register `RegisteredRoutesHook` on the `OpenApiPlugin`:
+
+```kotlin
+Javalin.start { config ->
+    config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
+
+    config.routes.get("/users") { /* ... */ }
+    config.routes.get("/users/{id}") { /* ... */ }
+}
+```
+
+Every newly discovered route is documented with its path, method, path parameters (typed as `string`), and a default `200` response. Existing operations from compile-time documentation are left unchanged unless the route carries runtime metadata.
+
+Routes registered by `OpenApiPlugin`, `SwaggerPlugin`, and `ReDocPlugin` are excluded by default, including custom UI and WebJar paths. Add prefix exclusions for your own non-API routes:
+
+```kotlin
+RegisteredRoutesHook { routes ->
+    routes.withIgnoredPathPrefixes("/assets", "/internal")
+}
+```
+
+Each prefix matches the path itself and its descendants, so `/assets` excludes `/assets/logo.svg` but not `/assets-admin`. A trailing `/*` is accepted as an equivalent spelling. To include the default excluded plugin routes, call `clearDefaultIgnoredRoutes()`.
+
+### Enriching a Route
+
+Javalin handlers are opaque lambdas, so without extra information the hook can only emit those stubs - it cannot infer request/response bodies. Attach an `OpenApiMetadata` to a route to describe it using the same operation DSL shown above; `schema(Class)` resolves the type through the reflection schema engine (no annotation processing required):
+
+```kotlin
+config.routes.addEndpoint(
+    Endpoint.create(HandlerType.GET, "/users/{id}")
+        .addMetadata(OpenApiMetadata {
+            summary("Get a user")
+            responses {
+                response("200") {
+                    description("The user")
+                    content { mediaType("application/json") { schema(User::class.java) } }
+                }
+            }
+        })
+        .handler { /* ... */ }
+)
+```
+
+For newly discovered operations, the path-parameter skeleton is auto-added before your metadata is applied. Existing operations retain their parameters, and referenced types (e.g. `User`) are emitted into `components/schemas`.
+
+::: warning
+The document is built on its first request, so routes registered after that request are not included. Runtime reflection cannot see CLASS-retention annotations or automatically discover discriminator subtypes. Runtime reflection is opt-in: it only happens when you add this module and register the hook, so the compile-time backends stay reflection-free.
+:::
 
 ## Merge Behavior
 

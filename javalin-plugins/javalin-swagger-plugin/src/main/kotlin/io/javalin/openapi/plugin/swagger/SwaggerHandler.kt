@@ -3,6 +3,7 @@ package io.javalin.openapi.plugin.swagger
 import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.http.HandlerType
+import io.javalin.openapi.OpenApiPluginRouteHandler
 import io.javalin.router.Endpoint
 import io.javalin.security.Roles
 import io.javalin.security.RouteRole
@@ -12,7 +13,7 @@ class SwaggerEndpoint(
     method: HandlerType,
     path: String,
     roles: Set<RouteRole>,
-    handler: Handler
+    handler: Handler,
 ) : Endpoint(
     method = method,
     path = path,
@@ -39,8 +40,8 @@ class SwaggerHandler(
     private val tagsSorter: String,
     private val operationsSorter: String,
     private val customStylesheetFiles: List<Pair<String, String>>,
-    private val customJavaScriptFiles: List<Pair<String, String>>
-) : Handler {
+    private val customJavaScriptFiles: List<Pair<String, String>>,
+) : Handler, OpenApiPluginRouteHandler {
 
     private val swaggerUiHtml = createSwaggerUiHtml()
 
@@ -56,17 +57,24 @@ class SwaggerHandler(
         val publicSwaggerAssetsPath = "$rootPath/webjars/swagger-ui/$swaggerVersion".removedDoubledPathOperators()
         val publicDocumentationPath = (rootPath + documentationPath).removedDoubledPathOperators()
 
-        val allDocumentations = versions
-            .joinToString(separator = ",\n") {
-                when (it) {
-                    is SwaggerVersionMapping.OpenApiLoader -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
-                    is SwaggerVersionMapping.Custom -> "{ name: '${it.name}', url: '${it.url}' }"
+        val allDocumentations =
+            versions
+                .joinToString(separator = ",\n") {
+                    when (it) {
+                        is SwaggerVersionMapping.OpenApiLoader -> "{ name: '${it.name}', url: '$publicDocumentationPath?v=${it.name}' }"
+                        is SwaggerVersionMapping.Custom -> "{ name: '${it.name}', url: '${it.url}' }"
+                    }
                 }
-            }
-        val allCustomStylesheets = customStylesheetFiles
-            .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
-        val allCustomJavaScripts = customJavaScriptFiles
-            .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}' />"}
+        val allCustomStylesheets =
+            customStylesheetFiles
+                .joinToString(separator = "\n") { "<link href='${it.first}' rel='stylesheet' media='${it.second}' type='text/css' />" }
+        val allCustomJavaScripts =
+            customJavaScriptFiles
+                .joinToString(separator = "\n") { "<script src='${it.first}' type='${it.second}'></script>" }
+        val resolvedValidatorUrl = when {
+            validatorUrl != null -> "\"$validatorUrl\""
+            else -> "null"
+        }
 
         @Suppress("JSUnresolvedReference")
         @Language("html")
@@ -117,7 +125,7 @@ class SwaggerHandler(
                         layout: "StandaloneLayout",
                         tagsSorter: $tagsSorter,
                         operationsSorter: $operationsSorter,
-                        validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
+                        validatorUrl: $resolvedValidatorUrl
                       })
                 }
                 </script>

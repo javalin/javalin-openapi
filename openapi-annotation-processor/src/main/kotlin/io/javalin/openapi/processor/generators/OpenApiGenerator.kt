@@ -1,6 +1,5 @@
 package io.javalin.openapi.processor.generators
 
-import io.javalin.http.HttpStatus
 import io.javalin.openapi.OpenApi
 import io.javalin.openapi.OpenApis
 import io.javalin.openapi.experimental.processor.shared.saveResource
@@ -16,58 +15,54 @@ internal class OpenApiGenerator {
 
     private val schemaGenerator = OpenApiSchemaGenerator(
         context = context,
-        defaultStatusDescription = { status ->
-            status.toIntOrNull()?.let { HttpStatus.forStatus(it) }?.message
-        }
+        title = context.parameters.info.title,
+        version = context.parameters.info.version,
     )
 
     fun generate(roundEnvironment: RoundEnvironment) {
-        val aggregatedOpenApiAnnotations = roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java)
-            .flatMap { element ->
-                element
-                    .getAnnotation(OpenApis::class.java)!!
-                    .value
-                    .asSequence()
-                    .map { element to it }
-            }
-
-        val standaloneOpenApiAnnotations =
-            roundEnvironment
-                .getElementsAnnotatedWith(OpenApi::class.java)
-                .map { it to it.getAnnotation(OpenApi::class.java)!! }
-
-        val openApiAnnotationsByVersion = (aggregatedOpenApiAnnotations + standaloneOpenApiAnnotations)
-            .flatMap { it.second.versions.map { version -> version to it } }
-            .groupBy { (version, _) -> version }
-            .mapValues { (_, annotations) -> annotations.map { it.second } }
-
-        openApiAnnotationsByVersion
-            .map { (version, openApiAnnotations) ->
-                val preparedOpenApiAnnotations = openApiAnnotations.toSet()
-                val generatedOpenApiSchema = schemaGenerator.generateSchema(preparedOpenApiAnnotations)
-
-                val resourceName = "openapi-${version.replace(" ", "-")}.json"
-                val resource = context.env.filer.saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
-                    ?.toUri()
-                    ?.toString()
-                    ?: return
-
-                if (context.configuration.validateWithParser) {
-                    val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
-
-                    if (parsedSchema.messages.isNotEmpty()) {
-                        context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
-                    }
-
-                    parsedSchema.messages.forEach {
-                        context.env.messager.printMessage(WARNING, it)
-                    }
+        val routes =
+            listOf(
+                roundEnvironment.getElementsAnnotatedWith(OpenApis::class.java),
+                roundEnvironment.getElementsAnnotatedWith(OpenApi::class.java),
+            )
+                .flatten()
+                .flatMap { element ->
+                    context
+                        .annotationsOf(element)
+                        .findAll(OpenApi::class.java)
+                        .map { it.values }
                 }
 
-                resourceName
-            }
-            .joinToString(separator = "\n")
-            .let { context.env.filer.saveResource(context, "openapi-plugin/.index", it) }
+        val resourceNames =
+            schemaGenerator
+                .generateVersionedSchemas(routes)
+                .map { (version, generatedOpenApiSchema) ->
+                    val resourceName = "openapi-${version.replace(" ", "-")}.json"
+                    val resource =
+                        context
+                            .env
+                            .filer
+                            .saveResource(context, "openapi-plugin/$resourceName", generatedOpenApiSchema)
+                            ?.toUri()
+                            ?.toString()
+                        ?: return
+
+                    if (context.configuration.validateWithParser) {
+                        val parsedSchema = OpenAPIV3Parser().readLocation(resource, emptyList(), ParseOptions())
+
+                        if (parsedSchema.messages.isNotEmpty()) {
+                            context.env.messager.printMessage(Diagnostic.Kind.NOTE, "OpenApi Validation Warnings :: ${parsedSchema.messages.size}")
+                        }
+
+                        parsedSchema.messages.forEach { message ->
+                            context.env.messager.printMessage(WARNING, message)
+                        }
+                    }
+
+                    resourceName
+                }
+
+        context.env.filer.saveResource(context, "openapi-plugin/.index", resourceNames.joinToString(separator = "\n"))
     }
 
 }

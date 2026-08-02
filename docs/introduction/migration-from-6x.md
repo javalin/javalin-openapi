@@ -48,8 +48,8 @@ New `@OpenApiNaming` annotation applies automatic name transformation to propert
 ```kotlin
 @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
 class UserResponse(
-    val firstName: String,  // → "first_name"
-    val lastName: String,   // → "last_name"
+    val firstName: String,  // -> "first_name"
+    val lastName: String,   // -> "last_name"
 )
 ```
 
@@ -95,7 +95,7 @@ New built-in type mappings:
 
 ### Simplified Plugin API
 
-Security methods are available directly on `OpenApiSchemaBuilder` — no more `withSecurity { ... }` wrapper:
+Security methods are available directly on `OpenApiSchemaBuilder` - no more `withSecurity { ... }` wrapper:
 
 ```kotlin
 openApiConfig.withDefinitionConfiguration { version, builder ->
@@ -130,11 +130,11 @@ Update the version in your build file:
 ::: code-group
 
 ```kotlin [Gradle (Kotlin)]
-val openapi = "7.2.2" // was 6.x
+val openapi = "7.3.0-RC.1" // was 6.x
 ```
 
 ```xml [Maven]
-<version>7.2.2</version> <!-- was 6.x -->
+<version>7.3.0-RC.1</version> <!-- was 6.x -->
 ```
 
 :::
@@ -184,7 +184,7 @@ kapt {
             <path>
                 <groupId>io.javalin.community.openapi</groupId>
                 <artifactId>openapi-annotation-processor</artifactId>
-                <version>7.2.2</version>
+                <version>7.3.0-RC.1</version>
             </path>
         </annotationProcessorPaths>
         <compilerArgs>
@@ -198,7 +198,7 @@ kapt {
 
 If you don't use a Groovy configuration script, no changes are needed.
 
-### OpenAPI 3.0.3 → 3.1.0 {#openapi-303-310}
+### OpenAPI 3.0.3 -> 3.1.0 {#openapi-303-310}
 
 Generated specs are now **OpenAPI 3.1.0** (was 3.0.3), based on JSON Schema 2020-12. This changes the generated output in several ways.
 
@@ -232,7 +232,7 @@ Nullable `$ref` types are wrapped in `anyOf`:
 Nullable `oneOf`/`anyOf` types append a null entry:
 
 ```json
-// 7.0 — oneOf with nullable
+// 7.0 - oneOf with nullable
 {
   "oneOf": [
     { "$ref": "#/components/schemas/Cat" },
@@ -242,7 +242,7 @@ Nullable `oneOf`/`anyOf` types append a null entry:
 }
 ```
 
-**No annotation changes needed** — this is handled automatically by the generator. If you have tooling that parses the generated spec (validators, code generators, etc.), it needs to understand 3.1.0 nullable semantics.
+**No annotation changes needed** - this is handled automatically by the generator. If you have tooling that parses the generated spec (validators, code generators, etc.), it needs to understand 3.1.0 nullable semantics.
 
 #### `additionalProperties` default
 
@@ -253,10 +253,10 @@ Nullable `oneOf`/`anyOf` types append a null entry:
 Changed from `Boolean` flags to numeric `String` values, matching JSON Schema 2020-12:
 
 ```kotlin
-// 7.0 — numeric value (the exclusive bound itself)
+// 7.0 - numeric value (the exclusive bound itself)
 @OpenApiNumberValidation(exclusiveMinimum = "0")
 
-// 6.x — boolean flag (means: minimum is exclusive)
+// 6.x - boolean flag (means: minimum is exclusive)
 @OpenApiNumberValidation(minimum = "0", exclusiveMinimum = true)
 ```
 
@@ -311,9 +311,9 @@ openApiConfig.withDefinitionConfiguration { version, definition ->
 ```
 
 Key differences:
-- `withInfo(...)` → `info(...)`
-- `withServer(...)` → `server(...)`
-- Security methods (`withBearerAuth`, `withBasicAuth`, `withOAuth2`, etc.) moved from `SecurityComponentConfiguration` to `OpenApiSchemaBuilder` directly — no more `withSecurity(security -> ...)` wrapper
+- `withInfo(...)` -> `info(...)`
+- `withServer(...)` -> `server(...)`
+- Security methods (`withBearerAuth`, `withBasicAuth`, `withOAuth2`, etc.) moved from `SecurityComponentConfiguration` to `OpenApiSchemaBuilder` directly - no more `withSecurity(security -> ...)` wrapper
 - `withDefinitionProcessor` moved from `DefinitionConfiguration` to `OpenApiPluginConfiguration`
 
 #### Swagger & ReDoc configuration style

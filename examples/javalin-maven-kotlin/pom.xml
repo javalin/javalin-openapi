@@ -10,7 +10,7 @@
 
     <properties>
         <javalin.version>7.2.2</javalin.version>
-        <javalin.openapi.version>7.2.2</javalin.openapi.version>
+        <javalin.openapi.version>7.3.0-RC.1</javalin.openapi.version>
         <kotlin.version>2.1.0</kotlin.version>
     </properties>
 

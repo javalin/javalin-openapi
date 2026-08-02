@@ -8,26 +8,35 @@ import io.javalin.openapi.schema.OpenApiSchemaBuilder
 import io.javalin.plugin.Plugin
 import java.util.function.Consumer
 
-open class OpenApiPlugin(userConfig: Consumer<OpenApiPluginConfiguration>) : Plugin<OpenApiPluginConfiguration>(userConfig, OpenApiPluginConfiguration()) {
+open class OpenApiPlugin(
+    userConfig: Consumer<OpenApiPluginConfiguration>,
+) : Plugin<OpenApiPluginConfiguration>(userConfig, OpenApiPluginConfiguration()) {
 
     override fun repeatable(): Boolean = true
 
     override fun onStart(state: JavalinState) {
         state.routes.get(
             pluginConfig.documentationPath,
-            OpenApiHandler(createDocumentation()),
+            OpenApiHandler(createDocumentation(state)),
             *pluginConfig.roles
         )
     }
 
-    private fun createDocumentation(): Lazy<Map<String, String>> =
+    private fun createDocumentation(state: JavalinState): Lazy<Map<String, String>> =
         lazy {
             OpenApiLoader(pluginConfig.resourceClassLoader ?: OpenApiLoader::class.java.classLoader)
                 .loadOpenApiSchemes()
                 .mapValues { (version, rawDocs) ->
                     val builder = OpenApiSchemaBuilder.fromJson(rawDocs)
+                    val context = OpenApiHookContext(version, builder, state)
+                    pluginConfig.hooks.forEach { it.apply(context) }
                     pluginConfig.definitionConfiguration?.accept(version, builder)
-                    val json = if (pluginConfig.prettyOutputEnabled) builder.toJson() else builder.toCompactJson()
+
+                    val json = when {
+                        pluginConfig.prettyOutputEnabled -> builder.toJson()
+                        else -> builder.toCompactJson()
+                    }
+
                     when (val processor = pluginConfig.definitionProcessor) {
                         null -> json
                         else -> processor.process(jsonMapper.readTree(json) as ObjectNode)

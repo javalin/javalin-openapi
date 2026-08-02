@@ -2,6 +2,7 @@ package io.javalin.openapi.plugin.redoc
 
 import io.javalin.http.Context
 import io.javalin.http.Handler
+import io.javalin.openapi.OpenApiPluginRouteHandler
 
 /**
  * Based on https://github.com/tipsy/javalin/blob/master/javalin-openapi/src/main/java/io/javalin/plugin/openapi/ui/ReDocRenderer.kt by @chsfleury
@@ -11,8 +12,8 @@ class ReDocHandler(
     private val documentationPath: String,
     private val version: String,
     private val routingPath: String,
-    private val basePath: String?
-) : Handler {
+    private val basePath: String?,
+) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
         context

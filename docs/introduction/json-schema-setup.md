@@ -10,42 +10,48 @@ You can serve them with any HTTP server, use them for validation, feed them to c
 
 ## Installation
 
-You only need the annotation processor and the specification module — no Javalin plugins required:
+You only need the annotation processor and the specification module - no Javalin plugins required:
 
 ::: code-group
 
 ```kotlin [Gradle (Kotlin)]
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
-    annotationProcessor(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:openapi-specification:$openapi"
-    )
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
 }
 ```
 
 ```kotlin [Gradle (Kotlin) with Kapt]
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
-    kapt(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:openapi-specification:$openapi"
-    )
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
 }
 ```
 
-```xml [Maven]
+```kotlin [Gradle (Kotlin) with KSP]
+plugins {
+    // KSP is released against a specific Kotlin version - use the build that matches yours (github.com/google/ksp/releases)
+    id("com.google.devtools.ksp") version "2.3.9"
+}
+
+dependencies {
+    val openapi = "7.3.0-RC.1"
+
+    ksp("io.javalin.community.openapi:openapi-ksp:$openapi")
+    implementation("io.javalin.community.openapi:openapi-specification:$openapi")
+}
+```
+
+```xml [Maven (Java)]
 <dependencies>
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>openapi-specification</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
 </dependencies>
 
@@ -59,10 +65,66 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.2.2</version>
+                        <version>7.3.0-RC.1</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+```xml [Maven (Kotlin)]
+<properties>
+    <kotlin.version>2.1.0</kotlin.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>openapi-specification</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>kapt</id>
+                    <goals>
+                        <goal>kapt</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                        </sourceDirs>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>io.javalin.community.openapi</groupId>
+                                <artifactId>openapi-annotation-processor</artifactId>
+                                <version>7.3.0-RC.1</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 </build>
@@ -106,14 +168,14 @@ At compile time, this generates a `/json-schemes/com.example.UserConfig` resourc
 
 ### Differences between the Two Modes
 
-| Aspect | OpenAPI | JSON Schema |
-|--------|---------|-------------|
-| Output format | OpenAPI 3.1.0 | JSON Schema 2020-12 |
-| Scope | Endpoint docs | Standalone type schemas |
-| References | `$ref` | All types inlined |
-| Trigger | `@OpenApi` | `@JsonSchema` |
+| Aspect        | OpenAPI       | JSON Schema             |
+|---------------|---------------|-------------------------|
+| Output format | OpenAPI 3.1.0 | JSON Schema 2020-12     |
+| Scope         | Endpoint docs | Standalone type schemas |
+| References    | `$ref`        | All types inlined       |
+| Trigger       | `@OpenApi`    | `@JsonSchema`           |
 
-Both modes are framework-agnostic at the annotation processing level — Javalin is only needed if you want to serve the specs via the Javalin plugins.
+Both modes are framework-agnostic at the annotation processing level - Javalin is only needed if you want to serve the specs via the Javalin plugins.
 
 ## Loading OpenAPI Specs at Runtime
 
@@ -122,7 +184,7 @@ Use `OpenApiLoader` to load the generated OpenAPI specifications from your class
 ```kotlin
 val loader = OpenApiLoader()
 
-// version → JSON
+// version -> JSON
 val schemes = loader.loadOpenApiSchemes()
 
 for ((version, json) in schemes) {
@@ -171,17 +233,17 @@ class InternalEntity
 
 Most property-level annotations work in both OpenAPI and JSON Schema modes:
 
-- `@OpenApiName` — override property names
-- `@OpenApiDescription` — add descriptions
-- `@OpenApiIgnore` — exclude properties
-- `@OpenApiRequired` — force required
-- `@OpenApiPropertyType` — override types
-- `@OpenApiNullable` — mark nullable
-- `@OpenApiNaming` — apply naming strategies
-- `@OpenApiByFields` — resolve from fields instead of getters
-- Validation annotations — `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation`
+- `@OpenApiName` - override property names
+- `@OpenApiDescription` - add descriptions
+- `@OpenApiIgnore` - exclude properties
+- `@OpenApiRequired` - force required
+- `@OpenApiPropertyType` - override types
+- `@OpenApiNullable` - mark nullable
+- `@OpenApiNaming` - apply naming strategies
+- `@OpenApiByFields` - resolve from fields instead of getters
+- Validation annotations - `@OpenApiNumberValidation`, `@OpenApiStringValidation`, `@OpenApiArrayValidation`, `@OpenApiObjectValidation`
 
 ## Next Steps
 
-- [Type Composition](../json-schema/getting-started) — `@OneOf`, `@AnyOf`, `@AllOf` with discriminators
-- [Custom Properties](../json-schema/custom-properties) — add custom schema properties with `@Custom`
+- [Type Composition](../json-schema/getting-started) - `@OneOf`, `@AnyOf`, `@AllOf` with discriminators
+- [Custom Properties](../json-schema/custom-properties) - add custom schema properties with `@Custom`

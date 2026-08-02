@@ -1,7 +1,6 @@
 package io.javalin.openapi.experimental.processor.shared
 
 import io.javalin.openapi.experimental.AnnotationProcessorContext
-import java.io.Writer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
@@ -19,7 +18,6 @@ fun Filer.saveResource(context: AnnotationProcessorContext, name: String, conten
         }
         resource
     } catch (_: FilerException) {
-        // file has been created during previous compilation phase
         null
     } catch (throwable: Throwable) {
         context.env.messager.printException(throwable)
@@ -42,27 +40,8 @@ fun Messager.printException(kind: Kind, throwable: Throwable) {
 
     printMessage(kind, error.toString())
 
-    if (throwable.cause != null) {
+    throwable.cause?.let { cause ->
         printMessage(kind, "---")
-        printException(throwable.cause!!)
+        printException(cause)
     }
-}
-
-class MessagerWriter(val context: AnnotationProcessorContext) : Writer() {
-
-    private val builder = StringBuilder()
-
-    override fun flush() {
-        context.env.messager.info(builder.toString())
-        builder.clear()
-    }
-
-    override fun write(cbuf: CharArray, off: Int, len: Int) {
-        builder.append(cbuf, off, len)
-    }
-
-    override fun close() {
-        flush()
-    }
-
 }

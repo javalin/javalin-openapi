@@ -7,6 +7,22 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class SwaggerPluginTest {
+
+    private fun swaggerPage(configure: SwaggerConfiguration.() -> Unit): String {
+        val app = Javalin.start {
+            it.jetty.port = 0
+            it.registerPlugin(SwaggerPlugin { swagger -> swagger.configure() })
+        }
+
+        return try {
+            Unirest.get("http://localhost:${app.port()}/swagger")
+                .asString()
+                .body
+        } finally {
+            app.stop()
+        }
+    }
+
     @Test
     fun `should properly host swagger ui`() {
         val app = Javalin.start {
@@ -46,30 +62,32 @@ internal class SwaggerPluginTest {
     }
 
     @Test
-    fun `should have custom version, css and js injected`() {
-        val app = Javalin.start {
-            it.jetty.port = 0
-            it.registerPlugin(SwaggerPlugin { swagger ->
-                swagger
-                    .injectStylesheet("/swagger.css")
-                    .injectStylesheet("/swagger-the-print.css", "print")
-                    .injectJavaScript("/script.js")
-                    .injectCustomVersion("custom", "/openapi.yaml")
-            })
+    fun `injects custom stylesheets`() {
+        val response = swaggerPage {
+            injectStylesheet("/swagger.css")
+            injectStylesheet("/swagger-the-print.css", "print")
         }
 
-        try {
-            val response = Unirest.get("http://localhost:${app.port()}/swagger")
-                .asString()
-                .body
+        assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
+        assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
+    }
 
-            assertThat(response).contains("""link href='/swagger.css' rel='stylesheet' media='screen' type='text/css'""")
-            assertThat(response).contains("""link href='/swagger-the-print.css' rel='stylesheet' media='print' type='text/css'""")
-            assertThat(response).contains("""script src='/script.js' type='text/javascript'""")
-            assertThat(response).contains("{ name: 'custom', url: '/openapi.yaml' }")
-        } finally {
-            app.stop()
+    @Test
+    fun `injects custom JavaScript`() {
+        val response = swaggerPage {
+            injectJavaScript("/script.js")
         }
+
+        assertThat(response).contains("""<script src='/script.js' type='text/javascript'></script>""")
+    }
+
+    @Test
+    fun `injects custom documentation versions`() {
+        val response = swaggerPage {
+            injectCustomVersion("custom", "/openapi.yaml")
+        }
+
+        assertThat(response).contains("{ name: 'custom', url: '/openapi.yaml' }")
     }
 
     @Test
@@ -113,7 +131,7 @@ internal class SwaggerPluginTest {
     }
 
     @Test
-    fun `should not fail if second swagger plugin is registered with routes`(){
+    fun `should not fail if second swagger plugin is registered with routes`() {
         val app = Javalin.start {
             it.jetty.port = 0
             it.registerPlugin(SwaggerPlugin())

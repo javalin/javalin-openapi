@@ -1,34 +1,119 @@
 package io.javalin.openapi.experimental
 
 import com.sun.source.util.Trees
+import io.javalin.introspection.AnnotationSet
+import io.javalin.introspection.EnumConstant
+import io.javalin.introspection.InternalIntrospectionApi
+import io.javalin.introspection.PropertyProjection
+import io.javalin.introspection.ClassDefinition as RawType
+import io.javalin.introspection.StructureType as RawStructureType
+import io.javalin.introspection.jap.JapTypeIntrospector
+import io.javalin.openapi.DiscriminatorMappingName
 import io.javalin.openapi.OpenApiName
-import io.javalin.openapi.experimental.StructureType.DEFAULT
 import io.javalin.openapi.experimental.processor.generators.TypeSchemaGenerator
-import io.javalin.openapi.experimental.processor.shared.getTypeMirror
-import io.javalin.openapi.experimental.processor.shared.getTypeMirrors
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
-import kotlin.reflect.KClass
+import javax.tools.Diagnostic.Kind.NOTE
+import javax.tools.Diagnostic.Kind.WARNING
 
 class AnnotationProcessorContext(
     val parameters: OpenApiAnnotationProcessorParameters,
     val configuration: OpenApiAnnotationProcessorConfiguration,
     val env: ProcessingEnvironment,
     val trees: Trees?,
-) {
+) : SchemaGenerationContext {
 
     val types: Types = env.typeUtils
-    val typeSchemaGenerator: TypeSchemaGenerator = TypeSchemaGenerator(this)
+    override val typeSchemaGenerator: TypeSchemaGenerator = TypeSchemaGenerator(this)
     var roundEnv: RoundEnvironment? = null
 
-    fun <R> inContext(body: AnnotationProcessorContext.() -> R): R =
-        body()
+    override val simpleTypeMappings: Map<String, SimpleType> get() = configuration.simpleTypeMappings
+    override val embeddedTypeProcessors: List<EmbeddedTypeProcessor> get() = configuration.embeddedTypeProcessors
+
+    private val japIntrospector: JapTypeIntrospector by lazy {
+        JapTypeIntrospector(
+            types = types,
+            elements = env.elementUtils,
+        ) { roundEnv }
+    }
+
+    override fun isEnum(type: OpenApiType): Boolean =
+        type.source.kind == ElementKind.ENUM
+
+    override fun annotationsOf(type: OpenApiType): AnnotationSet =
+        japIntrospector.annotationsOf(type.source)
+
+    fun annotationsOf(element: Element): AnnotationSet =
+        japIntrospector.annotationsOf(element)
+
+    override fun propertiesOf(type: OpenApiType): List<PropertyProjection> =
+        japIntrospector.introspect(type.mirror).getProperties()
+
+    override fun enumConstantsOf(type: OpenApiType): List<EnumConstant> =
+        japIntrospector.introspect(type.mirror).getEnumConstants()
+
+    @OptIn(InternalIntrospectionApi::class)
+    override fun toOpenApiType(raw: RawType): OpenApiType {
+        val rawMirror = raw.source as TypeMirror
+        val mirror = when {
+            rawMirror.kind.isPrimitive -> types.boxedClass(rawMirror as PrimitiveType).asType()
+            else -> rawMirror
+        }
+        val source = when {
+            raw.structureType == RawStructureType.DICTIONARY -> mapType()
+            else -> types.asElement(mirror) ?: objectType()
+        }
+
+        return OpenApiType(
+            simpleName = mirror.getSimpleName(),
+            fullName = mirror.getFullName(),
+            generics = raw.generics.map { toOpenApiType(it) },
+            structureType = StructureType.valueOf(raw.structureType.name),
+            handle = OpenApiTypeHandle(
+                mirror = mirror,
+                source = source,
+            ),
+        )
+    }
+
+    override fun reportWarning(message: String) {
+        env.messager.printMessage(WARNING, message)
+    }
+
+    override fun reportDebug(message: String) {
+        inDebug { it.printMessage(NOTE, message) }
+    }
+
+    fun TypeMirror.toOpenApiType(): OpenApiType =
+        toOpenApiType(japIntrospector.introspect(this))
+
+    @OptIn(InternalIntrospectionApi::class)
+    override fun acceptsProperty(type: OpenApiType, property: PropertyProjection): Boolean =
+        configuration.propertyInSchemeFilter?.filter(this, type, property.source as Element) != false
+
+    override fun discriminatorSubtypes(type: OpenApiType): List<Pair<String, OpenApiType>> {
+        val source = japIntrospector.introspect(type.mirror)
+        val subtypes = japIntrospector.typesAnnotatedWith(
+            annotationType = DiscriminatorMappingName::class.java,
+            assignableTo = source,
+        )
+        return subtypes.mapNotNull { subtype ->
+            subtype
+                .getAnnotations()
+                .find(DiscriminatorMappingName::class.java)
+                ?.get("value")
+                ?.asString()
+                ?.let { name -> name to toOpenApiType(subtype) }
+        }
+    }
 
     fun inDebug(body: (Messager) -> Unit) {
         if (configuration.debug) {
@@ -36,17 +121,14 @@ class AnnotationProcessorContext(
         }
     }
 
-    fun getClassDefinition(mirror: TypeMirror, generics: List<ClassDefinition> = emptyList(), type: StructureType = DEFAULT): ClassDefinition =
-        classDefinitionFrom(this, mirror, generics, type)
-
-    fun getClassDefinitions(mirrors: Set<TypeMirror>): Set<ClassDefinition> =
-        mirrors.map { getClassDefinition(it) }.toSet()
-
     fun forTypeElement(name: String): TypeElement? =
         env.elementUtils.getTypeElement(name)
 
-    fun forTypeElement(mirror: TypeMirror): TypeElement =
-        env.typeUtils.asElement(mirror) as TypeElement
+    private fun objectType(): TypeElement =
+        forTypeElement(Any::class.java.name)!!
+
+    private fun mapType(): TypeElement =
+        forTypeElement(Map::class.java.name)!!
 
     fun isAssignable(implementation: TypeMirror, superclass: TypeMirror): Boolean =
         env.typeUtils.isAssignable(implementation, superclass)
@@ -54,25 +136,25 @@ class AnnotationProcessorContext(
     fun hasElement(type: TypeElement, element: Element): Boolean =
         when (element) {
             is ExecutableElement -> env.elementUtils.getAllMembers(type).let { members ->
-                members.contains(element) || members.filterIsInstance<ExecutableElement>().any { env.elementUtils.overrides(element, it, type) }
+                members.contains(element) ||
+                    members
+                        .filterIsInstance<ExecutableElement>()
+                        .any { env.elementUtils.overrides(element, it, type) }
             }
             else -> false
         }
 
-    fun getFullName(mirror: TypeMirror): String =
-        env.typeUtils.asElement(mirror)
-            ?.getAnnotation(OpenApiName::class.java)
-            ?.value
-            ?.let { mirror.toString().substringBeforeLast(".") + "." + it }
-            ?: env.typeUtils.asElement(mirror)?.toString()?.substringBefore("<")
-            ?: mirror.toString().substringBefore("<")
-
-    /* Extension methods, should be replaced by context receivers in the future */
-
-    fun TypeMirror.toClassDefinition(
-        generics: List<ClassDefinition> = emptyList(),
-        type: StructureType = DEFAULT
-    ): ClassDefinition = getClassDefinition(this, generics, type)
+    fun getFullName(mirror: TypeMirror): String {
+        val element = env.typeUtils.asElement(mirror)
+        val fullName = element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
+        val customName = element?.getAnnotation(OpenApiName::class.java)?.value
+        val packageName = fullName.substringBeforeLast('.', "")
+        return when {
+            customName == null -> fullName
+            packageName.isEmpty() -> customName
+            else -> "$packageName.$customName"
+        }
+    }
 
     fun TypeMirror.getSimpleName(): String =
         getFullName().substringAfterLast(".")
@@ -80,13 +162,5 @@ class AnnotationProcessorContext(
     @JvmName("getFullNameExt")
     fun TypeMirror.getFullName(): String =
         getFullName(this)
-
-    fun <A : Annotation> A.getClassDefinitions(supplier: A.() -> Array<out KClass<*>>): Set<ClassDefinition> =
-        getTypeMirrors(supplier)
-            .map { it.toClassDefinition() }
-            .toSet()
-
-    fun <A : Annotation> A.getClassDefinition(supplier: A.() -> KClass<*>): ClassDefinition =
-        getTypeMirror(supplier).toClassDefinition()
 
 }

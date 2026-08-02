@@ -41,7 +41,7 @@ public final class JavalinTest implements Handler {
      * @param args args
      */
     public static void main(String[] args) {
-        Javalin.create(config -> {
+        Javalin.start(config -> {
             String deprecatedDocsPath = "/swagger-docs";
 
             config.registerPlugin(new OpenApiPlugin(openApiConfig ->
@@ -101,8 +101,7 @@ public final class JavalinTest implements Handler {
             config.registerPlugin(new ReDocPlugin(reDocConfiguration ->
                 reDocConfiguration.documentationPath = deprecatedDocsPath
             ));
-        })
-        .start(8080);
+        });
     }
 
     private static final String ROUTE = "/main/{name}";

@@ -8,15 +8,12 @@ plugins {
 
 dependencies {
     api(project(":openapi-generator"))
+    implementation(project(":introspection:introspection-jap"))
     kaptTest(project(":openapi-annotation-processor"))
     testImplementation(project(":openapi-annotation-processor"))
 
     implementation(kotlin("reflect"))
     implementation(libs.groovy)
-
-    implementation(libs.javalin) {
-        exclude(group = "org.slf4j")
-    }
 
     implementation(libs.swagger.parser) {
         exclude(group = "com.fasterxml.jackson")

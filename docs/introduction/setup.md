@@ -19,22 +19,14 @@ repositories {
 }
 
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
-    annotationProcessor(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
-    )
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
     // Optional: Swagger UI
-    implementation(
-        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
-    )
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
     // Optional: ReDoc
-    implementation(
-        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
-    )
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
 }
 ```
 
@@ -44,41 +36,54 @@ plugins {
 }
 
 dependencies {
-    val openapi = "7.2.2"
+    val openapi = "7.3.0-RC.1"
 
-    kapt(
-        "io.javalin.community.openapi:openapi-annotation-processor:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-openapi-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-swagger-plugin:$openapi"
-    )
-    implementation(
-        "io.javalin.community.openapi:javalin-redoc-plugin:$openapi"
-    )
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
 }
 ```
 
-```xml [Maven]
+```kotlin [Gradle (Kotlin) with KSP]
+plugins {
+    // KSP is released against a specific Kotlin version - use the build that matches yours (github.com/google/ksp/releases)
+    id("com.google.devtools.ksp") version "2.3.9"
+}
+
+dependencies {
+    val openapi = "7.3.0-RC.1"
+
+    ksp("io.javalin.community.openapi:openapi-ksp:$openapi")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:$openapi")
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:$openapi")
+}
+
+ksp {
+    arg("openapi.info.title", "My API")
+    arg("openapi.info.version", "1.0.0")
+}
+```
+
+```xml [Maven (Java)]
 <dependencies>
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-openapi-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
     <!-- Optional: Swagger UI -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-swagger-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
     <!-- Optional: ReDoc -->
     <dependency>
         <groupId>io.javalin.community.openapi</groupId>
         <artifactId>javalin-redoc-plugin</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.0-RC.1</version>
     </dependency>
 </dependencies>
 
@@ -92,7 +97,7 @@ dependencies {
                     <path>
                         <groupId>io.javalin.community.openapi</groupId>
                         <artifactId>openapi-annotation-processor</artifactId>
-                        <version>7.2.2</version>
+                        <version>7.3.0-RC.1</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -101,6 +106,90 @@ dependencies {
 </build>
 ```
 
+```xml [Maven (Kotlin)]
+<properties>
+    <kotlin.version>2.1.0</kotlin.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-openapi-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+    <!-- Optional: Swagger UI -->
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-swagger-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+    <!-- Optional: ReDoc -->
+    <dependency>
+        <groupId>io.javalin.community.openapi</groupId>
+        <artifactId>javalin-redoc-plugin</artifactId>
+        <version>7.3.0-RC.1</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>kapt</id>
+                    <goals>
+                        <goal>kapt</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                        </sourceDirs>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>io.javalin.community.openapi</groupId>
+                                <artifactId>openapi-annotation-processor</artifactId>
+                                <version>7.3.0-RC.1</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+:::
+
+## Choosing a Processor
+
+The same generation engine runs on three backends - pick the one that matches your build:
+
+| Backend                     | Dependency                     | Sources       | Best for                                   |
+|-----------------------------|--------------------------------|---------------|--------------------------------------------|
+| APT (`annotationProcessor`) | `openapi-annotation-processor` | Java          | Java projects, or Kotlin via `kapt`        |
+| Kapt (`kapt`)               | `openapi-annotation-processor` | Java + Kotlin | Mixed Java/Kotlin projects                 |
+| KSP (`ksp`)                 | `openapi-ksp` *(experimental)* | Kotlin only   | Kotlin-only projects wanting faster builds |
+
+All three emit the same `openapi-plugin/openapi-*.json` resource format that the `OpenApiPlugin` serves. APT/Kapt remain the reference backends; KSP is experimental and has the limitations listed below.
+
+::: warning KSP limitations
+KSP processes **Kotlin sources only** - `@OpenApi`/`@JsonSchema` on Java types are not picked up (use APT/Kapt for those). The Groovy [scripting configuration](../advanced/scripting) (custom type mappings, property filters, custom type processors) and parser validation are currently APT/Kapt-only. `@OpenApiByFields(only = true)` is also APT/Kapt-only; the KSP backend fails the build with a clear error instead of generating an empty schema.
 :::
 
 ## Register the Plugin
@@ -206,11 +295,11 @@ openapi.withDefinitionConfiguration { version, builder ->
 }
 ```
 
-`OpenApiPlugin` is repeatable — you can register multiple instances for different configurations.
+`OpenApiPlugin` is repeatable - you can register multiple instances for different configurations.
 
 ## Next Steps
 
-- [Javalin Swagger UI](./swagger) — interactive API explorer
-- [Javalin ReDoc](./redoc) — clean API reference
-- [OpenAPI Getting Started](../openapi/getting-started) — annotate your first endpoint
-- [Runtime Builder DSL](../advanced/runtime-builder) — build or extend specs programmatically at runtime
+- [Javalin Swagger UI](./swagger) - interactive API explorer
+- [Javalin ReDoc](./redoc) - clean API reference
+- [OpenAPI Getting Started](../openapi/getting-started) - annotate your first endpoint
+- [Runtime Builder DSL](../advanced/runtime-builder) - build or extend specs programmatically at runtime

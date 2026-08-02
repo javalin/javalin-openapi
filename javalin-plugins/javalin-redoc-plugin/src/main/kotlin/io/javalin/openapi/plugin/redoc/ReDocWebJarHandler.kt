@@ -2,17 +2,21 @@ package io.javalin.openapi.plugin.redoc
 
 import io.javalin.http.Context
 import io.javalin.http.Handler
+import io.javalin.openapi.OpenApiPluginRouteHandler
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.http.MimeTypes
 
 internal class ReDocWebJarHandler(
     private val redocWebJarPath: String,
     private val classLoader: ClassLoader = ReDocWebJarHandler::class.java.classLoader,
-) : Handler {
+) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
-        val resourcePath = "META-INF/resources" + redocWebJarPath + context.path().replaceFirst(context.contextPath(), "").replaceFirst(redocWebJarPath, "")
-        val resource = classLoader.getResourceAsStream(resourcePath)
+        val resourceRootPath = "META-INF/resources$redocWebJarPath"
+        val requestedResource = context.path()
+            .replaceFirst(context.contextPath(), "")
+            .replaceFirst(redocWebJarPath, "")
+        val resource = classLoader.getResourceAsStream(resourceRootPath + requestedResource)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)

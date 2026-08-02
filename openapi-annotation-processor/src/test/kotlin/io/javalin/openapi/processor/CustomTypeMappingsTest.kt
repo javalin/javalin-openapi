@@ -26,8 +26,6 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
     )
     @Test
     fun should_unwrap_atomic_reference_via_custom_processor() = withOpenApi("should_unwrap_atomic_reference_via_custom_processor") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.EntityWithAtomicReference")
             .isObject
@@ -63,8 +61,6 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
     )
     @Test
     fun should_unwrap_optional_as_nullable() = withOpenApi("should_unwrap_optional_as_nullable") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.EntityWithOptional")
             .isObject
@@ -86,6 +82,23 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
                   }
                 }
             """))
+    }
+
+    @OpenApi(
+        path = "/primitive-redirect",
+        versions = ["should_keep_primitive_redirect_required"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = PrimitiveRedirectDto::class)])]
+    )
+    @Test
+    fun should_keep_primitive_redirect_required() = withOpenApi("should_keep_primitive_redirect_required") {
+        assertThatJson(it)
+            .inPath("$.components.schemas.PrimitiveRedirectDto.properties.createdAt")
+            .isObject
+            .isEqualTo(json("""{ "type": "integer", "format": "int64" }"""))
+
+        assertThatJson(it)
+            .inPath("$.components.schemas.PrimitiveRedirectDto.required")
+            .isEqualTo(json("""["createdAt"]"""))
     }
 
 }

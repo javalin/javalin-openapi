@@ -1,11 +1,17 @@
 package io.javalin.openapi.experimental.processor.generators
 
 import io.javalin.openapi.Composition
-import io.javalin.openapi.Discriminator
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
 
 data class PropertyComposition(
     val type: Composition,
-    val references: Set<ClassDefinition>,
-    val discriminator: Discriminator
+    val references: Set<OpenApiType>,
+    val discriminator: DiscriminatorInfo?,
+)
+
+data class DiscriminatorInfo(
+    val propertyName: String,
+    val propertyType: OpenApiType,
+    val injectInMappings: Boolean,
+    val mapping: List<Pair<String, OpenApiType>>,
 )

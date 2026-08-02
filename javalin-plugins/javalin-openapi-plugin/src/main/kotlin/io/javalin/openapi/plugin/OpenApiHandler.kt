@@ -4,15 +4,18 @@ import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.http.Header
+import io.javalin.openapi.OpenApiPluginRouteHandler
 
-internal class OpenApiHandler(private val documentation: Lazy<Map<String, String>>) : Handler {
+internal class OpenApiHandler(private val documentation: Lazy<Map<String, String>>) : Handler, OpenApiPluginRouteHandler {
 
     override fun handle(context: Context) {
+        val version = context.queryParamMap()["v"]?.firstOrNull() ?: "default"
+
         context
             .header(Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
             .header(Header.ACCESS_CONTROL_ALLOW_METHODS, "GET")
             .contentType(ContentType.JSON)
-            .result(documentation.value[context.queryParamMap()["v"]?.firstOrNull() ?: "default"] ?: "{}")
+            .result(documentation.value[version] ?: "{}")
     }
 
 }

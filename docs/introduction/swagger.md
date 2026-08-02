@@ -57,4 +57,4 @@ When running behind a reverse proxy that adds a base path, set `basePath` so the
 swagger.basePath = "/api"
 ```
 
-`SwaggerPlugin` is repeatable — you can register multiple instances for different API versions or configurations.
+`SwaggerPlugin` is repeatable - you can register multiple instances for different API versions or configurations.

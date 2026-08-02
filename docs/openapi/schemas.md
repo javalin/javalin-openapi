@@ -8,17 +8,17 @@ The annotation processor automatically generates OpenAPI component schemas from 
 
 | Java Type | OpenAPI Type | Format |
 |-----------|-------------|--------|
-| `boolean` / `Boolean` | `boolean` | — |
+| `boolean` / `Boolean` | `boolean` | - |
 | `byte` / `Byte` | `integer` | `int32` |
 | `short` / `Short` | `integer` | `int32` |
 | `int` / `Integer` | `integer` | `int32` |
 | `long` / `Long` | `integer` | `int64` |
 | `float` / `Float` | `number` | `float` |
 | `double` / `Double` | `number` | `double` |
-| `char` / `Character` | `string` | — |
-| `String` | `string` | — |
-| `BigDecimal` | `string` | — |
-| `BigInteger` | `integer` | — |
+| `char` / `Character` | `string` | - |
+| `String` | `string` | - |
+| `BigDecimal` | `string` | - |
+| `BigInteger` | `integer` | - |
 | `UUID` | `string` | `uuid` |
 
 ### Date & Time Types
@@ -65,8 +65,8 @@ The annotation processor automatically generates OpenAPI component schemas from 
 
 By default, properties are resolved from getter methods following JavaBean conventions. The `get` / `is` prefix is stripped:
 
-- `getName()` → `name`
-- `isActive()` → `active`
+- `getName()` -> `name`
+- `isActive()` -> `active`
 
 ### Java Records
 
@@ -85,6 +85,8 @@ class Config {
 ```
 
 The `value` parameter controls the minimum field visibility. Use `only = true` to ignore methods entirely.
+
+`only = true` is supported by the APT/Kapt backend. KSP does not expose the Java-style field model needed for this mode yet, so the KSP backend fails the build with a clear error if it sees `@OpenApiByFields(only = true)`.
 
 ## Property Annotations
 
@@ -175,7 +177,7 @@ Generic type parameters are resolved when used in concrete contexts. `Page<User>
 
 ## Custom Type Mappings
 
-Register custom type mappings in the [compile-time configuration](../advanced/configuration):
+Register custom type mappings in the [scripting configuration](../advanced/scripting):
 
 ```groovy
 configuration.simpleTypeMappings['org.bson.types.ObjectId'] = new SimpleType("string")

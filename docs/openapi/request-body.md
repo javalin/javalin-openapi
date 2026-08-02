@@ -52,9 +52,9 @@ Use `@OpenApiRequestBody` and `@OpenApiContent` to describe request bodies.
 
 When `mimeType` is not specified, the content type is auto-detected from the `from` type:
 
-- Object types → `application/json`
-- `String` → `text/plain`
-- `ByteArray`, `InputStream`, `File` → `application/octet-stream`
+- Object types -> `application/json`
+- `String` -> `text/plain`
+- `ByteArray`, `InputStream`, `File` -> `application/octet-stream`
 
 ## Inline Properties
 
@@ -109,11 +109,11 @@ Generates:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `from` | `KClass<*>` | — | Schema type |
+| `from` | `KClass<*>` | - | Schema type |
 | `mimeType` | `String` | Auto-detect | Content type |
-| `type` | `String` | — | Override type |
-| `format` | `String` | — | Override format |
+| `type` | `String` | - | Override type |
+| `format` | `String` | - | Override format |
 | `properties` | `OpenApiContentProperty[]` | `[]` | Inline properties |
-| `additionalProperties` | `OpenApiAdditionalContent` | — | Map value type |
-| `example` | `String` | — | Example value |
+| `additionalProperties` | `OpenApiAdditionalContent` | - | Map value type |
+| `example` | `String` | - | Example value |
 | `exampleObjects` | `OpenApiExampleProperty[]` | `[]` | Structured example |

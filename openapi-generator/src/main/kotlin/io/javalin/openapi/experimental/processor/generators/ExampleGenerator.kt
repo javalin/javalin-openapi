@@ -3,7 +3,6 @@ package io.javalin.openapi.experimental.processor.generators
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.NULL_STRING
-import io.javalin.openapi.OpenApiExampleProperty
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import io.javalin.openapi.experimental.processor.shared.jsonMapper
@@ -12,15 +11,18 @@ data class ExampleProperty(
     val name: String?,
     val value: String?,
     val raw: String?,
-    val objects: List<ExampleProperty>?
+    val objects: List<ExampleProperty>?,
 )
 
-fun OpenApiExampleProperty.toExampleProperty(): ExampleProperty =
+fun Map<String, Any?>.toExampleProperty(): ExampleProperty =
     ExampleProperty(
-        name = this.name.takeIf { it != NULL_STRING },
-        value = this.value.takeIf { it != NULL_STRING },
-        raw = this.raw.takeIf { it != NULL_STRING },
-        objects = this.objects.map { it.toExampleProperty() }.takeIf { it.isNotEmpty() },
+        name = (get("name") as? String)?.takeIf { it != NULL_STRING },
+        value = (get("value") as? String)?.takeIf { it != NULL_STRING },
+        raw = (get("raw") as? String)?.takeIf { it != NULL_STRING },
+        objects = (get("objects") as? List<*>)
+            ?.filterIsInstance<Map<String, Any?>>()
+            ?.map { it.toExampleProperty() }
+            ?.takeIf { it.isNotEmpty() },
     )
 
 object ExampleGenerator {
@@ -55,15 +57,15 @@ object ExampleGenerator {
 
     private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
         when {
-            this.value != null -> GeneratorResult(this.value, null)
-            this.objects?.isNotEmpty() == true -> generateFromExamples(this.objects)
-            this.raw != null -> GeneratorResult(null, jsonMapper.readTree(this.raw))
+            value != null -> GeneratorResult(value, null)
+            objects?.isNotEmpty() == true -> generateFromExamples(objects)
+            raw != null -> GeneratorResult(null, jsonMapper.readTree(raw))
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
 
     private fun List<ExampleProperty>.toJsonObject(): ObjectNode {
         val jsonObject = createObjectNode()
-        this.forEach {
+        forEach {
             val result = it.toSimpleExampleValue()
             if (it.name == null) {
                 throw IllegalArgumentException("Example object must have a name ($it)")
@@ -77,9 +79,17 @@ object ExampleGenerator {
     }
 
     private fun List<ExampleProperty>.isObjectList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == null && it.value == null && it.objects?.isNotEmpty() ?: false }
+        isNotEmpty() && all { example ->
+            example.name == null &&
+                example.value == null &&
+                example.objects?.isNotEmpty() == true
+        }
 
     private fun List<ExampleProperty>.isRawList(): Boolean =
-        this.isNotEmpty() && this.all { it.name == null && it.value != null && it.objects?.isEmpty() ?: true }
+        isNotEmpty() && all { example ->
+            example.name == null &&
+                example.value != null &&
+                example.objects.isNullOrEmpty()
+        }
 
 }

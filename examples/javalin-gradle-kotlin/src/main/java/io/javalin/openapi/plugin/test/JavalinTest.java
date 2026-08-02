@@ -45,7 +45,7 @@ public final class JavalinTest implements Handler {
      * @param args args
      */
     public static void main(String[] args) {
-        var app = Javalin.create(config -> {
+        Javalin.start(config -> {
             // config.routing.contextPath = "/custom";
             String deprecatedDocsPath = "/api/openapi.json"; // by default it's /openapi
 
@@ -110,7 +110,6 @@ public final class JavalinTest implements Handler {
                 System.out.println(generatedJsonSchema.getContentAsString());
             }
         });
-        app.start();
     }
 
     @OpenApi(
@@ -217,7 +216,6 @@ public final class JavalinTest implements Handler {
                 @OpenApiContent(from = EntityDto[].class), // array
                 @OpenApiContent(from = File.class), // file
                 @OpenApiContent(type = "application/json"), // empty
-                @OpenApiContent(), // empty
                 @OpenApiContent(mimeType = "image/png", type = "string", format = "base64"), // single file upload,
                 @OpenApiContent(mimeType = "multipart/form-data", properties = {
                     @OpenApiContentProperty(name = "form-element", type = "integer"), // random element in form-data

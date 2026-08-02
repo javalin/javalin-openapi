@@ -10,6 +10,7 @@ dependencies {
 
     kaptTest(project(":openapi-annotation-processor"))
 
+    testImplementation(project(":openapi-dynamic"))
     testImplementation(libs.javalin)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.junit.jupiter.api)

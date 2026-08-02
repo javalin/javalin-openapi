@@ -3,13 +3,14 @@ package io.javalin.openapi.experimental.processor.generators
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.OpenApiNamingStrategy
-import io.javalin.openapi.experimental.ClassDefinition
+import io.javalin.openapi.experimental.OpenApiType
+import io.javalin.openapi.experimental.mergeExtraFrom
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import java.math.BigDecimal
 
 data class ResultScheme(
     val json: ObjectNode,
-    val references: Set<ClassDefinition>
+    val references: Set<OpenApiType>,
 ) {
     fun toJsonSchemaString(): String {
         val scheme = createObjectNode()
@@ -21,12 +22,19 @@ data class ResultScheme(
 
 data class Property(
     val name: String,
-    val type: ClassDefinition,
+    val type: OpenApiType,
     val composition: PropertyComposition? = null,
     val required: Boolean = true,
     val nullable: Boolean = false,
     val extra: Map<String, Any?> = emptyMap()
 )
+
+internal fun MutableSet<OpenApiType>.addReference(reference: OpenApiType) {
+    when (val existing = firstOrNull { it == reference }) {
+        null -> add(reference)
+        else -> existing.mergeExtraFrom(reference)
+    }
+}
 
 fun splitCamelCase(name: String): List<String> {
     val words = mutableListOf<String>()
@@ -54,7 +62,7 @@ fun translatePropertyName(strategy: OpenApiNamingStrategy, name: String): String
         OpenApiNamingStrategy.KEBAB_CASE -> splitCamelCase(name).joinToString("-") { it.lowercase() }
     }
 
-fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode = also {
+fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode {
     extra
         .filterValues { it != null }
         .forEach { (key, value) ->
@@ -71,4 +79,5 @@ fun ObjectNode.addExtra(extra: Map<String, Any?>): ObjectNode = also {
                 else -> put(key, value.toString())
             }
         }
+    return this
 }

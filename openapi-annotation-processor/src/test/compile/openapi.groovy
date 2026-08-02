@@ -1,6 +1,6 @@
 import io.javalin.openapi.experimental.AnnotationProcessorContext
-import io.javalin.openapi.experimental.ClassDefinition
-import io.javalin.openapi.experimental.ClassDefinitionHandleKt
+import io.javalin.openapi.experimental.OpenApiType
+import io.javalin.openapi.experimental.OpenApiTypeHandleKt
 import io.javalin.openapi.experimental.EmbeddedTypeProcessorContext
 import io.javalin.openapi.experimental.ExperimentalCompileOpenApiConfiguration
 import io.javalin.openapi.experimental.OpenApiAnnotationProcessorConfiguration
@@ -16,28 +16,18 @@ class OpenApiConfiguration implements OpenApiAnnotationProcessorConfigurer {
     @Override
     void configure(OpenApiAnnotationProcessorConfiguration configuration) {
         configuration.validateWithParser = false
-        // configuration.debug = false
 
-        // Used by TypeMappersTest
         configuration.simpleTypeMappings['io.javalin.openapi.processor.TypeMappersTest.CustomType'] = new SimpleType("string")
 
-        // Used by UserCasesTest
-        configuration.propertyInSchemeFilter = { AnnotationProcessorContext ctx, ClassDefinition type, Element property ->
-            TypeElement specificRecord = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecord')
-            TypeElement specificRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.UserCasesTest.SpecificRecordBase')
+        configuration.propertyInSchemeFilter = { AnnotationProcessorContext ctx, OpenApiType type, Element property ->
+            TypeElement filteredRecord = ctx.forTypeElement('io.javalin.openapi.processor.PropertySelectionTest.FilteredRecord')
+            TypeElement filteredRecordBase = ctx.forTypeElement('io.javalin.openapi.processor.PropertySelectionTest.FilteredRecordBase')
 
-            if (ctx.isAssignable(ClassDefinitionHandleKt.getMirror(type), specificRecord.asType()) && ctx.hasElement(specificRecord, property)) {
-                return false // exclude
+            return [filteredRecord, filteredRecordBase].every { filteredType ->
+                !ctx.isAssignable(OpenApiTypeHandleKt.getMirror(type), filteredType.asType()) || !ctx.hasElement(filteredType, property)
             }
-
-            if (ctx.isAssignable(ClassDefinitionHandleKt.getMirror(type), specificRecordBase.asType()) && ctx.hasElement(specificRecordBase, property)) {
-                return false // exclude
-            }
-
-            return true // include
         }
 
-        // Used by CustomTypeMappingsTest - unwrap AtomicReference<T> to T
         configuration.insertEmbeddedTypeProcessor({ EmbeddedTypeProcessorContext context ->
             if (context.type.simpleName == 'AtomicReference' && context.type.generics.size() == 1) {
                 context.parentContext.typeSchemaGenerator.addType(context.scheme, context.type.generics[0], context.inlineRefs, context.references, false)

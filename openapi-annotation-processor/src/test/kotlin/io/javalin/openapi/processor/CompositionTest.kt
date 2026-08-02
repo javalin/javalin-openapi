@@ -79,8 +79,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
             """))
     }
 
-    // Nullable composition types
-
     @JsonSchema
     class NullableOneOfConfig(
         @get:OpenApiNullable
@@ -226,8 +224,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
             """))
     }
 
-    // Discriminator tests
-
     @OneOf(
         discriminator = Discriminator(
             property = DiscriminatorProperty(
@@ -246,6 +242,11 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
     @OpenApiName("B")
     data class C(val b: String) : Union
 
+    data class UnionEnvelope(
+        val direct: A,
+        val union: Union,
+    )
+
     @OpenApi(
         path = "discriminator",
         versions = ["should_resolve_subtypes_as_mapping"],
@@ -253,8 +254,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_resolve_subtypes_as_mapping() = withOpenApi("should_resolve_subtypes_as_mapping") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.Union")
             .isObject
@@ -321,5 +320,19 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
                   }
             """))
     }
+
+    @OpenApi(
+        path = "discriminator-direct-subtype",
+        versions = ["should_inject_discriminator_into_previously_referenced_subtype"],
+        responses = [OpenApiResponse(status = "200", content = [OpenApiContent(from = UnionEnvelope::class)])]
+    )
+    @Test
+    fun should_inject_discriminator_into_previously_referenced_subtype() =
+        withOpenApi("should_inject_discriminator_into_previously_referenced_subtype") {
+            assertThatJson(it)
+                .inPath("$.components.schemas.A.properties.type")
+                .isObject
+                .isEqualTo(json("""{ "type": "string" }"""))
+        }
 
 }

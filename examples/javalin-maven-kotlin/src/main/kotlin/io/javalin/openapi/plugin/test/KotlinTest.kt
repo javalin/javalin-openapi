@@ -14,7 +14,7 @@ import io.javalin.openapi.plugin.swagger.SwaggerPlugin
     path = "/"
 )
 fun main() {
-    Javalin.createAndStart { config ->
+    Javalin.start { config ->
         config.registerPlugin(
             OpenApiPlugin {
                 it.documentationPath = "/openapi"

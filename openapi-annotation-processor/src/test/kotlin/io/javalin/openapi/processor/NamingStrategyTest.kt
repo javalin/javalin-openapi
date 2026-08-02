@@ -86,8 +86,6 @@ internal class NamingStrategyTest : OpenApiAnnotationProcessorSpecification() {
             .doesNotContainKey("lastName")
     }
 
-    // Enum naming tests
-
     @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
     private enum class SnakeCaseEnum {
         MyValue,
@@ -147,8 +145,6 @@ internal class NamingStrategyTest : OpenApiAnnotationProcessorSpecification() {
             .isArray
             .isEqualTo(json("""["my-value", "customName"]"""))
     }
-
-    // Property naming override tests
 
     @OpenApiNaming(OpenApiNamingStrategy.SNAKE_CASE)
     private class NamingWithOverrideEntity(
