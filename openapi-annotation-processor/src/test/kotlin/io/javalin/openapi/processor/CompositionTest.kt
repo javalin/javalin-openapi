@@ -254,8 +254,6 @@ internal class CompositionTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_resolve_subtypes_as_mapping() = withOpenApi("should_resolve_subtypes_as_mapping") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.Union")
             .isObject

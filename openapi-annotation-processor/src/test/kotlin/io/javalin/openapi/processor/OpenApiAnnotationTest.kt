@@ -155,8 +155,6 @@ internal class OpenApiAnnotationTest : OpenApiAnnotationProcessorSpecification()
     )
     @Test
     fun should_generate_callback() = withOpenApi("should_generate_callback") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.paths['/callback'].get.callbacks")
             .isObject

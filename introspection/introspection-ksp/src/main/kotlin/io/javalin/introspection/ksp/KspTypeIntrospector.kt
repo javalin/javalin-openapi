@@ -11,6 +11,7 @@ import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 import io.javalin.introspection.Accessor
 import io.javalin.introspection.AnnotationProjection
 import io.javalin.introspection.AnnotationSet
@@ -27,7 +28,6 @@ import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.MemberVisibility
 import java.lang.annotation.Inherited
 import java.lang.annotation.Repeatable as JavaRepeatable
-import com.google.devtools.ksp.symbol.Visibility as KspVisibility
 
 class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospector {
 
@@ -278,7 +278,9 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
         }
 
         override fun all(): List<AnnotationProjection> =
-            annotations().distinctBy { it.annotationType.resolve().declaration }.map { KspAnnotationProjection(it) }
+            annotations()
+                .distinctBy { it.annotationType.resolve().declaration }
+                .map { KspAnnotationProjection(it) }
 
         private fun KSAnnotation.named(type: Class<out Annotation>): Boolean {
             val qualifiedName = qualifiedName()

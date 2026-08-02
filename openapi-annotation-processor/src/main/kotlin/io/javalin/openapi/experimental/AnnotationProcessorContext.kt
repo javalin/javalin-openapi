@@ -146,10 +146,13 @@ class AnnotationProcessorContext(
 
     fun getFullName(mirror: TypeMirror): String {
         val element = env.typeUtils.asElement(mirror)
+        val fullName = element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
         val customName = element?.getAnnotation(OpenApiName::class.java)?.value
+        val packageName = fullName.substringBeforeLast('.', "")
         return when {
-            customName != null -> mirror.toString().substringBeforeLast(".") + "." + customName
-            else -> element?.toString()?.substringBefore("<") ?: mirror.toString().substringBefore("<")
+            customName == null -> fullName
+            packageName.isEmpty() -> customName
+            else -> "$packageName.$customName"
         }
     }
 

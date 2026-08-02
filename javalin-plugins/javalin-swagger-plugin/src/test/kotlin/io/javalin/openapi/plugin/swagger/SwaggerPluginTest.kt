@@ -22,6 +22,7 @@ internal class SwaggerPluginTest {
             app.stop()
         }
     }
+
     @Test
     fun `should properly host swagger ui`() {
         val app = Javalin.start {
@@ -130,7 +131,7 @@ internal class SwaggerPluginTest {
     }
 
     @Test
-    fun `should not fail if second swagger plugin is registered with routes`(){
+    fun `should not fail if second swagger plugin is registered with routes`() {
         val app = Javalin.start {
             it.jetty.port = 0
             it.registerPlugin(SwaggerPlugin())

@@ -45,7 +45,7 @@ class RegisteredRoutesHook @JvmOverloads constructor(
     private val config = RegisteredRoutesHookConfiguration().also(userConfig::accept)
 
     override fun apply(context: OpenApiHookContext) {
-        val schemaContext = ReflectionSchemaContext() // document-scoped: owns the generator + its memo cache
+        val schemaContext = ReflectionSchemaContext()
         context.builder.openApiVersion("3.1.0").ensureInfo()
 
         for (handler in context.state.internalRouter.allHttpHandlers()) {
@@ -83,7 +83,6 @@ class RegisteredRoutesHook @JvmOverloads constructor(
         context.builder.resolveComponentReferences { type -> schemaContext.componentSchema(type) }
     }
 
-    /** Javalin `<slashParam>` -> OpenAPI `{slashParam}`; `{param}` kept as-is. */
     private fun toOpenApiPath(path: String): String =
         path.replace(ANGLE_PARAM) { "{${it.groupValues[1]}}" }
 

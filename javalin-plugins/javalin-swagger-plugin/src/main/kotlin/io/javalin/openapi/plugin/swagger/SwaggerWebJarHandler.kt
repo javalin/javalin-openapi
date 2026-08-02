@@ -5,7 +5,6 @@ import io.javalin.http.Handler
 import io.javalin.openapi.OpenApiPluginRouteHandler
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.http.MimeTypes
-import java.io.InputStream
 
 internal class SwaggerWebJarHandler(
     private val swaggerWebJarPath: String,
@@ -19,7 +18,7 @@ internal class SwaggerWebJarHandler(
             .replaceFirst(context.contextPath(), "")
             .replaceFirst(swaggerWebJarPath, "")
 
-        val resource: InputStream? = classLoader.getResourceAsStream(resourceRootPath + requestedResource)
+        val resource = classLoader.getResourceAsStream(resourceRootPath + requestedResource)
 
         if (resource == null) {
             context.status(HttpStatus.NOT_FOUND_404)
@@ -29,7 +28,6 @@ internal class SwaggerWebJarHandler(
         context.result(resource)
         context.res().characterEncoding = "UTF-8"
 
-        // Swagger returns non-standard assets such as .js.map, which Jetty does not otherwise recognize.
         MimeTypes.DEFAULTS.getMimeByExtension(context.path())?.let {
             context.contentType(it)
         }

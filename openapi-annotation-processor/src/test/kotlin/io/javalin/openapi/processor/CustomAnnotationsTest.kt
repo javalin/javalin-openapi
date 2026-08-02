@@ -50,8 +50,6 @@ internal class CustomAnnotationsTest : OpenApiAnnotationProcessorSpecification()
     )
     @Test
     fun should_include_custom_annotation_in_type_scheme() = withOpenApi("should_include_custom_annotation_in_type_scheme") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.paths['/custom'].get.responses.200.content['application/json'].schema")
             .isObject

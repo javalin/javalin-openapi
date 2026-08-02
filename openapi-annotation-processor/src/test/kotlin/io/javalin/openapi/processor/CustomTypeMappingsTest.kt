@@ -26,8 +26,6 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
     )
     @Test
     fun should_unwrap_atomic_reference_via_custom_processor() = withOpenApi("should_unwrap_atomic_reference_via_custom_processor") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.EntityWithAtomicReference")
             .isObject
@@ -63,8 +61,6 @@ internal class CustomTypeMappingsTest : OpenApiAnnotationProcessorSpecification(
     )
     @Test
     fun should_unwrap_optional_as_nullable() = withOpenApi("should_unwrap_optional_as_nullable") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.EntityWithOptional")
             .isObject

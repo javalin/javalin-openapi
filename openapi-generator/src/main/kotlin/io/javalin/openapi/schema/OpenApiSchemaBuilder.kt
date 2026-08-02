@@ -52,16 +52,17 @@ class OpenApiSchemaBuilder {
             root.set<JsonNode>("info", updatedInfo)
         }
 
-    fun ensureInfo(title: String = "", version: String = ""): OpenApiSchemaBuilder = apply {
-        val info = root.get("info") as? ObjectNode
-            ?: createObjectNode().also { root.set<JsonNode>("info", it) }
-        if (!info.has("title")) {
-            info.put("title", title)
+    fun ensureInfo(title: String = "", version: String = ""): OpenApiSchemaBuilder =
+        apply {
+            val info = root.get("info") as? ObjectNode
+                ?: createObjectNode().also { root.set<JsonNode>("info", it) }
+            if (!info.has("title")) {
+                info.put("title", title)
+            }
+            if (!info.has("version")) {
+                info.put("version", version)
+            }
         }
-        if (!info.has("version")) {
-            info.put("version", version)
-        }
-    }
 
     fun server(configure: Consumer<OpenApiServer>): OpenApiSchemaBuilder =
         apply {
@@ -259,7 +260,6 @@ class OpenApiSchemaBuilder {
                         schemas?.properties()?.forEach { (schemaName, schemaValue) ->
                             builder.componentSchemas.set<JsonNode>(schemaName, schemaValue.deepCopy())
                         }
-                        // Preserve non-schema component entries (securitySchemes, etc.)
                         componentsNode.properties()
                             .filter { it.key != "schemas" }
                             .forEach { (compKey, compValue) ->

@@ -220,9 +220,8 @@ class OpenApiSchemaGenerator(
         return method.lowercase() + path
     }
 
-    private fun String.capitalise(): String = replaceFirstChar {
-        it.titlecase(Locale.getDefault())
-    }
+    private fun String.capitalise(): String =
+        replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
     private fun resolveMediaType(content: OpenApiContentDefinition): Pair<String, MediaTypeBuilder.() -> Unit>? {
         val source = content.resolvedSource
@@ -335,7 +334,8 @@ class OpenApiSchemaGenerator(
         return context.typeSchemaGenerator.createEmbeddedTypeDescription(model)
     }
 
-    private fun descriptionOf(response: OpenApiResponseDefinition): String = response.description
+    private fun descriptionOf(response: OpenApiResponseDefinition): String =
+        response.description
             ?: defaultStatusDescription(response.status)
             ?: ""
 

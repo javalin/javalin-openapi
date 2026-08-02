@@ -94,8 +94,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_map_all_simple_types() = withOpenApi("should_map_all_simple_types") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.SimpleTypesList.properties")
             .isObject
@@ -275,8 +273,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_output_dictionary_structure() = withOpenApi("should_output_dictionary_structure") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.paths['/dictionary-structure'].get.responses.200.content['application/map-string-string'].schema")
             .isObject
@@ -329,8 +325,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_support_nested_lists_in_example_objects() = withOpenApi("should_support_nested_lists_in_example_objects") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.paths['/nested-list-example'].get.responses.200.content['text/plain'].example")
             .isObject
@@ -367,8 +361,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_support_raw_examples() = withOpenApi("should_support_raw_examples") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.RawExampleEntity.properties.intField.example")
             .isEqualTo(1234)
@@ -400,8 +392,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_support_integer_enum() = withOpenApi("should_support_integer_enum") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.IntegerEnum")
             .isObject
@@ -434,8 +424,6 @@ internal class TypeMappersTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_support_x_enum_descriptions_enum() = withOpenApi("should_support_x_enum_descriptions_enum") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.XEnumDescriptionsEnum")
             .isObject

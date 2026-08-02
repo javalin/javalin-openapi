@@ -246,7 +246,6 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         }
     }
 
-    // clazz.methods is public-only, so a second pass picks up inherited protected/package-private getters (jap parity)
     for (method in nonPublicGettersHierarchy(clazz)) {
         if (getterNames.add(method.name)) {
             members += method.toMember()
@@ -305,16 +304,12 @@ private fun declaredFieldsHierarchy(clazz: Class<*>): List<Field> {
     val fields = mutableListOf<Field>()
     var current: Class<*>? = clazz
     while (current != null && current != Any::class.java) {
-        // only members [clazz] actually inherits, matching JAP's getAllMembers: private stays in the leaf,
-        // package-private is inherited only within the same package
         current.declaredFields.filterTo(fields) { field ->
-            val modifiers = field.modifiers
-            when {
-                current == clazz -> true
-                Modifier.isPrivate(modifiers) -> false
-                Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) -> true
-                else -> field.declaringClass.packageName == clazz.packageName
-            }
+            memberIsInheritedBy(
+                type = clazz,
+                declaringClass = field.declaringClass,
+                modifiers = field.modifiers,
+            )
         }
         current = current.superclass
     }
@@ -329,18 +324,26 @@ private fun nonPublicGettersHierarchy(clazz: Class<*>): List<Method> {
             val modifiers = method.modifiers
             if (Modifier.isStatic(modifiers) || Modifier.isPublic(modifiers) || method.isBridge || method.isSynthetic) continue
             if (method.parameterCount != 0 || method.returnType == Void.TYPE || !method.isPropertyGetter()) continue
-            val inherited = when {
-                current == clazz -> true
-                Modifier.isPrivate(modifiers) -> false
-                Modifier.isProtected(modifiers) -> true
-                else -> method.declaringClass.packageName == clazz.packageName
+            if (memberIsInheritedBy(clazz, method.declaringClass, modifiers)) {
+                getters += method
             }
-            if (inherited) getters += method
         }
         current = current.superclass
     }
     return getters
 }
+
+private fun memberIsInheritedBy(
+    type: Class<*>,
+    declaringClass: Class<*>,
+    modifiers: Int,
+): Boolean =
+    when {
+        declaringClass == type -> true
+        Modifier.isPrivate(modifiers) -> false
+        Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) -> true
+        else -> declaringClass.packageName == type.packageName
+    }
 
 private class ReflectionAnnotations(private val sources: List<AnnotatedElement>) : AnnotationSet {
 

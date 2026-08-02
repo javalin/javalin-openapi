@@ -37,8 +37,6 @@ internal class ComponentSchemaTest : OpenApiAnnotationProcessorSpecification() {
     )
     @Test
     fun should_generate_reference_with_inherited_properties() = withOpenApi("should_generate_reference_with_inherited_properties") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.FinalClass.properties")
             .isObject

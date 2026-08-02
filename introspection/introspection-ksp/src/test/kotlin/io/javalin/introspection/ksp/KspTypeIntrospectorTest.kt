@@ -64,41 +64,45 @@ class KspTypeIntrospectorTest {
 
     @Test
     fun `KSP backend resolves enum constants`() {
-        val color =
+        val (isEnum, constants) =
             withKsp { ksp ->
-                ksp.introspect("$REF_PKG.Color")
+                val color = ksp.introspect("$REF_PKG.Color")
+                color.isEnum() to color.getEnumConstants().map { it.name }
             }
 
-        assertThat(color.isEnum()).isTrue()
-        assertThat(color.getEnumConstants().map { it.name }).containsExactly("RED", "GREEN")
+        assertThat(isEnum).isTrue()
+        assertThat(constants).containsExactly("RED", "GREEN")
     }
 
     @Test
     fun `KSP backend reads annotations by name`() {
-        val annotations =
+        val (hasRef, refValue) =
             withKsp { ksp ->
-                ksp
+                val annotations =
+                    ksp
                     .introspect("$REF_PKG.Account")
                     .getAnnotations()
+                annotations.contains("Ref") to annotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName
             }
 
-        assertThat(annotations.contains("Ref")).isTrue()
-        assertThat(annotations.find(Ref::class.java)?.get("value")?.asClassDefinition()?.fullName)
-            .isEqualTo("$REF_PKG.Address")
+        assertThat(hasRef).isTrue()
+        assertThat(refValue).isEqualTo("$REF_PKG.Address")
     }
 
     @Test
     fun `KSP backend finds annotations by meta-annotation`() {
-        val annotated =
+        val label =
             withKsp { ksp ->
                 ksp
                     .introspect("$REF_PKG.Account")
                     .getAnnotations()
                     .all()
                     .first { it.metadata.contains("MetaMarker") }
+                    .get("label")
+                    .asString()
             }
 
-        assertThat(annotated["label"].asString()).isEqualTo("x")
+        assertThat(label).isEqualTo("x")
     }
 
     private companion object {

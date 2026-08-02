@@ -92,6 +92,44 @@ internal class ProcessorDiagnosticsTest {
             )
     }
 
+    @Test
+    fun should_apply_custom_type_names_without_a_package() {
+        val diagnostics = compile(
+            sourceCode =
+                """
+                import io.javalin.openapi.OpenApi;
+                import io.javalin.openapi.OpenApiContent;
+                import io.javalin.openapi.OpenApiName;
+                import io.javalin.openapi.OpenApiResponse;
+
+                @OpenApiName("Renamed")
+                class Original {
+                }
+
+                class DefaultPackageRoute {
+                    @OpenApi(
+                        path = "/renamed",
+                        responses = {
+                            @OpenApiResponse(status = "200", content = { @OpenApiContent(from = Original.class) })
+                        }
+                    )
+                    public void route() {
+                    }
+                }
+                """.trimIndent(),
+            processor =
+                object : OpenApiAnnotationProcessor() {
+                    override fun init(processingEnv: ProcessingEnvironment) {
+                        super.init(processingEnv)
+                        context.configuration.debug = true
+                    }
+                },
+        )
+
+        assertThat(diagnostics.map { it.getMessage(null) })
+            .contains("OpenApi | Generating schema for Renamed")
+    }
+
     private fun compile(
         sourceCode: String,
         processor: Processor = OpenApiAnnotationProcessor(),

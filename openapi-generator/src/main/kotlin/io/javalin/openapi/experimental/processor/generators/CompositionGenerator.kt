@@ -32,7 +32,12 @@ private fun compositionOf(
     composition: Composition,
 ): PropertyComposition? {
     val annotation = annotations.find(annotationType) ?: return null
-    val references = annotation.get("value").asClassDefinitions().map { context.toOpenApiType(it) }.toSet()
+    val references =
+        annotation
+            .get("value")
+            .asClassDefinitions()
+            .map(context::toOpenApiType)
+            .toSet()
     val discriminator = annotation.get("discriminator").asMap()?.let { discriminatorInfo(context, it) }
     return PropertyComposition(
         type = composition,
@@ -72,7 +77,6 @@ fun ObjectNode.createComposition(
 
     val refs = propertyComposition.references.ifEmpty { subtypes.map { it.second } }
 
-    // an empty oneOf/anyOf/allOf is invalid OpenAPI, so skip when there are no refs/subtypes
     if (refs.isEmpty()) return
 
     val compositionValues = createArrayNode()

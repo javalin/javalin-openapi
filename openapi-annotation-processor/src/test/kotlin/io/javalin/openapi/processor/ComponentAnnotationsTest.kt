@@ -30,8 +30,6 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
     )
     @Test
     fun should_include_openapi_description() = withOpenApi("should_include_openapi_description") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.ClassWithOpenApiDescription")
             .isObject
@@ -55,8 +53,6 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
     )
     @Test
     fun should_change_property_type() = withOpenApi("should_change_property_type") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.ClassWithOpenApiType")
             .isObject
@@ -87,8 +83,6 @@ internal class ComponentAnnotationsTest : OpenApiAnnotationProcessorSpecificatio
     )
     @Test
     fun should_add_nullable_property() = withOpenApi("should_control_nullability") {
-        println(it)
-
         assertThatJson(it)
             .inPath("$.components.schemas.ClassWithNullableProperties.properties.testProperty.type")
             .isEqualTo(json("""["string", "null"]"""))

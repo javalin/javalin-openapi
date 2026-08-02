@@ -18,7 +18,6 @@ fun Filer.saveResource(context: AnnotationProcessorContext, name: String, conten
         }
         resource
     } catch (_: FilerException) {
-        // file has been created during previous compilation phase
         null
     } catch (throwable: Throwable) {
         context.env.messager.printException(throwable)
