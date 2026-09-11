@@ -26,6 +26,8 @@ class SwaggerConfiguration @JvmOverloads constructor(
     @JvmField var title: String = "OpenApi documentation",
     /** Specification validator */
     @JvmField var validatorUrl: String? = "https://validator.swagger.io/validator",
+    /** Enables passing credentials, such as cookies, in CORS requests that are sent by the browser. */
+    @JvmField var withCredentials: Boolean = false,
     /** Tags sorter algorithm expression. */
     @JvmField var tagsSorter: String = "'alpha'",
     /** Operations sorter algorithm expression. */
@@ -63,6 +65,10 @@ class SwaggerConfiguration @JvmOverloads constructor(
 
     /** Set specification validator URL */
     fun withValidatorUrl(url: String?): SwaggerConfiguration = also { validatorUrl = url }
+
+    /** Enable passing credentials in CORS requests */
+    @JvmOverloads
+    fun withCredentials(enabled: Boolean = true): SwaggerConfiguration = also { withCredentials = enabled }
 
     /** Set tags sorter algorithm expression */
     fun withTagsSorter(sorter: String): SwaggerConfiguration = also { tagsSorter = sorter }
@@ -113,6 +119,7 @@ open class SwaggerPlugin @JvmOverloads constructor(
             },
             swaggerVersion = pluginConfig.version,
             validatorUrl = pluginConfig.validatorUrl,
+            withCredentials = pluginConfig.withCredentials,
             routingPath = state.router.contextPath,
             basePath = pluginConfig.basePath,
             tagsSorter = pluginConfig.tagsSorter,
