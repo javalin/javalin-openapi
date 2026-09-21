@@ -34,6 +34,7 @@ class SwaggerHandler(
     private val versions: List<SwaggerVersionMapping>,
     private val swaggerVersion: String,
     private val validatorUrl: String?,
+    private val withCredentials: Boolean,
     private val routingPath: String,
     private val basePath: String?,
     private val tagsSorter: String,
@@ -117,6 +118,7 @@ class SwaggerHandler(
                         layout: "StandaloneLayout",
                         tagsSorter: $tagsSorter,
                         operationsSorter: $operationsSorter,
+                        withCredentials: $withCredentials,
                         validatorUrl: ${if (validatorUrl != null) "\"$validatorUrl\"" else "null"}
                       })
                 }
