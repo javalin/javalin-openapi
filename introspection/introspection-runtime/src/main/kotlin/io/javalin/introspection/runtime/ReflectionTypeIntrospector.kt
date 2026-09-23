@@ -36,7 +36,6 @@ class ReflectionTypeIntrospector : TypeIntrospector {
 
 private fun reflect(
     type: Type,
-    generics: List<ClassDefinition> = emptyList(),
     structureType: StructureType = DEFAULT,
     visitingTypeVariables: Set<TypeVariable<*>> = emptySet(),
 ): ClassDefinition =
@@ -44,14 +43,12 @@ private fun reflect(
         is GenericArrayType ->
             reflect(
                 type = type.genericComponentType,
-                generics = generics,
                 structureType = ARRAY,
                 visitingTypeVariables = visitingTypeVariables,
             )
         is WildcardType ->
             reflect(
                 type = type.upperBounds.firstOrNull() ?: Any::class.java,
-                generics = generics,
                 structureType = structureType,
                 visitingTypeVariables = visitingTypeVariables,
             )
@@ -61,20 +58,17 @@ private fun reflect(
                 else ->
                     reflect(
                         type = type.bounds.firstOrNull() ?: Any::class.java,
-                        generics = generics,
                         structureType = structureType,
                         visitingTypeVariables = visitingTypeVariables + type,
                     )
             }
         is ParameterizedType -> parameterized(
             type = type,
-            generics = generics,
             structureType = structureType,
             visitingTypeVariables = visitingTypeVariables,
         )
         is Class<*> -> raw(
             clazz = type,
-            generics = generics,
             structureType = structureType,
             visitingTypeVariables = visitingTypeVariables,
         )
@@ -83,21 +77,19 @@ private fun reflect(
 
 private fun raw(
     clazz: Class<*>,
-    generics: List<ClassDefinition>,
     structureType: StructureType,
     visitingTypeVariables: Set<TypeVariable<*>>,
 ): ClassDefinition =
     when {
         clazz.isArray -> reflect(
             type = clazz.componentType,
-            generics = generics,
             structureType = ARRAY,
             visitingTypeVariables = visitingTypeVariables,
         )
         clazz.isPrimitive ->
             definition(
                 erasure = clazz.kotlin.javaObjectType,
-                generics = generics,
+                generics = emptyList(),
                 structureType = structureType,
                 source = clazz,
             )
@@ -108,12 +100,11 @@ private fun raw(
                 structureType = DICTIONARY,
             )
         Collection::class.java.isAssignableFrom(clazz) -> objectDefinition(ARRAY)
-        else -> definition(erasure = clazz, generics = generics, structureType = structureType)
+        else -> definition(erasure = clazz, generics = emptyList(), structureType = structureType)
     }
 
 private fun parameterized(
     type: ParameterizedType,
-    generics: List<ClassDefinition>,
     structureType: StructureType,
     visitingTypeVariables: Set<TypeVariable<*>>,
 ): ClassDefinition {
@@ -132,7 +123,6 @@ private fun parameterized(
         Collection::class.java.isAssignableFrom(erasure) ->
             reflect(
                 type = arguments.getOrElse(0) { Any::class.java },
-                generics = generics,
                 structureType = ARRAY,
                 visitingTypeVariables = visitingTypeVariables,
             )
@@ -219,8 +209,12 @@ private class ReflectionClassDefinition(
 }
 
 private fun collectMembers(clazz: Class<*>): List<Member> {
+    val members = mutableListOf<Member>()
+    val getterNames = mutableSetOf<String>()
+
     if (clazz.isRecord) {
-        return clazz.recordComponents.map { component ->
+        clazz.recordComponents.mapTo(members) { component ->
+            getterNames.add(component.accessor.name)
             val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
             Member(
                 name = component.name,
@@ -233,9 +227,6 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
             )
         }
     }
-
-    val members = mutableListOf<Member>()
-    val getterNames = mutableSetOf<String>()
 
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
@@ -250,6 +241,11 @@ private fun collectMembers(clazz: Class<*>): List<Member> {
         if (getterNames.add(method.name)) {
             members += method.toMember()
         }
+    }
+
+    if (clazz.isRecord) {
+        val componentNames = clazz.recordComponents.map { it.name }
+        return members.filter { it.accessor == Accessor.RECORD_COMPONENT || propertyName(it.name) !in componentNames }
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {

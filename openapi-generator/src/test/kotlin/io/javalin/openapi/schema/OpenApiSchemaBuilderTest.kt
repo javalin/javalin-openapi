@@ -8,6 +8,8 @@ import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
 import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -663,6 +665,18 @@ internal class OpenApiSchemaBuilderTest {
                 .containsEntry("type", "object")
                 .containsEntry("example", "example value")
         }
+
+        @Test
+        fun `last object example replaces the previous representation`() {
+            val schema = ObjectSchemaBuilder()
+            val example = createObjectNode().put("name", "Ada")
+            schema.example("first")
+            schema.exampleJson(example)
+            assertThatJson(schema.build()).inPath("$.example").isEqualTo(example)
+
+            schema.example("last")
+            assertThatJson(schema.build()).inPath("$.example").isEqualTo("last")
+        }
     }
 
     @Nested
@@ -989,6 +1003,46 @@ internal class OpenApiSchemaBuilderTest {
 
     @Nested
     inner class MergeBehavior {
+
+        @Test
+        fun `failed operation edit leaves the published document unchanged`() {
+            val schema = builder()
+            schema.path("/users").operation("get") {
+                tags("users")
+                parameters { parameter("limit", "query") { type("integer") } }
+                responses { response("200") { description("Original") } }
+            }
+            val before = schema.toJson()
+
+            assertThatThrownBy {
+                schema.path("/users").operation("get") {
+                    addTag("admin")
+                    parameters { parameter("name", "query") { type("string") } }
+                    responses { response("200") { description("Changed") } }
+                    error("Edit failed")
+                }
+            }.isInstanceOf(IllegalStateException::class.java)
+
+            assertThat(schema.toJson()).isEqualTo(before)
+        }
+
+        @Test
+        fun `operation field order is independent of configuration order`() {
+            val operation = OperationBuilder().apply {
+                security { securityRequirement("auth") }
+                deprecated(true)
+                callbacks { callback("event", "{url}", "post") { summary("Callback") } }
+                responses { response("200") { description("OK") } }
+                requestBody { description("Body") }
+                parameters { parameter("id", "path") { type("string") } }
+                summary("Summary")
+                tags("users")
+            }
+
+            assertThat(operation.build().fieldNames().asSequence().toList()).containsExactly(
+                "tags", "summary", "parameters", "requestBody", "responses", "callbacks", "deprecated", "security"
+            )
+        }
 
         @Test
         fun `should preserve all fields when reopening operation with empty lambda`() {

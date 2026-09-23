@@ -73,10 +73,10 @@ class RegisteredRoutesHook @JvmOverloads constructor(
                     }
                 }
 
-                when (metadata) {
-                    null -> responses { response("200") { description("OK") } }
-                    else -> metadata.configure(this)
+                if (!operationAlreadyDocumented) {
+                    responses { response("200") { description("OK") } }
                 }
+                metadata?.configure(this)
             }
         }
 

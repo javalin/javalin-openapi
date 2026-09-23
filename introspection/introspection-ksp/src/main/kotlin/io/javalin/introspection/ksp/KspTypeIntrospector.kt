@@ -26,6 +26,8 @@ import io.javalin.introspection.StructureType.ARRAY
 import io.javalin.introspection.StructureType.DEFAULT
 import io.javalin.introspection.StructureType.DICTIONARY
 import io.javalin.introspection.MemberVisibility
+import io.javalin.introspection.isGetterName
+import io.javalin.introspection.propertyName
 import java.lang.annotation.Inherited
 import java.lang.annotation.Repeatable as JavaRepeatable
 
@@ -201,25 +203,62 @@ class KspTypeIntrospector(private val resolver: Resolver) : CompileTimeIntrospec
 
         override fun getAnnotations(): AnnotationSet = KspAnnotations(declaration)
 
+        @OptIn(KspExperimental::class)
         override fun getProperties(): List<PropertyProjection> {
             val declaration = declaration ?: return emptyList()
-            return declaration
-                .getAllProperties()
-                .filter { property -> property.getVisibility() !in setOf(KspVisibility.PRIVATE, KspVisibility.LOCAL) }
-                .map { property ->
-                    val propertyType = property.type.resolve()
-                    PropertyProjection(
-                        name = property.simpleName.asString(),
-                        type = resolve(propertyType),
-                        accessor = Accessor.GETTER,
-                        nullable = propertyType.isMarkedNullable,
-                        visibility = visibilityOf(property.getVisibility()),
-                        transient = Modifier.JAVA_TRANSIENT in property.modifiers,
-                        source = property,
-                        annotations = KspAnnotations(elements = listOfNotNull(property, property.getter)),
-                    )
-                }
-                .toList()
+            val properties =
+                declaration
+                    .getAllProperties()
+                    .filter { property -> property.getVisibility() !in setOf(KspVisibility.PRIVATE, KspVisibility.LOCAL) }
+                    .map { property ->
+                        val propertyType = property.type.resolve()
+                        PropertyProjection(
+                            name = property.simpleName.asString(),
+                            type = resolve(propertyType),
+                            accessor = Accessor.GETTER,
+                            nullable = propertyType.isMarkedNullable,
+                            visibility = visibilityOf(property.getVisibility()),
+                            transient = Modifier.JAVA_TRANSIENT in property.modifiers,
+                            source = property,
+                            annotations = KspAnnotations(elements = listOfNotNull(property, property.getter)),
+                        )
+                    }
+                    .toList()
+
+            val getters =
+                declaration
+                    .getAllFunctions()
+                    .filter { it.getVisibility() != KspVisibility.PRIVATE || it.parentDeclaration == declaration }
+                    .filter { Modifier.SUSPEND !in it.modifiers && Modifier.JAVA_STATIC !in it.modifiers }
+                    .filter { it.parameters.isEmpty() && it.extensionReceiver == null }
+                    .filterNot { function ->
+                        declaration.classKind == ClassKind.OBJECT && !declaration.isCompanionObject &&
+                            function.annotations.any { it.annotationType.resolve().declaration.qualifiedName?.asString() == "kotlin.jvm.JvmStatic" }
+                    }
+                    .mapNotNull { function ->
+                        val name = resolver.getJvmName(function) ?: function.simpleName.asString()
+                        val annotations = KspAnnotations(function)
+                        if (!isGetterName(name) && !annotations.contains("OpenApiName")) {
+                            return@mapNotNull null
+                        }
+                        val returnType = function.returnType?.resolve() ?: return@mapNotNull null
+                        if (returnType.declaration.qualifiedName?.asString() == "kotlin.Unit" && !returnType.isMarkedNullable) {
+                            return@mapNotNull null
+                        }
+                        PropertyProjection(
+                            name = propertyName(name),
+                            type = resolve(returnType),
+                            accessor = Accessor.GETTER,
+                            nullable = returnType.isMarkedNullable,
+                            visibility = visibilityOf(function.getVisibility()),
+                            transient = false,
+                            source = function,
+                            annotations = annotations,
+                        )
+                    }
+                    .toList()
+
+            return properties + getters
         }
     }
 

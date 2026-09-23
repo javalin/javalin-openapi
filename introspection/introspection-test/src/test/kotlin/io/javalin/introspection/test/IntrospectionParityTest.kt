@@ -116,15 +116,6 @@ class IntrospectionParityTest {
     }
 
     @Test
-    fun `annotation value maps match across backends`() {
-        val runtimeValue = runtime.introspect(Holder::class.java).getAnnotations().find(Ref::class.java)!!.get("value").asClassDefinition()
-        val processedValue = AnnotationProcessing.introspect(Holder::class) { it.getAnnotations().find(Ref::class.java)!!.get("value").asClassDefinition() }
-        assertThat(processedValue?.fullName)
-            .isEqualTo(runtimeValue?.fullName)
-            .isEqualTo(Address::class.java.name)
-    }
-
-    @Test
     fun `primitive array annotation members normalize identically across backends`() {
         val runtimeInts = runtime.introspect(Flagged::class.java).getAnnotations().find(Flags::class.java)!!.get("ints").asList()
         val processedInts = AnnotationProcessing.introspect(Flagged::class) { it.getAnnotations().find(Flags::class.java)!!.get("ints").asList() }

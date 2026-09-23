@@ -15,19 +15,12 @@ import io.javalin.openapi.experimental.processor.shared.*
 
 class TypeSchemaGenerator(val context: SchemaGenerationContext) {
 
-    private val processedProperties = mutableMapOf<ProcessedProperty, ResultScheme>()
     private val activeInlineTypes = mutableMapOf<InlineType, ObjectNode>()
-    private val inlineTypeAnchors = mutableMapOf<InlineType, String>()
-    private var inlineSchemaDepth = 0
+    private var nextInlineAnchor = 0
 
     private data class InlineType(
         val fullName: String,
         val structureType: StructureType,
-    )
-
-    private data class ProcessedProperty(
-        val property: Property,
-        val requiresNonNulls: Boolean,
     )
 
     private fun OpenApiType.definedBy(): OpenApiType? =
@@ -42,159 +35,128 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
         inlineRefs: Boolean = false,
         requireNonNullsByDefault: Boolean = true,
     ): ResultScheme {
-        val isStandaloneJsonSchema = inlineRefs
-        val isRootJsonSchema = isStandaloneJsonSchema && inlineSchemaDepth == 0
+        if (inlineRefs) {
+            if (activeInlineTypes.isEmpty()) {
+                this.nextInlineAnchor = 0
+            }
+            activeInlineTypes[type.toInlineType()]?.let { activeSchema ->
+                val anchor = activeSchema.get($$"$anchor")?.asText()
+                    ?: "javalin-${this.nextInlineAnchor++}".also { activeSchema.put($$"$anchor", it) }
+                return ResultScheme(
+                    json = createObjectNode().put($$"$ref", "#$anchor"),
+                    references = emptySet(),
+                )
+            }
+        }
 
-        if (isStandaloneJsonSchema) {
-            inlineSchemaDepth++
+        context.reportDebug("OpenApi | Generating schema for ${type.fullName}")
+
+        val annotations = context.annotationsOf(type)
+        val isEnum = context.isEnum(type)
+        val definedBy = type.definedBy()
+
+        if (definedBy != null && !isEnum) {
+            return createTypeSchema(
+                type = definedBy,
+                inlineRefs = inlineRefs,
+                requireNonNullsByDefault = requireNonNullsByDefault,
+            )
+        }
+
+        val schema = createObjectNode()
+        val references = mutableSetOf<OpenApiType>()
+        val composition = findCompositionInElement(context, annotations)
+
+        if (inlineRefs) {
+            activeInlineTypes[type.toInlineType()] = schema
         }
 
         try {
-            if (isStandaloneJsonSchema) {
-                val inlineType = type.toInlineType()
-                activeInlineTypes[inlineType]?.let { activeSchema ->
-                    activeSchema.put($$"$anchor", inlineAnchorFor(inlineType))
-                    return ResultScheme(
-                        json = createObjectNode().put($$"$ref", "#${inlineAnchorFor(inlineType)}"),
-                        references = emptySet(),
+            when {
+                composition != null -> {
+                    schema.createComposition(
+                        context = context,
+                        type = type,
+                        propertyComposition = composition,
+                        references = references,
+                        inlineRefs = inlineRefs,
+                        requiresNonNulls = requireNonNullsByDefault,
                     )
                 }
-            }
+                isEnum -> {
+                    val enumType = definedBy
+                        ?.let { context.simpleTypeMappings[it.fullName] }
 
-            context.reportDebug("OpenApi | Generating schema for ${type.fullName}")
+                    val namingStrategy = annotations.namingStrategy()
+                    val values = createArrayNode()
+                    val descriptions = createArrayNode()
 
-            val annotations = context.annotationsOf(type)
-            val isEnum = context.isEnum(type)
-            val definedBy = type.definedBy()
+                    for (constant in context.enumConstantsOf(type)) {
+                        val customName = constant.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
+                        val description = constant.annotations.find(OpenApiDescription::class.java)?.get("value")?.asString()
+                        val name = when {
+                            customName != null -> customName
+                            namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
+                            else -> constant.name
+                        }
 
-            if (definedBy != null && !isEnum) {
-                return createTypeSchema(
-                    type = definedBy,
-                    inlineRefs = inlineRefs,
-                    requireNonNullsByDefault = requireNonNullsByDefault,
-                )
-            }
+                        when {
+                            enumType != null && enumType.type != "string" -> values.add(jsonMapper.readTree(name))
+                            else -> values.add(name)
+                        }
+                        descriptions.add(description ?: "")
+                    }
 
-            val schema = createObjectNode()
-            val references = mutableSetOf<OpenApiType>()
-            val composition = findCompositionInElement(context, annotations)
+                    schema.put("type", enumType?.type ?: "string")
+                    enumType?.format?.also { schema.put("format", it) }
+                    schema.set<JsonNode>("enum", values)
 
-            if (isStandaloneJsonSchema) {
-                activeInlineTypes[type.toInlineType()] = schema
-            }
+                    if (descriptions.any { it.isTextual && it.asText().isNotEmpty() }) {
+                        schema.set<JsonNode>("x-enum-descriptions", descriptions)
+                    }
 
-            try {
-                when {
-                    composition != null -> {
-                        schema.createComposition(
-                            context = context,
-                            type = type,
-                            propertyComposition = composition,
-                            references = references,
+                    schema.addExtra(annotations.findExtra())
+                }
+                else -> {
+                    schema.put("type", "object")
+
+                    schema.addExtra(annotations.findExtra())
+
+                    val propertiesObject = createObjectNode()
+                    schema.set<JsonNode>("properties", propertiesObject)
+
+                    val requireNonNulls = (annotations.find(JsonSchema::class.java)?.get("requireNonNulls")?.asBoolean())
+                        ?: requireNonNullsByDefault
+
+                    val properties = context.findAllProperties(type, requireNonNulls)
+
+                    properties.forEach { property ->
+                        val result = createEmbeddedTypeDescription(
+                            type = property.type,
                             inlineRefs = inlineRefs,
-                            requiresNonNulls = requireNonNullsByDefault,
+                            requiresNonNulls = requireNonNulls,
+                            composition = property.composition,
+                            extra = property.extra,
+                            nullable = property.nullable,
                         )
+                        propertiesObject.set<JsonNode>(property.name, result.json)
+                        result.references.forEach { references.addReference(it) }
                     }
-                    isEnum -> {
-                        val enumType = definedBy
-                            ?.let { context.simpleTypeMappings[it.fullName] }
 
-                        val namingStrategy = annotations.namingStrategy()
-                        val values = createArrayNode()
-                        val descriptions = createArrayNode()
-
-                        for (constant in context.enumConstantsOf(type)) {
-                            val customName = constant.annotations.find(OpenApiName::class.java)?.get("value")?.asString()
-                            val description = constant.annotations.find(OpenApiDescription::class.java)?.get("value")?.asString()
-                            val name = when {
-                                customName != null -> customName
-                                namingStrategy != null -> translatePropertyName(namingStrategy, constant.name)
-                                else -> constant.name
-                            }
-
-                            when {
-                                enumType != null && enumType.type != "string" -> values.add(jsonMapper.readTree(name))
-                                else -> values.add(name)
-                            }
-                            descriptions.add(description ?: "")
-                        }
-
-                        schema.put("type", enumType?.type ?: "string")
-                        enumType?.format?.also { schema.put("format", it) }
-                        schema.set<JsonNode>("enum", values)
-
-                        if (descriptions.any { it.isTextual && it.asText().isNotEmpty() }) {
-                            schema.set<JsonNode>("x-enum-descriptions", descriptions)
-                        }
-
-                        schema.addExtra(annotations.findExtra())
+                    if (properties.any { it.required }) {
+                        val required = createArrayNode()
+                        properties.filter { it.required }.forEach { required.add(it.name) }
+                        schema.set<JsonNode>("required", required)
                     }
-                    else -> {
-                        schema.put("type", "object")
-
-                        schema.addExtra(annotations.findExtra())
-
-                        val propertiesObject = createObjectNode()
-                        schema.set<JsonNode>("properties", propertiesObject)
-
-                        val requireNonNulls = (annotations.find(JsonSchema::class.java)?.get("requireNonNulls")?.asBoolean())
-                            ?: requireNonNullsByDefault
-
-                        val properties = context.findAllProperties(type, requireNonNulls)
-
-                        properties.forEach { property ->
-                            val result =
-                                when {
-                                    inlineRefs -> createEmbeddedTypeDescription(
-                                        type = property.type,
-                                        inlineRefs = true,
-                                        requiresNonNulls = requireNonNulls,
-                                        composition = property.composition,
-                                        extra = property.extra,
-                                        nullable = property.nullable,
-                                    )
-                                    else -> processedProperties.getOrPut(
-                                        ProcessedProperty(
-                                            property = property,
-                                            requiresNonNulls = requireNonNulls,
-                                        )
-                                    ) {
-                                        createEmbeddedTypeDescription(
-                                            type = property.type,
-                                            inlineRefs = false,
-                                            requiresNonNulls = requireNonNulls,
-                                            composition = property.composition,
-                                            extra = property.extra,
-                                            nullable = property.nullable,
-                                        )
-                                    }
-                                }
-                            propertiesObject.set<JsonNode>(property.name, result.json)
-                            result.references.forEach { references.addReference(it) }
-                        }
-
-                        if (properties.any { it.required }) {
-                            val required = createArrayNode()
-                            properties.filter { it.required }.forEach { required.add(it.name) }
-                            schema.set<JsonNode>("required", required)
-                        }
-                    }
-                }
-            } finally {
-                if (isStandaloneJsonSchema) {
-                    activeInlineTypes.remove(type.toInlineType())
                 }
             }
-
-            return ResultScheme(json = schema, references = references)
         } finally {
-            if (isStandaloneJsonSchema) {
-                inlineSchemaDepth--
-            }
-            if (isRootJsonSchema) {
-                inlineTypeAnchors.clear()
+            if (inlineRefs) {
+                activeInlineTypes.remove(type.toInlineType())
             }
         }
+
+        return ResultScheme(json = schema, references = references)
     }
 
     private fun OpenApiType.toInlineType(): InlineType =
@@ -202,9 +164,6 @@ class TypeSchemaGenerator(val context: SchemaGenerationContext) {
             fullName = fullName,
             structureType = structureType,
         )
-
-    private fun inlineAnchorFor(type: InlineType): String =
-        inlineTypeAnchors.getOrPut(type) { "javalin-${inlineTypeAnchors.size}" }
 
     fun createEmbeddedTypeDescription(
         type: OpenApiType,

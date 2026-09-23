@@ -64,7 +64,6 @@ class JapTypeIntrospector(
 
     private fun resolve(
         mirror: TypeMirror,
-        generics: List<ClassDefinition> = emptyList(),
         structureType: StructureType = DEFAULT,
         visitingTypeVariables: Set<String> = emptySet(),
     ): ClassDefinition =
@@ -77,7 +76,6 @@ class JapTypeIntrospector(
                     bound != null ->
                         resolve(
                             mirror = bound,
-                            generics = generics,
                             structureType = structureType,
                             visitingTypeVariables = visitingTypeVariables + key,
                         )
@@ -87,24 +85,21 @@ class JapTypeIntrospector(
             is WildcardType ->
                 resolve(
                     mirror = mirror.extendsBound ?: objectMirror(),
-                    generics = generics,
                     structureType = structureType,
                     visitingTypeVariables = visitingTypeVariables,
                 )
             is ArrayType -> resolve(
                 mirror = mirror.componentType,
-                generics = generics,
                 structureType = ARRAY,
                 visitingTypeVariables = visitingTypeVariables,
             )
             is PrimitiveType -> definition(
                 mirror = types.boxedClass(mirror).asType(),
-                generics = generics,
+                generics = emptyList(),
                 structureType = structureType,
             )
             is DeclaredType -> declared(
                 mirror = mirror,
-                generics = generics,
                 structureType = structureType,
                 visitingTypeVariables = visitingTypeVariables,
             )
@@ -116,7 +111,6 @@ class JapTypeIntrospector(
                     ?.let {
                         resolve(
                             mirror = it,
-                            generics = generics,
                             structureType = structureType,
                             visitingTypeVariables = visitingTypeVariables,
                         )
@@ -126,7 +120,6 @@ class JapTypeIntrospector(
 
     private fun declared(
         mirror: DeclaredType,
-        generics: List<ClassDefinition>,
         structureType: StructureType,
         visitingTypeVariables: Set<String>,
     ): ClassDefinition {
@@ -150,7 +143,6 @@ class JapTypeIntrospector(
             types.isAssignable(erasure, erasureOf("java.util.Collection")) ->
                 resolve(
                     mirror = mirror.typeArguments.getOrElse(0) { objectMirror() },
-                    generics = generics,
                     structureType = ARRAY,
                     visitingTypeVariables = visitingTypeVariables,
                 )
@@ -271,51 +263,32 @@ class JapTypeIntrospector(
         override fun getProperties(): List<PropertyProjection> {
             val element = typeElement() ?: return emptyList()
 
-            if (element.kind == ElementKind.RECORD) {
-                val recordProperties = element.recordComponents.map { component ->
-                    PropertyProjection(
-                        name = component.simpleName.toString(),
-                        type = resolve(component.asType()),
-                        accessor = Accessor.RECORD_COMPONENT,
-                        nullable = component.asType().nullable(),
-                        visibility = MemberVisibility.PUBLIC,
-                        transient = false,
-                        source = component,
-                        annotations = AnnotationsView(listOf(component)),
-                    )
+            val recordProperties = element.recordComponents.map { component ->
+                val backingField = element.enclosedElements.firstOrNull {
+                    it.kind == ElementKind.FIELD && it.simpleName == component.simpleName
                 }
-                val recordPropertyNames = recordProperties.mapTo(mutableSetOf()) { it.name }
-                val extraGetters = elements.getAllMembers(element).mapNotNull { member ->
-                    if (!member.isGetter()) {
-                        return@mapNotNull null
-                    }
-
-                    val getter = member as ExecutableElement
-                    val name = propertyName(getter.simpleName.toString())
-                    if (name in recordPropertyNames) {
-                        return@mapNotNull null
-                    }
-
-                    PropertyProjection(
-                        name = name,
-                        type = resolve(getter.returnType),
-                        accessor = Accessor.GETTER,
-                        nullable = getter.returnType.nullable(),
-                        visibility = getter.visibility(),
-                        transient = false,
-                        source = getter,
-                        annotations = AnnotationsView(listOf(getter)),
-                    )
-                }
-
-                return recordProperties + extraGetters
+                PropertyProjection(
+                    name = component.simpleName.toString(),
+                    type = resolve(component.asType()),
+                    accessor = Accessor.RECORD_COMPONENT,
+                    nullable = component.asType().nullable(),
+                    visibility = MemberVisibility.PUBLIC,
+                    transient = false,
+                    source = component.accessor,
+                    annotations = AnnotationsView(listOfNotNull(component.accessor, backingField, component)),
+                )
             }
+            val recordPropertyNames = recordProperties.map { it.name }
 
-            return elements.getAllMembers(element).mapNotNull { member ->
+            val otherProperties = elements.getAllMembers(element).mapNotNull { member ->
                 when {
                     member.isGetter() -> (member as ExecutableElement).let { getter ->
+                        val name = propertyName(getter.simpleName.toString())
+                        if (name in recordPropertyNames) {
+                            return@mapNotNull null
+                        }
                         PropertyProjection(
-                            name = propertyName(getter.simpleName.toString()),
+                            name = name,
                             type = resolve(getter.returnType),
                             accessor = Accessor.GETTER,
                             nullable = getter.returnType.nullable(),
@@ -325,7 +298,7 @@ class JapTypeIntrospector(
                             annotations = AnnotationsView(listOf(getter)),
                         )
                     }
-                    member.isInstanceField() -> (member as VariableElement).let { field ->
+                    element.kind != ElementKind.RECORD && member.isInstanceField() -> (member as VariableElement).let { field ->
                         PropertyProjection(
                             name = field.simpleName.toString(),
                             type = resolve(field.asType()),
@@ -340,6 +313,7 @@ class JapTypeIntrospector(
                     else -> null
                 }
             }
+            return recordProperties + otherProperties
         }
 
         private fun typeElement(): TypeElement? =

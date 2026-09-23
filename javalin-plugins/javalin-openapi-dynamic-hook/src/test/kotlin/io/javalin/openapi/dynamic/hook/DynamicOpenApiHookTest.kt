@@ -123,6 +123,58 @@ class DynamicOpenApiHookTest {
     }
 
     @Test
+    fun `summary metadata preserves the generated response`() {
+        val app = Javalin.start { config ->
+            config.jetty.port = 0
+            config.registerPlugin(OpenApiPlugin { it.withHook(RegisteredRoutesHook()) })
+            config.routes.addEndpoint(
+                Endpoint.create(HandlerType.GET, "/users")
+                    .addMetadata(OpenApiMetadata { summary("List users") })
+                    .handler { }
+            )
+        }
+
+        try {
+            val document = jsonMapper.readTree(Unirest.get("http://localhost:${app.port()}/openapi").asString().body)
+            val operation = document.path("paths").path("/users").path("get")
+            assertThat(operation.path("summary").asText()).isEqualTo("List users")
+            assertThat(operation.path("responses").path("200").path("description").asText()).isEqualTo("OK")
+        } finally {
+            app.stop()
+        }
+    }
+
+    @Test
+    fun `metadata preserves responses from existing documentation`() {
+        val app = Javalin.start { config ->
+            config.jetty.port = 0
+            config.registerPlugin(OpenApiPlugin { plugin ->
+                plugin.withHook { context ->
+                    context.builder.path("/users").operation("post") {
+                        responses { response("201") { description("Created") } }
+                    }
+                }
+                plugin.withHook(RegisteredRoutesHook())
+            })
+            config.routes.addEndpoint(
+                Endpoint.create(HandlerType.POST, "/users")
+                    .addMetadata(OpenApiMetadata { summary("Create a user") })
+                    .handler { }
+            )
+        }
+
+        try {
+            val document = jsonMapper.readTree(Unirest.get("http://localhost:${app.port()}/openapi").asString().body)
+            val operation = document.path("paths").path("/users").path("post")
+            assertThat(operation.path("summary").asText()).isEqualTo("Create a user")
+            assertThat(operation.path("responses").fieldNames().asSequence().toList()).containsExactly("201")
+            assertThat(operation.path("responses").path("201").path("description").asText()).isEqualTo("Created")
+        } finally {
+            app.stop()
+        }
+    }
+
+    @Test
     fun `enriches a route from OpenApiMetadata`() {
         val app = Javalin.start { config ->
             config.jetty.port = 0
@@ -147,6 +199,7 @@ class DynamicOpenApiHookTest {
             val get = document.path("paths").path("/users/{id}").path("get")
 
             assertThat(get.path("summary").asText()).isEqualTo("Get a user")
+            assertThat(get.path("responses").path("200").path("description").asText()).isEqualTo("The user")
             assertThat(get.path("parameters")[0].path("name").asText()).isEqualTo("id")
 
             val schema = get.path("responses").path("200").path("content").path("application/json").path("schema")

@@ -6,6 +6,7 @@ import io.javalin.introspection.ClassDefinition
 import io.javalin.introspection.EnumConstant
 import io.javalin.introspection.InternalIntrospectionApi
 import io.javalin.introspection.PropertyProjection
+import io.javalin.openapi.NULL_CLASS
 import io.javalin.openapi.experimental.EmbeddedTypeProcessor
 import io.javalin.openapi.experimental.OpenApiType
 import io.javalin.openapi.experimental.SchemaGenerationContext
@@ -17,6 +18,19 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class OpenApiRouteDefinitionTest {
+
+    @Test
+    fun `absent content sources are normalized while decoding annotations`() {
+        val content = OpenApiContentDefinition.from(
+            mapOf(
+                "from" to StubClassDefinition(NULL_CLASS::class.java.name),
+                "properties" to listOf(mapOf("name" to "value", "from" to StubClassDefinition(NULL_CLASS::class.java.name))),
+            )
+        )
+
+        assertThat(content.from).isNull()
+        assertThat(content.properties.single().from).isNull()
+    }
 
     @Test
     fun `schemas resolved content properties without an unused fallback type`() {
@@ -66,9 +80,9 @@ internal class OpenApiRouteDefinitionTest {
             .isEqualTo("#/components/schemas/Owner")
     }
 
-    private class StubClassDefinition : ClassDefinition(
+    private class StubClassDefinition(fullName: String = "example.Owner") : ClassDefinition(
         simpleName = "Owner",
-        fullName = "example.Owner",
+        fullName = fullName,
     ) {
         @OptIn(InternalIntrospectionApi::class)
         override val source: Any = Unit

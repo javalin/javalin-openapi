@@ -224,7 +224,7 @@ class OpenApiSchemaGenerator(
         replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
     private fun resolveMediaType(content: OpenApiContentDefinition): Pair<String, MediaTypeBuilder.() -> Unit>? {
-        val source = content.resolvedSource
+        val source = content.from
         var type = content.type
         var mimeType = content.mimeType
 
@@ -288,7 +288,7 @@ class OpenApiSchemaGenerator(
 
     private fun ObjectSchemaBuilder.buildProperties(properties: List<OpenApiContentPropertyDefinition>) {
         for (property in properties) {
-            val source = property.resolvedSource
+            val source = property.from
 
             when {
                 property.isArray && source != null ->
@@ -304,7 +304,7 @@ class OpenApiSchemaGenerator(
     }
 
     private fun ObjectSchemaBuilder.buildAdditionalProperties(additionalProperties: OpenApiContentDefinition) {
-        val source = additionalProperties.resolvedSource
+        val source = additionalProperties.from
 
         when {
             source != null -> additionalProperties(createTypeDescriptionWithReferences(source))

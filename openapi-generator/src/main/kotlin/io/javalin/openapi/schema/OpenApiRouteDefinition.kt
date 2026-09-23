@@ -157,9 +157,6 @@ internal data class OpenApiContentDefinition(
     val example: String?,
     val exampleObjects: List<ExampleProperty>,
 ) {
-    val resolvedSource: ClassDefinition?
-        get() = from?.takeUnless { it.fullName == NULL_CLASS::class.java.name }
-
     companion object {
         fun from(values: Map<String, Any?>): OpenApiContentDefinition =
             OpenApiContentDefinition(
@@ -184,9 +181,6 @@ internal data class OpenApiContentPropertyDefinition(
     val type: String?,
     val format: String?,
 ) {
-    val resolvedSource: ClassDefinition?
-        get() = from?.takeUnless { it.fullName == NULL_CLASS::class.java.name }
-
     companion object {
         fun from(values: Map<String, Any?>): OpenApiContentPropertyDefinition =
             OpenApiContentPropertyDefinition(
@@ -211,7 +205,8 @@ private fun Map<String, Any?>.nonEmptyString(key: String): String? = string(key)
 
 private fun Map<String, Any?>.boolean(key: String): Boolean = get(key) as? Boolean ?: false
 
-private fun Map<String, Any?>.classDefinition(key: String): ClassDefinition? = get(key) as? ClassDefinition
+private fun Map<String, Any?>.classDefinition(key: String): ClassDefinition? =
+    (get(key) as? ClassDefinition)?.takeUnless { it.fullName == NULL_CLASS::class.java.name }
 
 private fun Map<String, Any?>.strings(key: String): List<String> =
     (get(key) as? List<*>)?.filterIsInstance<String>().orEmpty()
