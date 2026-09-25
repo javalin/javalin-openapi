@@ -72,7 +72,7 @@ private fun reflect(
             structureType = structureType,
             visitingTypeVariables = visitingTypeVariables,
         )
-        else -> definition(erasure = Any::class.java, generics = emptyList(), structureType = structureType)
+        else -> objectDefinition(structureType)
     }
 
 private fun raw(
@@ -87,20 +87,20 @@ private fun raw(
             visitingTypeVariables = visitingTypeVariables,
         )
         clazz.isPrimitive ->
-            definition(
+            ReflectionClassDefinition(
                 erasure = clazz.kotlin.javaObjectType,
                 generics = emptyList(),
                 structureType = structureType,
-                source = clazz,
+                sourceType = clazz,
             )
         Map::class.java.isAssignableFrom(clazz) ->
-            definition(
+            ReflectionClassDefinition(
                 erasure = clazz,
                 generics = listOf(objectDefinition(), objectDefinition()),
                 structureType = DICTIONARY,
             )
         Collection::class.java.isAssignableFrom(clazz) -> objectDefinition(ARRAY)
-        else -> definition(erasure = clazz, generics = emptyList(), structureType = structureType)
+        else -> ReflectionClassDefinition(erasure = clazz, generics = emptyList(), structureType = structureType)
     }
 
 private fun parameterized(
@@ -114,7 +114,7 @@ private fun parameterized(
         Map::class.java.isAssignableFrom(erasure) -> {
             val keyType = reflect(arguments.getOrElse(0) { Any::class.java }, visitingTypeVariables = visitingTypeVariables)
             val valueType = reflect(arguments.getOrElse(1) { Any::class.java }, visitingTypeVariables = visitingTypeVariables)
-            definition(
+            ReflectionClassDefinition(
                 erasure = erasure,
                 generics = listOf(keyType, valueType),
                 structureType = DICTIONARY,
@@ -130,39 +130,22 @@ private fun parameterized(
             val resolvedGenerics = arguments.map {
                 reflect(it, visitingTypeVariables = visitingTypeVariables)
             }
-            definition(erasure = erasure, generics = resolvedGenerics, structureType = structureType)
+            ReflectionClassDefinition(erasure = erasure, generics = resolvedGenerics, structureType = structureType)
         }
     }
 }
 
-private fun definition(
-    erasure: Class<*>,
-    generics: List<ClassDefinition>,
-    structureType: StructureType,
-    source: Class<*> = erasure,
-): ClassDefinition =
-    ReflectionClassDefinition(
-        simpleName = erasure.simpleName.ifEmpty { erasure.name.substringAfterLast('.') },
-        fullName = erasure.canonicalName ?: erasure.name,
-        generics = generics,
-        structureType = structureType,
-        erasure = erasure,
-        sourceType = source,
-    )
-
 private fun objectDefinition(structureType: StructureType = DEFAULT): ClassDefinition =
-    definition(erasure = Any::class.java, generics = emptyList(), structureType = structureType)
+    ReflectionClassDefinition(erasure = Any::class.java, generics = emptyList(), structureType = structureType)
 
 private class ReflectionClassDefinition(
-    simpleName: String,
-    fullName: String,
+    private val erasure: Class<*>,
     generics: List<ClassDefinition>,
     structureType: StructureType,
-    private val erasure: Class<*>,
-    private val sourceType: Class<*>,
+    sourceType: Class<*> = erasure,
 ) : ClassDefinition(
-    simpleName = simpleName,
-    fullName = fullName,
+    simpleName = erasure.simpleName.ifEmpty { erasure.name.substringAfterLast('.') },
+    fullName = erasure.canonicalName ?: erasure.name,
     generics = generics,
     structureType = structureType,
 ) {
@@ -189,100 +172,80 @@ private class ReflectionClassDefinition(
     }
 
     override fun getProperties(): List<PropertyProjection> =
-        collectMembers(erasure).map { member ->
-            PropertyProjection(
-                name = when {
-                    member.accessor == Accessor.GETTER -> propertyName(member.name)
-                    else -> member.name
-                },
-                type = reflect(member.genericType),
-                accessor = member.accessor,
-                nullable = (member.genericType as? Class<*>)?.isPrimitive != true,
-                visibility = member.visibility,
-                transient = member.transient,
-                source = member.source,
-                annotations = ReflectionAnnotations(member.sources),
-            )
-        }
+        collectProperties(erasure)
 
     override fun getAnnotations(): AnnotationSet = ReflectionAnnotations(listOf(erasure))
 }
 
-private fun collectMembers(clazz: Class<*>): List<Member> {
-    val members = mutableListOf<Member>()
+private fun collectProperties(clazz: Class<*>): List<PropertyProjection> {
+    val properties = mutableListOf<PropertyProjection>()
     val getterNames = mutableSetOf<String>()
+    val components = clazz.recordComponents.orEmpty()
+    val componentNames = components.map { it.name }
 
-    if (clazz.isRecord) {
-        clazz.recordComponents.mapTo(members) { component ->
-            getterNames.add(component.accessor.name)
-            val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
-            Member(
-                name = component.name,
-                genericType = component.genericType,
-                accessor = Accessor.RECORD_COMPONENT,
-                visibility = MemberVisibility.PUBLIC,
-                transient = false,
-                source = component.accessor,
-                sources = listOfNotNull(component.accessor, backingField, component),
-            )
-        }
+    components.mapTo(properties) { component ->
+        getterNames.add(component.accessor.name)
+        val backingField = runCatching { clazz.getDeclaredField(component.name) }.getOrNull()
+        PropertyProjection(
+            name = component.name,
+            type = reflect(component.genericType),
+            accessor = Accessor.RECORD_COMPONENT,
+            nullable = !component.type.isPrimitive,
+            visibility = MemberVisibility.PUBLIC,
+            transient = false,
+            source = component.accessor,
+            annotations = ReflectionAnnotations(listOfNotNull(component.accessor, backingField, component)),
+        )
     }
 
     for (method in clazz.methods) {
         if (Modifier.isStatic(method.modifiers) || method.isBridge || method.isSynthetic) continue
         if (method.parameterCount != 0 || method.declaringClass == Any::class.java) continue
         if (method.returnType == Void.TYPE || !method.isPropertyGetter()) continue
+        if (propertyName(method.name) in componentNames) continue
         if (getterNames.add(method.name)) {
-            members += method.toMember()
+            properties += method.toProperty()
         }
     }
 
     for (method in nonPublicGettersHierarchy(clazz)) {
+        if (propertyName(method.name) in componentNames) continue
         if (getterNames.add(method.name)) {
-            members += method.toMember()
+            properties += method.toProperty()
         }
     }
 
     if (clazz.isRecord) {
-        val componentNames = clazz.recordComponents.map { it.name }
-        return members.filter { it.accessor == Accessor.RECORD_COMPONENT || propertyName(it.name) !in componentNames }
+        return properties
     }
 
     for (field in declaredFieldsHierarchy(clazz)) {
         if (Modifier.isStatic(field.modifiers) || field.isSynthetic) continue
-        members += Member(
+        properties += PropertyProjection(
             name = field.name,
-            genericType = field.genericType,
+            type = reflect(field.genericType),
             accessor = Accessor.FIELD,
+            nullable = !field.type.isPrimitive,
             visibility = visibilityOf(field.modifiers),
             transient = Modifier.isTransient(field.modifiers),
             source = field,
-            sources = listOf(field),
+            annotations = ReflectionAnnotations(listOf(field)),
         )
     }
 
-    return members
+    return properties
 }
 
-private class Member(
-    val name: String,
-    val genericType: Type,
-    val accessor: Accessor,
-    val visibility: MemberVisibility,
-    val transient: Boolean,
-    val source: AnnotatedElement,
-    val sources: List<AnnotatedElement>,
-)
-
-private fun Method.toMember(): Member =
-    Member(
-        name = name,
-        genericType = genericReturnType,
+private fun Method.toProperty(): PropertyProjection =
+    PropertyProjection(
+        name = propertyName(name),
+        type = reflect(genericReturnType),
         accessor = Accessor.GETTER,
+        nullable = !returnType.isPrimitive,
         visibility = visibilityOf(modifiers),
         transient = false,
         source = this,
-        sources = listOf(this),
+        annotations = ReflectionAnnotations(listOf(this)),
     )
 
 private fun Method.isPropertyGetter(): Boolean =

@@ -1,7 +1,7 @@
 package io.javalin.openapi.experimental.processor.generators
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import io.javalin.openapi.NULL_STRING
 import io.javalin.openapi.experimental.processor.shared.createArrayNode
 import io.javalin.openapi.experimental.processor.shared.createObjectNode
@@ -39,44 +39,30 @@ object ExampleGenerator {
         }
     }
 
-    fun generateFromExamples(examples: List<ExampleProperty>): GeneratorResult {
-        if (examples.isRawList()) {
-            val jsonArray = createArrayNode()
-            examples.forEach { jsonArray.add(it.value) }
-            return GeneratorResult(null, jsonArray)
-        }
+    fun generateFromExamples(examples: List<ExampleProperty>): GeneratorResult =
+        GeneratorResult(simpleValue = null, jsonElement = examples.toJson())
 
-        if (examples.isObjectList()) {
-            val jsonArray = createArrayNode()
-            examples.forEach { jsonArray.add(it.toSimpleExampleValue().jsonElement!!) }
-            return GeneratorResult(null, jsonArray)
-        }
-
-        return GeneratorResult(null, examples.toJsonObject())
-    }
-
-    private fun ExampleProperty.toSimpleExampleValue(): GeneratorResult =
+    private fun ExampleProperty.toJson(): JsonNode =
         when {
-            value != null -> GeneratorResult(value, null)
-            objects?.isNotEmpty() == true -> generateFromExamples(objects)
-            raw != null -> GeneratorResult(null, jsonMapper.readTree(raw))
+            value != null -> TextNode.valueOf(value)
+            objects?.isNotEmpty() == true -> objects.toJson()
+            raw != null -> jsonMapper.readTree(raw)
             else -> throw IllegalArgumentException("Example object must have value, raw value or objects ($this)")
         }
 
-    private fun List<ExampleProperty>.toJsonObject(): ObjectNode {
-        val jsonObject = createObjectNode()
-        forEach {
-            val result = it.toSimpleExampleValue()
-            if (it.name == null) {
-                throw IllegalArgumentException("Example object must have a name ($it)")
+    private fun List<ExampleProperty>.toJson(): JsonNode =
+        when {
+            isRawList() || isObjectList() -> createArrayNode().also { array ->
+                forEach { array.add(it.toJson()) }
             }
-            when {
-                result.simpleValue != null -> jsonObject.put(it.name, result.simpleValue)
-                result.jsonElement != null -> jsonObject.set<JsonNode>(it.name, result.jsonElement)
+            else -> createObjectNode().also { objectNode ->
+                forEach { example ->
+                    val value = example.toJson()
+                    require(example.name != null) { "Example object must have a name ($example)" }
+                    objectNode.set<JsonNode>(example.name, value)
+                }
             }
         }
-        return jsonObject
-    }
 
     private fun List<ExampleProperty>.isObjectList(): Boolean =
         isNotEmpty() && all { example ->

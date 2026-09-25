@@ -27,6 +27,28 @@ class SchemaParityTest {
         package parity
 
         import io.javalin.openapi.*
+        import kotlin.reflect.KClass
+
+        @CustomAnnotation
+        annotation class CustomSchema(val nested: NestedValues, val entries: Array<NestedValues>)
+
+        annotation class NestedValues(
+            val enabled: Boolean = true,
+            val byteValue: Byte = 1,
+            val shortValue: Short = 2,
+            val intValue: Int = 3,
+            val longValue: Long = 4,
+            val floatValue: Float = 1.5f,
+            val doubleValue: Double = 2.5,
+            val letter: Char = 'x',
+            val text: String = "  label",
+            val type: KClass<*> = Child::class,
+            val numbers: IntArray = [1, 2],
+        )
+
+        @JsonSchema
+        @CustomSchema(nested = NestedValues(), entries = [NestedValues()])
+        class CustomValues
 
         @JsonSchema(requireNonNulls = false)
         class Properties(
@@ -198,6 +220,23 @@ class SchemaParityTest {
                 inlineRefs = true,
             ).toJsonSchemaString()
         )
+    }
+
+    @Test
+    fun `nested custom annotation values retain their JSON types across backends`() {
+        val schema = schema("CustomValues")
+        val expected = jsonMapper.readTree(
+            // language=json
+            """
+            {
+              "enabled": true, "byteValue": 1, "shortValue": 2, "intValue": 3, "longValue": 4,
+              "floatValue": 1.5, "doubleValue": 2.5, "letter": "x", "text": "label",
+              "type": "parity.Child", "numbers": [1, 2]
+            }
+            """
+        )
+        assertThat(schema.path("nested")).isEqualTo(expected)
+        assertThat(schema.path("entries")).containsExactly(expected)
     }
 
     @Test

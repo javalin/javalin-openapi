@@ -461,23 +461,15 @@ private fun customAnnotationValue(value: Any?): Any? =
     when (value) {
         is String -> value.trimIndent()
         is RawType -> value.fullName
-        is Map<*, *> -> createObjectNode().also { node ->
-            value.forEach { (key, nestedValue) ->
-                val field = key as? String ?: return@forEach
-                when (val resolved = customAnnotationValue(nestedValue)) {
-                    is Boolean -> node.put(field, resolved)
-                    is Int -> node.put(field, resolved)
-                    is Long -> node.put(field, resolved)
-                    is Double -> node.put(field, resolved)
-                    is Float -> node.put(field, resolved)
-                    is Short -> node.put(field, resolved.toInt())
-                    is Byte -> node.put(field, resolved.toInt())
-                    is String -> node.put(field, resolved)
-                    is JsonNode -> node.set<JsonNode>(field, resolved)
-                    null -> {}
-                    else -> node.put(field, resolved.toString())
-                }
-            }
+        is Map<*, *> -> {
+            val fields =
+                value
+                    .entries
+                    .mapNotNull { (key, nestedValue) ->
+                        (key as? String)?.let { it to customAnnotationValue(nestedValue) }
+                    }
+                    .toMap()
+            createObjectNode().addExtra(fields)
         }
         is List<*> -> createArrayNode().also { array ->
             value.forEach {
